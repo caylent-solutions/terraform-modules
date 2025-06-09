@@ -1,0 +1,9 @@
+conftest 0.60.0
+golang 1.23.9
+golangci-lint 2.1.6
+pre-commit 4.2.0
+terraform 1.12.1
+terraform-docs 0.20.0
+terragrunt 0.80.3
+tflint 0.58.0
+tfsec 1.28.14

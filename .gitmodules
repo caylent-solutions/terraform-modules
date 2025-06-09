@@ -1,0 +1,3 @@
+[submodule "terraform-terratest-framework"]
+	path = terraform-terratest-framework
+	url = https://github.com/caylent-solutions/terraform-terratest-framework.git
