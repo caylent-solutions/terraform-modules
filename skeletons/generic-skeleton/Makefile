@@ -13,15 +13,6 @@ test:
 	@echo "Running all tests..."
 	@tftest run
 
-# Run tests for a specific example
-test-basic:
-	@echo "Running basic example tests..."
-	@tftest run --example-path basic
-
-test-advanced:
-	@echo "Running advanced example tests..."
-	@tftest run --example-path advanced
-
 # Run common tests
 test-common:
 	@echo "Running common tests..."
