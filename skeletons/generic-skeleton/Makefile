@@ -1,22 +1,27 @@
-.PHONY: install test format clean
+.PHONY: install test test-clean test-common format clean clean-all
 
 # Install dependencies
 install:
 	@echo "Installing dependencies..."
 	@go mod tidy
-	@go install github.com/caylent-solutions/terraform-terratest-framework/cmd/tftest@$$(grep terraform-terratest-framework go.mod | awk '{print $$2}')
+	@go install github.com/caylent-solutions/terraform-terratest-framework/cmd/tftest@$(grep terraform-terratest-framework go.mod | awk '{print $2}')
 	@asdf reshim golang || true
 	@echo "Dependencies installed successfully"
 
-# Run all tests
-test:
-	@echo "Running all tests..."
-	@tftest run
 
-# Run common tests
+# Run all tests with clean cache
+test:
+	@echo "Cleaning Go test cache..."
+	@go clean -cache -testcache
+	@echo "Running all tests with clean cache..."
+	@GOFLAGS="-count=1" tftest run
+
+# Run common tests with clean cache
 test-common:
-	@echo "Running common tests..."
-	@. ~/.asdf/asdf.sh && go test ./tests/common -v
+	@echo "Cleaning Go test cache..."
+	@go clean -cache -testcache
+	@echo "Running common tests with clean cache..."
+	@. ~/.asdf/asdf.sh && go test ./tests/common -v -count=1
 
 # Format all test files
 format:
@@ -25,8 +30,14 @@ format:
 
 # Clean up temporary files
 clean:
-	@echo "Cleaning up..."
+	@echo "Cleaning up temporary files..."
 	@rm -rf .terraform
 	@find . -name ".terraform.lock.hcl" -delete
 	@find . -name "terraform.tfstate*" -delete
 	@find . -name ".terraform.tfstate.lock.info" -delete
+
+# Clean up everything including Go cache
+clean-all: clean
+	@echo "Cleaning Go cache..."
+	@go clean -cache -testcache
+	@echo "All caches cleaned"

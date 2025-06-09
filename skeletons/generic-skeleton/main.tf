@@ -7,6 +7,7 @@ resource "local_file" "output" {
 # Generate a timestamp for testing purposes
 resource "time_static" "creation_time" {
   triggers = {
-    file_content = local_file.output.content
+    # Use content_sha256 instead of content to ensure idempotency
+    file_content_hash = local_file.output.content_sha256
   }
 }
