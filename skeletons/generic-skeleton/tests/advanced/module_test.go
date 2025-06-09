@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/caylent-solutions/terraform-terratest-framework/pkg/assertions"
 	"github.com/caylent-solutions/terraform-terratest-framework/pkg/testctx"
-	"github.com/caylent-solutions/terraform-terratest-framework/tests/unit"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,9 +24,8 @@ func TestAdvancedOutput(t *testing.T) {
 	filePath := terraform.Output(t, ctx.Terraform, "output_file_path")
 	assert.NotEmpty(t, filePath, "File path should not be empty")
 	
-	content := terraform.Output(t, ctx.Terraform, "output_content")
-	assert.Contains(t, content, "advanced", "File content should contain expected value")
-	assert.Contains(t, content, "true", "File content should contain expected value")
+	assertions.AssertOutputContains(t, ctx, "output_content", "advanced")
+	assertions.AssertOutputContains(t, ctx, "output_content", "true")
 	
 	// Get the json_data output directly - Terraform already returns this as a structured map
 	jsonData := terraform.OutputForKeys(t, ctx.Terraform, []string{"json_data"})
@@ -41,7 +40,7 @@ func TestAdvancedOutput(t *testing.T) {
 func AssertJSONStructure(t *testing.T, ctx testctx.TestContext, requiredKeys []string) {
 	// Get the file content from the output
 	content := terraform.Output(t, ctx.Terraform, "output_content")
-	assert.NotEmpty(t, content, "File content should not be empty")
+	assertions.AssertOutputNotEmpty(t, ctx, "output_content")
 	
 	// Parse the JSON content
 	var jsonData map[string]interface{}
@@ -54,13 +53,32 @@ func AssertJSONStructure(t *testing.T, ctx testctx.TestContext, requiredKeys []s
 		assert.True(t, exists, "JSON should contain key '%s'", key)
 	}
 	
-	// Use the full path to check the file
+	// Use the file path from the output to check the file
 	filePath := terraform.Output(t, ctx.Terraform, "output_file_path")
+	assert.NotEmpty(t, filePath, "Output file path should not be empty")
+	
+	// Construct the full path
 	fullPath := filepath.Join(ctx.Terraform.TerraformDir, filePath)
 	
 	// Verify the file exists
-	_, err = os.Stat(fullPath)
+	fileInfo, err := os.Stat(fullPath)
 	assert.NoError(t, err, "File should exist at path: %s", fullPath)
+	assert.False(t, fileInfo.IsDir(), "Path should be a file, not a directory: %s", fullPath)
+	
+	// Read the file content and verify it matches the output_content
+	fileContent, err := os.ReadFile(fullPath)
+	assert.NoError(t, err, "Should be able to read file: %s", fullPath)
+	
+	// Parse the file content as JSON to compare structure
+	var fileJsonData map[string]interface{}
+	err = json.Unmarshal(fileContent, &fileJsonData)
+	assert.NoError(t, err, "File content should be valid JSON")
+	
+	// Check if all required keys exist in the file content
+	for _, key := range requiredKeys {
+		_, exists := fileJsonData[key]
+		assert.True(t, exists, "File JSON should contain key '%s'", key)
+	}
 }
 
 // TestAdvancedJSONStructure tests that the JSON file created by the advanced example has the expected structure
@@ -100,20 +118,20 @@ func TestCollectionAssertions(t *testing.T) {
 	
 	// Collection Assertions
 	// Verify that the json_data output map contains the key "tags"
-	unit.AssertOutputMapContainsKey(t, ctx, "json_data", "tags")
+	assertions.AssertOutputMapContainsKey(t, ctx, "json_data", "tags")
 	
 	// Verify that the "message" key in the json_data output map equals "advanced"
-	unit.AssertOutputMapKeyEquals(t, ctx, "json_data", "message", "advanced")
+	assertions.AssertOutputMapKeyEquals(t, ctx, "json_data", "message", "advanced")
 	
 	// Verify that the regions_list output list contains the value "us-west-2"
-	unit.AssertOutputListContains(t, ctx, "regions_list", "us-west-2")
+	assertions.AssertOutputListContains(t, ctx, "regions_list", "us-west-2")
 	
 	// Verify that the regions_list output list has exactly 2 elements
-	unit.AssertOutputListLength(t, ctx, "regions_list", 2)
+	assertions.AssertOutputListLength(t, ctx, "regions_list", 2)
 	
 	// JSON Assertions
 	// Verify that the output_content JSON string contains the key-value pair "enabled": true
-	unit.AssertOutputJSONContains(t, ctx, "output_content", "enabled", true)
+	assertions.AssertOutputJSONContains(t, ctx, "output_content", "enabled", true)
 }
 
 // TestAdvancedJSONFormat verifies that the advanced example creates a valid JSON file
@@ -125,31 +143,31 @@ func TestAdvancedJSONFormat(t *testing.T) {
 		Name: "advanced-json-format-test",
 	})
 	
-	// Get the output content
+	// Store the content in a variable before any assertions that might cause cleanup
 	content := terraform.Output(t, ctx.Terraform, "output_content")
+	assert.NotEmpty(t, content, "Output content should not be empty")
 	
 	// Verify that the content is valid JSON
 	var jsonData map[string]interface{}
 	err := json.Unmarshal([]byte(content), &jsonData)
 	assert.NoError(t, err, "Advanced example should output valid JSON")
 	
-	// Verify specific JSON structure unique to the advanced example
-	assert.Contains(t, jsonData, "message", "JSON should contain 'message' field")
-	assert.Contains(t, jsonData, "enabled", "JSON should contain 'enabled' field")
-	assert.Contains(t, jsonData, "retries", "JSON should contain 'retries' field")
-	
-	// Verify data types of fields
-	assert.IsType(t, "", jsonData["message"], "message should be a string")
-	assert.IsType(t, true, jsonData["enabled"], "enabled should be a boolean")
-	assert.IsType(t, float64(0), jsonData["retries"], "retries should be a number")
+	// Verify specific fields directly from the parsed JSON
+	assert.Equal(t, "advanced", jsonData["message"], "JSON message should match expected value")
+	assert.Equal(t, true, jsonData["enabled"], "JSON enabled flag should match expected value")
+	assert.Equal(t, float64(5), jsonData["retries"], "JSON retries should match expected value")
 	
 	// Verify nested structures if they exist
 	if tags, ok := jsonData["tags"].(map[string]interface{}); ok {
 		assert.Contains(t, tags, "Name", "tags should contain 'Name' field")
 		assert.Contains(t, tags, "Environment", "tags should contain 'Environment' field")
+	} else {
+		assert.Fail(t, "JSON should contain 'tags' as a map")
 	}
 	
 	if regions, ok := jsonData["regions"].([]interface{}); ok {
 		assert.GreaterOrEqual(t, len(regions), 1, "regions should contain at least one item")
+	} else {
+		assert.Fail(t, "JSON should contain 'regions' as an array")
 	}
 }

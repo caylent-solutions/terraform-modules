@@ -1,11 +1,11 @@
-module github.com/your-org/terraform-modules/skeletons/generic-skeleton
+module github.com/caylent-solutions/terraform-modules/skeletons/generic-skeleton
 
 go 1.23.0
 
 toolchain go1.23.9
 
 require (
-	github.com/caylent-solutions/terraform-terratest-framework v0.4.2
+	github.com/caylent-solutions/terraform-terratest-framework v0.5.0
 	github.com/gruntwork-io/terratest v0.49.0
 	github.com/stretchr/testify v1.10.0
 )
@@ -15,7 +15,6 @@ require (
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-getter/v2 v2.2.3 // indirect

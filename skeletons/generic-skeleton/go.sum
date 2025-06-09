@@ -4,8 +4,8 @@ github.com/apparentlymart/go-textseg/v15 v15.0.0 h1:uYvfpb3DyLSCGWnctWKGj857c6ew
 github.com/apparentlymart/go-textseg/v15 v15.0.0/go.mod h1:K8XmNZdhEBkdlyDdvbmmsvpAG721bKi0joRfFdHIWJ4=
 github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d h1:xDfNPAt8lFiC1UJrqV3uuy861HCTo708pDMbjHHdCas=
 github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d/go.mod h1:6QX/PXZ00z/TKoufEY6K/a0k6AhaJrQKdFe6OfVXsa4=
-github.com/caylent-solutions/terraform-terratest-framework v0.4.2 h1:0HVdOCwSPpOWCvCMWWsvo1VyYPOuMbN2sbwqdc8tprY=
-github.com/caylent-solutions/terraform-terratest-framework v0.4.2/go.mod h1:ew5HcL75yFbSoo1artUx4sx/6wYWld8e5vxGnV257HI=
+github.com/caylent-solutions/terraform-terratest-framework v0.5.0 h1:smpnNr1jhPrR6M3y6NPCK5I41WWVCKIvUOvKEEdCtIY=
+github.com/caylent-solutions/terraform-terratest-framework v0.5.0/go.mod h1:ew5HcL75yFbSoo1artUx4sx/6wYWld8e5vxGnV257HI=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-test/deep v1.0.7 h1:/VSMRlnY/JSyqxQUzQLKVMAskpY/NZKFA5j2P+0pP2M=
@@ -26,8 +26,6 @@ github.com/hashicorp/go-safetemp v1.0.0 h1:2HR189eFNrjHQyENnQMMpCiBAsRxzbTMIgBhE
 github.com/hashicorp/go-safetemp v1.0.0/go.mod h1:oaerMy3BhqiTbVye6QuFhFtIceqFoDHxNAB65b+Rj1I=
 github.com/hashicorp/go-version v1.7.0 h1:5tqGy27NaOTB8yJKUZELlFAS/LTKJkrmONwQKeRZfjY=
 github.com/hashicorp/go-version v1.7.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
-github.com/hashicorp/hcl/v2 v2.22.0 h1:hkZ3nCtqeJsDhPRFz5EA9iwcG1hNWGePOTw6oyul12M=
-github.com/hashicorp/hcl/v2 v2.22.0/go.mod h1:62ZYHrXgPoX8xBnzl8QzbWq4dyDsDtfCRgIq1rbJEvA=
 github.com/hashicorp/hcl/v2 v2.23.0 h1:Fphj1/gCylPxHutVSEOf2fBOh1VE4AuLV7+kbJf3qos=
 github.com/hashicorp/hcl/v2 v2.23.0/go.mod h1:62ZYHrXgPoX8xBnzl8QzbWq4dyDsDtfCRgIq1rbJEvA=
 github.com/hashicorp/terraform-json v0.23.0 h1:sniCkExU4iKtTADReHzACkk8fnpQXrdD2xoR+lppBkI=
