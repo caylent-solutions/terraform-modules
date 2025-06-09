@@ -96,6 +96,7 @@ shell.env
 .devcontainer/.env.local
 .devcontainer/postCreate.log
 .devcontainer/devcontainer-functions.shc
+.devcontainer/aws-profile-map.json
 
 # Node / Python cache if applicable
 node_modules/
