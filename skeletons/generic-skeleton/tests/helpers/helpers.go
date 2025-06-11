@@ -14,7 +14,7 @@ func VerifyFilePermissions(t *testing.T, filePath string, expectedPerm os.FileMo
 	// Get the file info
 	fileInfo, err := os.Stat(filePath)
 	assert.NoError(t, err, "Should be able to get file info")
-	
+
 	// Check the file permissions
 	actualPerm := fileInfo.Mode().Perm()
 	assert.Equal(t, expectedPerm, actualPerm, "File should have the expected permissions")
@@ -25,7 +25,7 @@ func VerifyFileContent(t *testing.T, filePath string, expectedContent string) {
 	// Read the file content
 	content, err := os.ReadFile(filePath)
 	assert.NoError(t, err, "Should be able to read file content")
-	
+
 	// Check the file content
 	assert.Equal(t, expectedContent, string(content), "File should have the expected content")
 }
@@ -42,13 +42,13 @@ func AssertInputMatchesOutput(t *testing.T, ctx TestContext, inputName string, o
 	frameworkCtx := testctx.TestContext{
 		Terraform: ctx.Terraform,
 	}
-	
+
 	// Get the input variable value using the framework's GetVariableAsMap method
 	inputValue := frameworkCtx.GetVariableAsMap()[inputName]
-	
+
 	// Get the output value
 	outputValue := terraform.Output(t, ctx.Terraform, outputName)
-	
+
 	// Verify that the input matches the output
 	assert.Equal(t, inputValue, outputValue, "Input '%s' should match output '%s'", inputName, outputName)
 }
@@ -60,21 +60,21 @@ func AssertAllInputsMatchOutputs(t *testing.T, ctx TestContext, inputOutputMap m
 	frameworkCtx := testctx.TestContext{
 		Terraform: ctx.Terraform,
 	}
-	
+
 	// Get all input variables using the framework's GetVariableAsMap method
 	inputs := frameworkCtx.GetVariableAsMap()
-	
+
 	// Get all outputs
 	outputs := terraform.OutputAll(t, ctx.Terraform)
-	
+
 	// Verify each input-output pair
 	for inputName, outputName := range inputOutputMap {
 		inputValue, inputExists := inputs[inputName]
 		assert.True(t, inputExists, "Input '%s' should exist", inputName)
-		
+
 		outputValue, outputExists := outputs[outputName]
 		assert.True(t, outputExists, "Output '%s' should exist", outputName)
-		
+
 		assert.Equal(t, inputValue, outputValue, "Input '%s' should match output '%s'", inputName, outputName)
 	}
 }

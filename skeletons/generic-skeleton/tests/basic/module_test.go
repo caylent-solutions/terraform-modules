@@ -17,11 +17,11 @@ func TestBasicOutput(t *testing.T) {
 	ctx := testctx.RunSingleExample(t, "../../examples", "basic", testctx.TestConfig{
 		Name: "basic",
 	})
-	
+
 	// Verify file exists and has correct content
 	filePath := terraform.Output(t, ctx.Terraform, "output_file_path")
 	assert.NotEmpty(t, filePath, "File path should not be empty")
-	
+
 	content := terraform.Output(t, ctx.Terraform, "output_content")
 	assert.Equal(t, "hello from basic", content, "File content should match expected value")
 }
@@ -31,14 +31,14 @@ func AssertFilePermissions(t *testing.T, ctx testctx.TestContext, expectedPerm o
 	// Get the file path from the output
 	filePath := terraform.Output(t, ctx.Terraform, "output_file_path")
 	assert.NotEmpty(t, filePath, "File path should not be empty")
-	
+
 	// Use the correct path by prepending the working directory
 	fullPath := filepath.Join(ctx.Terraform.TerraformDir, filePath)
-	
+
 	// Get the file info
 	fileInfo, err := os.Stat(fullPath)
 	assert.NoError(t, err, "Should be able to get file info")
-	
+
 	// Check the file permissions
 	actualPerm := fileInfo.Mode().Perm()
 	assert.Equal(t, expectedPerm, actualPerm, "File should have the expected permissions")
@@ -51,7 +51,7 @@ func TestBasicFilePermissions(t *testing.T) {
 	ctx := testctx.RunSingleExample(t, "../../examples", "basic", testctx.TestConfig{
 		Name: "basic-permissions-test",
 	})
-	
+
 	// Use our custom assertion to check file permissions
 	// 0644 is a common permission for files (rw-r--r--)
 	AssertFilePermissions(t, ctx, 0644)
@@ -64,13 +64,13 @@ func TestBasicContentFormat(t *testing.T) {
 	ctx := testctx.RunSingleExample(t, "../../examples", "basic", testctx.TestConfig{
 		Name: "basic-content-format-test",
 	})
-	
+
 	// Get the output content
 	content := terraform.Output(t, ctx.Terraform, "output_content")
-	
+
 	// Verify that the content is plain text (not JSON)
 	assert.Equal(t, "hello from basic", content, "Basic example should output plain text")
-	
+
 	// Verify that attempting to parse as JSON would fail
 	// This is a unique characteristic of the basic example
 	assert.NotContains(t, content, "{", "Basic example should not contain JSON syntax")
