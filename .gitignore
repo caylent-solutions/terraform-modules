@@ -98,6 +98,20 @@ shell.env
 .devcontainer/devcontainer-functions.shc
 .devcontainer/aws-profile-map.json
 
+# Go
+/bin/
+/vendor/
+tmp
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage*.out
+go.sum
+
 # Node / Python cache if applicable
 node_modules/
 __pycache__/
@@ -109,6 +123,7 @@ __pycache__/
 coverage/
 *.coverage
 *.pid
+skeletons/generic-skeleton/test.output
 
 # Logs
 *.log
