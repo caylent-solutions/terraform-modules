@@ -48,6 +48,13 @@ When a PR is submitted, the following validation steps occur:
    - Runs security checks with tfsec
    - Performs a Terraform plan
 
+4. **Functional Testing**
+   - Runs comprehensive tests using Caylent's terraform-terratest-framework
+   - Tests each example implementation
+   - Verifies module functionality and behavior
+   - Validates idempotency (configurable via test.config)
+   - For external contributors, requires approval before running tests
+
 ## Running Validation Locally
 
 You can validate your module locally before submitting a PR:
@@ -66,6 +73,9 @@ make tf-format MODULE_PATH=$MODULE_PATH
 make tf-docs MODULE_PATH=$MODULE_PATH
 make tf-security MODULE_PATH=$MODULE_PATH
 make tf-plan MODULE_PATH=$MODULE_PATH
+
+# Run functional tests
+make tf-test MODULE_PATH=$MODULE_PATH
 ```
 
 Alternatively, you can use the module detection script:
@@ -80,8 +90,25 @@ if [ "$IS_MODULE" = "true" ]; then
   make module-validate MODULE_PATH=$MODULE_PATH MODULE_TYPE=$MODULE_TYPE
   make tf-lint MODULE_PATH=$MODULE_PATH
   # ... other checks
+  make tf-test MODULE_PATH=$MODULE_PATH
 fi
 ```
+
+## Test Configuration
+
+Each module must include a `test.config` file that controls test behavior:
+
+```bash
+# Test configuration for this module
+# This file controls test behavior settings
+
+# Set to false to disable idempotency testing
+TERRATEST_IDEMPOTENCY=true
+
+# Add other test configuration settings below
+```
+
+This configuration is automatically loaded when running tests via `make tf-test`.
 
 ## Adding New Module Types
 

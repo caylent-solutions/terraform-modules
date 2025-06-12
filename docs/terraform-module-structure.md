@@ -32,7 +32,8 @@ terraform-module/
 ├── README.md                # Module documentation
 ├── TERRAFORM-DOCS.md        # Generated Terraform documentation
 ├── CODEOWNERS               # File ownership information
-└── Makefile                 # Automation for common tasks
+├── Makefile                 # Automation for common tasks
+└── test.config              # Test configuration settings
 ```
 
 ## File Requirements
@@ -50,6 +51,7 @@ terraform-module/
 | TERRAFORM-DOCS.md | Yes | No | Generated Terraform documentation |
 | CODEOWNERS | Yes | No | File ownership information |
 | Makefile | Yes | No | Must match the skeleton Makefile |
+| test.config | Yes | No | Test configuration with TERRATEST_IDEMPOTENCY setting |
 
 ### Example Directory Files
 
@@ -75,6 +77,22 @@ The tests directory must contain:
    - module_test.go
    - README.md
 
+## Test Configuration
+
+The `test.config` file must contain:
+
+```bash
+# Test configuration for this module
+# This file controls test behavior settings
+
+# Set to false to disable idempotency testing
+TERRATEST_IDEMPOTENCY=true
+
+# Add other test configuration settings below
+```
+
+This file controls test behavior and is required for all modules.
+
 ## Additional Requirements
 
 1. **No nested modules**: Terraform modules cannot contain nested modules.
@@ -97,7 +115,9 @@ To create a new module that follows these requirements:
 
 4. Write tests to verify your module's functionality.
 
-5. Run validation to ensure your module meets all requirements:
+5. Configure test behavior in the test.config file.
+
+6. Run validation to ensure your module meets all requirements:
    ```bash
    make module-validate MODULE_PATH=your-new-module MODULE_TYPE=<module_type>
    ```

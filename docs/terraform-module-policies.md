@@ -35,6 +35,7 @@ This document outlines the policies enforced for all Terraform modules in this r
    - `TERRAFORM-DOCS.md` (required, non-empty)
    - `CODEOWNERS` (required, non-empty)
    - `Makefile` (required, must match skeleton)
+   - `test.config` (required, must include TERRATEST_IDEMPOTENCY setting)
 
 2. **Examples Directory**
    - At least one example directory is required
@@ -53,13 +54,19 @@ This document outlines the policies enforced for all Terraform modules in this r
      - `module_test.go` (non-empty)
      - `README.md` (non-empty)
    - The tests directory must have a `README.md` (non-empty)
+   - Optional `helpers` directory, if present must contain:
+     - `helpers.go` (non-empty)
+     - `README.md` (non-empty)
 
 ### Code Quality Policies
 
 1. **No Hard-coded Values**
    - All values in Terraform code must use variables
    - No hard-coded strings, numbers, booleans, JSON objects, or YAML heredocs
-   - Hard-coded values are only allowed in variable declarations, locals blocks, and output blocks
+   - Hard-coded values are only permitted in:
+     - `terraform.tfvars` files
+     - Default values in `variables.tf`
+   - Hard-coded values are not allowed in any other files or blocks
 
 2. **No Nested Modules**
    - Terraform modules cannot contain nested modules
@@ -67,6 +74,17 @@ This document outlines the policies enforced for all Terraform modules in this r
 
 3. **Limited .tf Files**
    - Only `main.tf`, `variables.tf`, `outputs.tf`, `versions.tf`, and `locals.tf` are allowed in the root directory
+
+4. **Resource Naming**
+   - Resource names cannot be dynamically generated
+   - Resource names must come from variables or variable defaults
+   - No interpolation or functions are allowed in resource names
+
+5. **Module Sources**
+   - No local module sources are allowed (no relative or absolute paths)
+   - All module sources must have version constraints
+   - External module sources (non-Caylent) must use pinned version constraints (exact version)
+   - Caylent module sources may use fuzzy version constraints for minor and patch updates
 
 ### Testing Policies
 
