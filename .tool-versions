@@ -1,6 +1,7 @@
 conftest 0.60.0
 golang 1.23.9
 golangci-lint 2.1.6
+jq 1.7.1
 pre-commit 4.2.0
 python 3.12.9
 terraform 1.12.1
@@ -8,3 +9,4 @@ terraform-docs 0.20.0
 terragrunt 0.80.3
 tflint 0.58.0
 tfsec 1.28.14
+opa 0.62.0

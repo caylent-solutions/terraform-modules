@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: terraform-module-policy
+        name: Terraform Module Policy Check
+        entry: make pr-opa-policy-test
+        language: system
+        pass_filenames: false
+        always_run: true

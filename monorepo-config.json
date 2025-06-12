@@ -1,0 +1,42 @@
+{
+  "module_roots": [
+    "generics/utilities/",
+    "providers/aws/collections/",
+    "providers/aws/primitives/",
+    "providers/aws/references/",
+    "providers/github/collections/",
+    "providers/github/primitives/",
+    "providers/github/references/",
+    "skeletons/"
+  ],
+  "test_changed_files": [
+    "providers/aws/collections/example-module/main.tf",
+    "providers/aws/collections/example-module/variables.tf"
+  ],
+  "module_types": {
+    "skeleton": {
+      "path_patterns": ["skeletons/*"],
+      "policy_dir": "policies/opa/terraform_module_types/skeleton"
+    },
+    "utility": {
+      "path_patterns": ["generics/utilities/*"],
+      "policy_dir": "policies/opa/terraform_module_types/utility"
+    },
+    "primitive": {
+      "path_patterns": ["providers/*/primitives/*"],
+      "policy_dir": "policies/opa/terraform_module_types/primitive"
+    },
+    "collection": {
+      "path_patterns": ["providers/*/collections/*"],
+      "policy_dir": "policies/opa/terraform_module_types/collection"
+    },
+    "reference": {
+      "path_patterns": ["providers/*/references/*"],
+      "policy_dir": "policies/opa/terraform_module_types/reference"
+    }
+  },
+  "scripts": {
+    "terraform_file_collector": "terraform-file-collector",
+    "temp_file_pattern": "terraform-files-*.json"
+  }
+}

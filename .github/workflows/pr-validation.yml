@@ -1,0 +1,87 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [ main]
+
+jobs:
+  validate:
+    name: Validate PR
+    if: ${{ github.actor != 'caylent-platform-bot[bot]' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git checkout -b pr-validation origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "Changed files: $CHANGED_FILES"
+          
+          # Update the config file with actual changed files
+          jq --argjson files "$CHANGED_FILES" '.test_changed_files = $files' monorepo-config.json > monorepo-config.json.tmp
+          mv monorepo-config.json.tmp monorepo-config.json
+
+      - name: Run monorepo policy check
+        run: make pr-opa-policy-test
+        
+      - name: Detect module changes
+        id: detect-module
+        run: |
+          # Run the module detection script
+          eval $(make detect-module-changes)
+          
+          # Pass the outputs to GitHub Actions
+          echo "is_module=$IS_MODULE" >> $GITHUB_OUTPUT
+          if [ "$IS_MODULE" = "true" ]; then
+            echo "module_path=$MODULE_PATH" >> $GITHUB_OUTPUT
+            echo "module_type=$MODULE_TYPE" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger Terraform module validation
+        if: steps.detect-module.outputs.is_module == 'true'
+        uses: ./.github/workflows/terraform-module-validation.yml
+        with:
+          module_path: ${{ steps.detect-module.outputs.module_path }}
+          module_type: ${{ steps.detect-module.outputs.module_type }}
+
+      - name: Trigger non-Terraform validation
+        if: steps.detect-module.outputs.is_module != 'true'
+        uses: ./.github/workflows/non-terraform-validation.yml

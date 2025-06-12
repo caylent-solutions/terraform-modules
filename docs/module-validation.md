@@ -1,0 +1,101 @@
+# Terraform Module Validation
+
+This document describes the validation process for Terraform modules in the monorepo.
+
+## Module Types
+
+The repository supports several types of Terraform modules, each with specific validation rules:
+
+1. **Utility Modules**
+   - Cannot contain Terraform resource blocks
+   - Located in `generics/utilities/`
+
+2. **Collection Modules**
+   - Cannot contain Terraform resource blocks
+   - Must use at least one source Terraform module
+   - Located in `providers/*/collections/`
+
+3. **Reference Modules**
+   - Cannot contain Terraform resource blocks
+   - Must use at least one source Terraform module
+   - Located in `providers/*/references/`
+
+4. **Primitive Modules**
+   - No specific content restrictions
+   - Located in `providers/*/primitives/`
+
+5. **Skeleton Modules**
+   - No specific content restrictions
+   - Located in `skeletons/`
+
+## Validation Process
+
+When a PR is submitted, the following validation steps occur:
+
+1. **Monorepo Policy Check**
+   - Ensures PR changes only one module at a time
+   - Prevents mixing module and non-module changes
+
+2. **Module Type Detection**
+   - Determines if changes are in a Terraform module
+   - Identifies the module type based on its path
+
+3. **Module-Specific Validation**
+   - Runs type-specific OPA policies
+   - Performs Terraform linting
+   - Checks Terraform formatting
+   - Validates Terraform documentation
+   - Runs security checks with tfsec
+   - Performs a Terraform plan
+
+## Running Validation Locally
+
+You can validate your module locally before submitting a PR:
+
+```bash
+# Manually specify module path and type
+MODULE_PATH="providers/aws/collections/my-module"
+MODULE_TYPE="collection"
+
+# Run module validation
+make module-validate MODULE_PATH=$MODULE_PATH MODULE_TYPE=$MODULE_TYPE
+
+# Run Terraform checks
+make tf-lint MODULE_PATH=$MODULE_PATH
+make tf-format MODULE_PATH=$MODULE_PATH
+make tf-docs MODULE_PATH=$MODULE_PATH
+make tf-security MODULE_PATH=$MODULE_PATH
+make tf-plan MODULE_PATH=$MODULE_PATH
+```
+
+Alternatively, you can use the module detection script:
+
+```bash
+# Update test_changed_files in monorepo-config.json with your changes
+# Then run the detection script and use its output
+eval $(make detect-module-changes)
+
+# If changes are in a module, run validation
+if [ "$IS_MODULE" = "true" ]; then
+  make module-validate MODULE_PATH=$MODULE_PATH MODULE_TYPE=$MODULE_TYPE
+  make tf-lint MODULE_PATH=$MODULE_PATH
+  # ... other checks
+fi
+```
+
+## Adding New Module Types
+
+To add validation for a new module type:
+
+1. Update the `monorepo-config.json` file:
+   ```json
+   "module_types": {
+     "new-type": {
+       "path_patterns": ["path/to/new/type/*"],
+       "policy_dir": "policies/opa/terraform_module_types/new-type"
+     }
+   }
+   ```
+
+2. Create a new policy directory: `policies/opa/terraform_module_types/new-type/`
+3. Add Rego policies with appropriate rules

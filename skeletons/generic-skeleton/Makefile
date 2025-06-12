@@ -14,7 +14,8 @@ test:
 	@echo "Cleaning Go test cache..."
 	@go clean -cache -testcache
 	@echo "Running all tests with clean cache..."
-	@GOFLAGS="-count=1" tftest run --parallel-fixtures=false --parallel-tests=false
+	@echo "TERRATEST_IDEMPOTENCY=${TERRATEST_IDEMPOTENCY:-true}"
+	@TERRATEST_IDEMPOTENCY=${TERRATEST_IDEMPOTENCY:-true} GOFLAGS="-count=1" tftest run --parallel-fixtures=false --parallel-tests=false
 
 # Run common tests with clean cache
 test-common:

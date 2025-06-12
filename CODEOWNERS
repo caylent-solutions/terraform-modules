@@ -1,0 +1,34 @@
+# This file defines ownership for files in this repository
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @matt-dresden-caylent
+
+# Terraform module files
+*.tf @matt-dresden-caylent
+*.tfvars @matt-dresden-caylent
+
+# Documentation
+*.md @matt-dresden-caylent
+/docs/ @matt-dresden-caylent
+
+# Policies
+/policies/ @matt-dresden-caylent
+
+# Scripts
+/scripts/ @matt-dresden-caylent
+
+# Module types
+/generics/ @matt-dresden-caylent
+/providers/ @matt-dresden-caylent
+/skeletons/ @matt-dresden-caylent
+
+# Tests
+**/tests/ @matt-dresden-caylent
+
+# Configuration files
+*.json @matt-dresden-caylent
+*.yaml @matt-dresden-caylent
+*.yml @matt-dresden-caylent
+Makefile @matt-dresden-caylent
+.github/ @matt-dresden-caylent

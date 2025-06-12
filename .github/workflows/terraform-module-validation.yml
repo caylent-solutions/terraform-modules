@@ -1,0 +1,158 @@
+name: Terraform Module Validation
+
+on:
+  workflow_call:
+    inputs:
+      module_path:
+        required: true
+        type: string
+      module_type:
+        required: true
+        type: string
+
+jobs:
+  validate-module:
+    name: Validate Terraform Module
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run module type validation
+        run: make module-validate MODULE_PATH=${{ inputs.module_path }} MODULE_TYPE=${{ inputs.module_type }}
+
+      - name: Run Terraform linting
+        run: make tf-lint MODULE_PATH=${{ inputs.module_path }}
+
+      - name: Run Terraform formatting check
+        run: make tf-format MODULE_PATH=${{ inputs.module_path }}
+
+      - name: Check Terraform documentation is up-to-date
+        run: make tf-docs-check MODULE_PATH=${{ inputs.module_path }}
+
+      - name: Run security checks
+        run: make tf-security MODULE_PATH=${{ inputs.module_path }}
+
+      - name: Run Terraform plan
+        run: make tf-plan MODULE_PATH=${{ inputs.module_path }}
+      
+      - name: Check if user is a Caylent contributor
+        id: check-org
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const username = context.payload.sender.login;
+            try {
+              const { status } = await github.rest.orgs.checkMembershipForUser({
+                org: 'caylent-solutions',
+                username: username
+              });
+              return status === 204; // 204 means user is a member
+            } catch (error) {
+              return false;
+            }
+          result-encoding: string
+
+  run-tests-caylent:
+    name: Run Terraform Module Tests (Caylent)
+    needs: validate-module
+    if: ${{ needs.validate-module.outputs.check-org == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run module tests with configuration
+        run: |
+          echo "Running tests with module-specific configuration"
+          make tf-test MODULE_PATH=${{ inputs.module_path }}
+
+  run-tests-external:
+    name: Run Terraform Module Tests (External)
+    needs: validate-module
+    if: ${{ needs.validate-module.outputs.check-org == 'false' }}
+    runs-on: ubuntu-24.04
+    environment: external-contributor-test-approval
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+                    
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run module tests with configuration
+        run: |
+          echo "Running tests with module-specific configuration"
+          make tf-test MODULE_PATH=${{ inputs.module_path }}

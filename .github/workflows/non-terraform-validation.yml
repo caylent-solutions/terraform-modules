@@ -1,0 +1,40 @@
+name: Non-Terraform Validation
+
+on:
+  workflow_call:
+
+jobs:
+  validate-non-terraform:
+    name: Validate Non-Terraform Changes
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run Go linting
+        run: make lint
+
+      - name: Run Go formatting
+        run: make format
+
+      - name: Placeholder for additional non-Terraform validations
+        run: |
+          echo "This is a placeholder for additional non-Terraform validations"
+          echo "Add specific validation steps for non-Terraform changes here"
