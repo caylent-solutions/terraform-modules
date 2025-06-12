@@ -1,6 +1,6 @@
 # Terraform Module Skeleton
 
-This repository contains a skeleton for creating new Terraform modules with built-in testing using the [Terraform Terratest Framework](https://github.com/caylent-solutions/terraform-terratest-framework).
+This repository contains a skeleton for creating new Terraform modules with built-in testing using the [Terraform Terratest Framework](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/README.md).
 
 ## Getting Started
 
@@ -104,7 +104,7 @@ The `testctx` package is the core of the Terraform Terratest Framework, providin
   })
   ```
 
-For more detailed documentation on the testctx package, see the [TestCtx Package Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/v0.5.0/docs/TESTCTX_PACKAGE.md).
+For more detailed documentation on the testctx package, see the [TestCtx Package Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/TESTCTX_PACKAGE.md).
 
 ### Using Assertions
 
@@ -130,7 +130,7 @@ func TestExample(t *testing.T) {
 }
 ```
 
-For a complete list of available assertions, see the [Assertions Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/v0.5.0/docs/ASSERTIONS.md).
+For a complete list of available assertions, see the [Assertions Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/ASSERTIONS.md).
 
 ### Common Tests
 
@@ -142,7 +142,7 @@ Common tests run on all examples and verify basic functionality:
 - **Required Outputs**: Ensures that all required outputs are defined
 - **Input Validation**: Verifies that inputs from terraform.tfvars match the provisioned outputs
 
-See the [Common Tests README](tests/common/README.md) for more details on these tests and how to control idempotency testing.
+See the [Common Tests README](./tests/common/README.md) for more details on these tests and how to control idempotency testing.
 
 ### Example-Specific Tests
 
@@ -151,7 +151,7 @@ Each example has its own tests that verify specific functionality:
 - **Basic Example**: Tests the basic functionality of the module
 - **Advanced Example**: Tests more complex configurations and features
 
-See the [Basic Tests README](tests/basic/README.md) and [Advanced Tests README](tests/advanced/README.md) for more details.
+See the [Basic Tests README](./tests/basic/README.md) and [Advanced Tests README](./tests/advanced/README.md) for more details.
 
 ## Variable Management
 
@@ -191,7 +191,7 @@ make format
 make clean
 ```
 
-For more information on the `tftest` CLI tool, see the [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/v0.5.0/docs/CLI_USAGE.md).
+For more information on the `tftest` CLI tool, see the [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/CLI_USAGE.md).
 
 ## Developer Workflow
 
@@ -204,9 +204,9 @@ For more information on the `tftest` CLI tool, see the [CLI Usage Documentation]
 
 ## References
 
-- [Terraform Terratest Framework](https://github.com/caylent-solutions/terraform-terratest-framework/blob/v0.5.0/README.md)
-- [TestCtx Package Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/v0.5.0/docs/TESTCTX_PACKAGE.md)
-- [Assertions Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/v0.5.0/docs/ASSERTIONS.md)
-- [Directory Structure Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/v0.5.0/docs/DIRECTORY_STRUCTURE.md)
-- [Writing Tests Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/v0.5.0/docs/WRITING_TESTS.md)
-- [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/v0.5.0/docs/CLI_USAGE.md)
+- [Terraform Terratest Framework](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/README.md)
+- [TestCtx Package Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/TESTCTX_PACKAGE.md)
+- [Assertions Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/ASSERTIONS.md)
+- [Directory Structure Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/DIRECTORY_STRUCTURE.md)
+- [Writing Tests Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/WRITING_TESTS.md)
+- [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/CLI_USAGE.md)
