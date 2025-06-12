@@ -213,6 +213,24 @@ violation[result] {
     }
 }
 
+# Check for test.config file
+violation[result] {
+    # Get module path from input
+    module_path := input.module_path
+    
+    # Check if test.config exists
+    test_config_file := sprintf("%s/test.config", [module_path])
+    not input.files[test_config_file]
+    
+    result := {
+        "policy": "terraform_module_tests_policy",
+        "severity": "error",
+        "message": "Missing test.config file",
+        "details": sprintf("Module '%s' must contain a test.config file to control test behavior", [module_path]),
+        "resolution": "Create a test.config file with appropriate test configuration settings"
+    }
+}
+
 # Check if go.mod contains terraform-terratest-framework
 violation[result] {
     # Get module path from input
@@ -230,6 +248,26 @@ violation[result] {
         "message": "Missing terraform-terratest-framework dependency",
         "details": sprintf("Module '%s' go.mod file must include the terraform-terratest-framework dependency", [module_path]),
         "resolution": "Add 'github.com/caylent-solutions/terraform-terratest-framework' to the go.mod file"
+    }
+}
+
+# Check if test.config contains TERRATEST_IDEMPOTENCY setting
+violation[result] {
+    # Get module path from input
+    module_path := input.module_path
+    
+    # Check if test.config exists and contains the idempotency setting
+    test_config_file := sprintf("%s/test.config", [module_path])
+    input.files[test_config_file]
+    content := input.files[test_config_file]
+    not contains(content, "TERRATEST_IDEMPOTENCY=")
+    
+    result := {
+        "policy": "terraform_module_tests_policy",
+        "severity": "error",
+        "message": "Missing TERRATEST_IDEMPOTENCY setting in test.config",
+        "details": sprintf("Module '%s' test.config file must include the TERRATEST_IDEMPOTENCY setting", [module_path]),
+        "resolution": "Add 'TERRATEST_IDEMPOTENCY=true' or 'TERRATEST_IDEMPOTENCY=false' to the test.config file"
     }
 }
 

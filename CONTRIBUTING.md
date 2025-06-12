@@ -108,6 +108,8 @@ All modules must follow the required structure:
 - Include common tests for validation, formatting, and outputs
 - Create example-specific tests for unique features
 - Follow the [test structure requirements](docs/terraform-module-testing.md)
+- Configure test behavior using the `test.config` file in the module root
+- Control idempotency testing with `TERRATEST_IDEMPOTENCY=true|false` in the config file
 
 ## Pull Request Process
 
@@ -115,6 +117,14 @@ When you submit a pull request:
 1. Automated checks will validate your module against all policies
 2. Code owners will be automatically notified for review
 3. All checks must pass and reviews must be approved before merging
+
+### Test Execution in Pull Requests
+
+- **For Caylent Contributors**: Tests will run automatically as part of the PR validation
+- **For External Contributors**: Tests require explicit approval from a Caylent maintainer before running
+  - This is a security measure to prevent potentially harmful code from running in our CI environment
+  - A Caylent maintainer will review your code and approve the test run if it appears safe
+  - After approval, tests will run automatically
 
 ## Getting Help
 
