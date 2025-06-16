@@ -34,7 +34,7 @@ When a PR is submitted, the following validation steps occur:
 
 1. **Monorepo Policy Check**
    - Ensures PR changes only one module at a time
-   - Prevents mixing module and non-module changes
+   - PRs must either modify exactly one module OR only non-module files
 
 2. **Module Type Detection**
    - Determines if changes are in a Terraform module

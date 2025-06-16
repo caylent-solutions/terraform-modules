@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -37,10 +36,56 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Check if changes are in a module
-	modulePath, moduleType := detectModuleChanges(changedFiles, config)
+	// Check if changes are in modules
+	modulePaths, moduleTypes := detectModuleChanges(changedFiles, config)
 	
-	if modulePath != "" {
+	// Get module roots from config
+	moduleRoots, ok := config["module_roots"].([]interface{})
+	if !ok {
+		fmt.Println("Error: module_roots not found in config")
+		os.Exit(1)
+	}
+	
+	// Identify non-module files
+	nonModuleFiles := []string{}
+	for _, file := range changedFiles {
+		isModuleFile := false
+		for _, root := range moduleRoots {
+			rootStr, ok := root.(string)
+			if !ok {
+				continue
+			}
+			if strings.HasPrefix(file, rootStr) {
+				isModuleFile = true
+				break
+			}
+		}
+		if !isModuleFile {
+			nonModuleFiles = append(nonModuleFiles, file)
+		}
+	}
+	
+	if len(modulePaths) > 1 {
+		fmt.Println("Error: Multiple modules detected in the same PR")
+		fmt.Println("Affected modules:")
+		for i, path := range modulePaths {
+			fmt.Printf("  - %s (type: %s)\n", path, moduleTypes[i])
+		}
+		fmt.Println("PRs should only modify a single module at a time")
+		os.Exit(1)
+	} else if len(modulePaths) == 1 && len(nonModuleFiles) > 0 {
+		fmt.Println("Error: Mixed module and non-module changes detected in the same PR")
+		fmt.Printf("Module: %s (type: %s)\n", modulePaths[0], moduleTypes[0])
+		fmt.Println("Non-module files:")
+		for _, file := range nonModuleFiles {
+			fmt.Printf("  - %s\n", file)
+		}
+		fmt.Println("PRs should either modify exactly one module OR only non-module files, not both")
+		os.Exit(1)
+	} else if len(modulePaths) == 1 {
+		modulePath := modulePaths[0]
+		moduleType := moduleTypes[0]
+		
 		fmt.Printf("MODULE_PATH=%s\n", modulePath)
 		fmt.Printf("MODULE_TYPE=%s\n", moduleType)
 		fmt.Println("IS_MODULE=true")
@@ -87,14 +132,17 @@ func getChangedFiles(config map[string]interface{}) []string {
 	return []string{}
 }
 
-// detectModuleChanges determines if changes are in a module and returns the module path and type
-func detectModuleChanges(changedFiles []string, config map[string]interface{}) (string, string) {
+// detectModuleChanges determines if changes are in modules and returns the module paths and types
+func detectModuleChanges(changedFiles []string, config map[string]interface{}) ([]string, []string) {
 	// Get module types from config
 	moduleTypes, ok := config["module_types"].(map[string]interface{})
 	if !ok {
 		fmt.Println("Error: module_types not found in config")
-		return "", ""
+		return []string{}, []string{}
 	}
+	
+	// Maps to track unique modules
+	modulePathMap := make(map[string]string)
 	
 	// Check each file against module path patterns
 	for _, file := range changedFiles {
@@ -118,13 +166,22 @@ func detectModuleChanges(changedFiles []string, config map[string]interface{}) (
 				// Check if file matches the pattern
 				matched, modulePath := matchesPattern(file, patternStr)
 				if matched {
-					return modulePath, typeName
+					modulePathMap[modulePath] = typeName
 				}
 			}
 		}
 	}
 	
-	return "", ""
+	// Convert maps to slices for return
+	modulePaths := []string{}
+	moduleTypesList := []string{}
+	
+	for path, typeName := range modulePathMap {
+		modulePaths = append(modulePaths, path)
+		moduleTypesList = append(moduleTypesList, typeName)
+	}
+	
+	return modulePaths, moduleTypesList
 }
 
 // matchesPattern checks if a file path matches a pattern and returns the module path

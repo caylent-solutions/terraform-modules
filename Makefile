@@ -1,4 +1,4 @@
-.PHONY: detect-module-changes format install-tools lint module-validate pr-opa-policy-test tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security build-terraform-file-collector install configure tf-test
+.PHONY: build-terraform-file-collector configure detect-module-changes go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate pr-opa-policy-test tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
 
 # Build and install terraform-file-collector binary
 build-terraform-file-collector:
@@ -9,15 +9,16 @@ build-terraform-file-collector:
 	@export PATH="$$PWD/bin:$$PATH"
 
 # Configure environment with required tools
-configure: install build-terraform-file-collector
+configure: go-install build-terraform-file-collector
 
 # Detect if changes are in a module
 # Used by CI pipeline to determine module path and type
 # Outputs: IS_MODULE, MODULE_PATH, MODULE_TYPE
 detect-module-changes:
-	@go run ./scripts/detect-module-changes/main.go --config ./monorepo-config.json
+	@go run ./scripts/detect-proposed-git-repo-changes/main.go --config ./monorepo-config.json
 
-format:
+# Fix code formatting issues
+go-format:
 	@echo "Fixing code formatting and lint issues..."
 	@mkdir -p ./bin
 	@echo "Building format tool..."
@@ -26,19 +27,12 @@ format:
 	@rm -f ./bin/format
 
 # Install Go dependencies
-install:
+go-install:
 	@echo "Installing Go dependencies..."
 	@cd ./scripts/terraform-file-collector && go mod tidy
 
-install-tools:
-	@echo "Installing asdf and required development tools..."
-	@mkdir -p ./bin
-	@echo "Building install-tools..."
-	@go build -o ./bin/install-tools ./scripts/install-tools/main.go
-	@./bin/install-tools --asdf-version=v0.15.0
-	@rm -f ./bin/install-tools
-
-lint:
+# Check code for linting issues
+go-lint:
 	@echo "Checking code for linting issues..."
 	@mkdir -p ./bin
 	@echo "Building lint tool..."
@@ -46,6 +40,38 @@ lint:
 	@./bin/lint --ignore="bin" || echo "Lint check failed ❌"
 	@rm -f ./bin/lint
 	@echo "Lint check complete"
+
+# Run all Go unit tests based on monorepo-config.json
+go-unit-test:
+	@echo "Running Go unit tests based on monorepo-config.json..."
+	@go run scripts/go-unit-test/main.go --no-coverage monorepo-config.json
+
+# Run all Go unit tests with coverage
+go-unit-test-coverage:
+	@mkdir -p tmp/coverage
+	@go run scripts/go-unit-test/main.go --coverage-text monorepo-config.json
+
+# Run all Go unit tests with coverage and output as JSON
+go-unit-test-coverage-json:
+	@mkdir -p tmp/coverage
+	@go run scripts/go-unit-test/main.go --coverage-json monorepo-config.json
+
+# List all available make tasks with descriptions
+help:
+	@echo "Available make tasks:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "For tasks without descriptions:"
+	@grep -E '^[a-zA-Z_-]+:' $(MAKEFILE_LIST) | grep -v "## " | sort | awk 'BEGIN {FS = ":"}; {printf "\033[36m%-30s\033[0m\n", $$1}'
+
+# Install ASDF and required development tools
+install-tools:
+	@echo "Installing asdf and required development tools..."
+	@mkdir -p ./bin
+	@echo "Building install-tools..."
+	@go build -o ./bin/install-tools ./scripts/install-tools/main.go
+	@./bin/install-tools --asdf-version=v0.15.0
+	@rm -f ./bin/install-tools
 
 # Validate a specific module against its type-specific policies
 # Usage: make module-validate MODULE_PATH=path/to/module MODULE_TYPE=module_type

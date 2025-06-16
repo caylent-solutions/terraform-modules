@@ -45,8 +45,13 @@ jobs:
           asdf install
           asdf reshim
           
-      - name: Configure environment
-        run: make configure
+      - name: Install GO Dependencies
+        run: make go-install
+
+      - name: Run OPA Policy Validation
+        run: |
+          opa version
+          opa eval --format pretty data.global $(find policies/opa/global -name "*.rego")
 
       - name: Get changed files
         id: changed-files
@@ -58,11 +63,8 @@ jobs:
           # Update the config file with actual changed files
           jq --argjson files "$CHANGED_FILES" '.test_changed_files = $files' monorepo-config.json > monorepo-config.json.tmp
           mv monorepo-config.json.tmp monorepo-config.json
-
-      - name: Run monorepo policy check
-        run: make pr-opa-policy-test
         
-      - name: Detect module changes
+      - name: Detect proposed git repo changes
         id: detect-module
         run: |
           # Run the module detection script

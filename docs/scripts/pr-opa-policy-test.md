@@ -1,84 +1,109 @@
 # PR OPA Policy Test Script
 
-## Purpose and Scope
+This document describes the script used to evaluate pull requests against Open Policy Agent (OPA) policies in the monorepo.
 
-The `pr-opa-policy-test` script is a Go utility that evaluates Pull Request (PR) changes against Open Policy Agent (OPA) policies defined in the repository. It helps enforce governance rules for the Terraform monorepo by validating that PRs follow the established patterns for module and non-module changes.
+## Overview
 
-## Integration with Repository
+The `pr-opa-policy-test` script validates pull requests against a set of OPA policies to enforce the monorepo's governance rules. It ensures that PRs adhere to standards such as the single module policy, separation policy, and empty PR policy.
 
-This script is located at `scripts/pr-opa-policy-test/main.go` and is executed via the `make pr-opa-policy-test` command. It requires two parameters:
+## Features
 
-- `--config`: Path to the monorepo configuration file
-- `--policy-dir`: Directory containing the OPA policy files
+- Evaluates PRs against OPA policies
+- Provides detailed error messages for policy violations
+- Uses color-coded output for better readability
+- Supports testing with simulated changed files
+- Integrates with the monorepo's configuration system
 
-The script reads configuration from the specified file and evaluates the policies in the specified directory.
+## Usage
 
-## Example Usage
+The script is primarily used in CI/CD pipelines to validate pull requests:
 
-### Local Testing
+```bash
+go run scripts/pr-opa-policy-test/main.go --config monorepo-config.json --policy-dir policies/pr
+```
 
-To test your changes locally before submitting a PR:
+## Command Line Options
 
-1. Update the test changed files in the configuration:
+- `--config`: Path to the monorepo configuration file (required)
+- `--policy-dir`: Directory containing OPA policy files (required)
 
-```json
-// monorepo-config.json
-{
-  "module_roots": [...],
-  "test_changed_files": [
-    "providers/aws/collections/my-module/main.tf",
-    "providers/aws/collections/my-module/variables.tf"
-  ]
+## Configuration
+
+The script uses the following sections from the `monorepo-config.json` file:
+
+- `test_changed_files`: (Optional) List of files to use for testing instead of git changes
+
+## Policy Evaluation
+
+The script evaluates the PR against all `.rego` files in the specified policy directory. Each policy can define violations with the following structure:
+
+```rego
+violation[result] {
+  # Policy logic
+  result := {
+    "policy": "policy_name",
+    "severity": "error",
+    "message": "Human-readable error message",
+    "details": "Technical details about the violation",
+    "resolution": "Steps to resolve the violation"
+  }
 }
 ```
 
-2. Run the policy test:
+## Input Structure
 
-```bash
-make pr-opa-policy-test
+The script creates the following input structure for OPA policies:
+
+```json
+{
+  "changed_files": ["path/to/file1", "path/to/file2"],
+  "config": {
+    // Contents of monorepo-config.json
+  }
+}
 ```
 
-Or run the script directly with explicit parameters:
+## Output
 
-```bash
-go run ./scripts/pr-opa-policy-test/main.go --config ./monorepo-config.json --policy-dir ./policies/opa/global
+The script produces detailed output about policy violations:
+
+```
+=== Evaluating PR policies ===
+Evaluating policy: single_module_policy.rego
+✗ Policy violations found in single_module_policy.rego
+  Multiple modules detected in the same PR
+  Details: Found changes to modules: providers/aws/primitives/s3-bucket, providers/aws/primitives/dynamodb-table
+  Resolution: Split your changes into separate PRs, one for each module
+
+=== Policy check failed ===
 ```
 
-### CI/CD Integration
+## Error Handling
 
-In CI/CD pipelines, the script is automatically run as part of the PR validation workflow:
+The script exits with a non-zero status code in the following cases:
 
-```yaml
-# .github/workflows/pr-validation.yml
-steps:
-  - name: Get changed files
-    run: |
-      # Update the config file with actual changed files
-      jq --argjson files "$CHANGED_FILES" '.test_changed_files = $files' monorepo-config.json > monorepo-config.json.tmp
-      mv monorepo-config.json.tmp monorepo-config.json
+1. Required command line arguments are missing
+2. The configuration file cannot be read or parsed
+3. OPA evaluation fails
+4. Any policy violations are detected
 
-  - name: Run monorepo policy check
-    run: make pr-opa-policy-test
-```
+Each error is clearly reported with details and resolution steps.
 
-## Edge Case Behavior
+## Implementation Details
 
-- **Missing input flags**: The script will exit with an error if either the `--config` or `--policy-dir` flags are not provided.
-- **Invalid config file**: The script will exit with an error if the config file cannot be read or parsed.
-- **No policy files**: If no policy files are found in the specified directory, the script will exit successfully with a warning.
-- **Invalid policy files**: If a policy file cannot be evaluated, the script will report an error.
-- **Git errors**: If git commands fail (e.g., in a shallow clone), the script will use the test_changed_files from the configuration.
+The script works by:
 
-## Troubleshooting
+1. Loading the monorepo configuration
+2. Getting the list of changed files (from the configuration or git)
+3. Creating the input structure for OPA
+4. Running OPA evaluation for each policy file
+5. Reporting any violations
+6. Exiting with the appropriate status code
 
-Common issues and solutions:
+### Changed Files Detection
 
-1. **OPA not installed**: Ensure OPA is installed via ASDF (`asdf install opa`).
-2. **Invalid configuration**: Check that the config file is valid JSON and contains the required fields.
-3. **Policy evaluation errors**: Run with debug logging to see detailed OPA evaluation:
+In a CI environment, the script gets the list of changed files from git by comparing the current commit with the previous one. For testing purposes, it can also use a list of files specified in the configuration.
 
-```bash
-OPA_LOG_LEVEL=debug make pr-opa-policy-test
-```
+## Integration with CI/CD
 
-4. **Git issues**: If git commands fail, you can manually specify changed files in the configuration file.
+This script is typically used as one of the first steps in the PR validation workflow to ensure that the PR adheres to the monorepo's governance rules before proceeding with more specific validations.

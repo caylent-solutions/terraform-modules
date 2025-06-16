@@ -16,27 +16,86 @@
   "module_types": {
     "skeleton": {
       "path_patterns": ["skeletons/*"],
-      "policy_dir": "policies/opa/terraform_module_types/skeleton"
+      "policy_dir": "policies/opa/terraform/module_types/skeleton"
     },
     "utility": {
       "path_patterns": ["generics/utilities/*"],
-      "policy_dir": "policies/opa/terraform_module_types/utility"
+      "policy_dir": "policies/opa/terraform/module_types/utility"
     },
     "primitive": {
       "path_patterns": ["providers/*/primitives/*"],
-      "policy_dir": "policies/opa/terraform_module_types/primitive"
+      "policy_dir": "policies/opa/terraform/module_types/primitive"
     },
     "collection": {
       "path_patterns": ["providers/*/collections/*"],
-      "policy_dir": "policies/opa/terraform_module_types/collection"
+      "policy_dir": "policies/opa/terraform/module_types/collection"
     },
     "reference": {
       "path_patterns": ["providers/*/references/*"],
-      "policy_dir": "policies/opa/terraform_module_types/reference"
+      "policy_dir": "policies/opa/terraform/module_types/reference"
     }
   },
   "scripts": {
     "terraform_file_collector": "terraform-file-collector",
-    "temp_file_pattern": "terraform-files-*.json"
-  }
+    "temp_file_pattern": "terraform-files-*.json",
+    "go_unit_test": "./scripts/go-unit-test/main.go"
+  },
+  "coverage_groups": [
+    {
+      "name": "Go Unit Test",
+      "emoji": "🧪",
+      "outputFile": "go-unit-test.out",
+      "testPath": "./scripts/go-unit-test",
+      "coverPkg": "./scripts/go-unit-test"
+    },
+    {
+      "name": "Detect Proposed Git Repo Changes",
+      "emoji": "🔍",
+      "outputFile": "detect-proposed-git-repo-changes.out",
+      "testPath": "./scripts/detect-proposed-git-repo-changes",
+      "coverPkg": "./scripts/detect-proposed-git-repo-changes"
+    },
+    {
+      "name": "Install Tools",
+      "emoji": "🔧",
+      "outputFile": "go-unit-test.out",
+      "testPath": "./scripts/go-unit-test",
+      "coverPkg": "./scripts/go-unit-test"
+    },
+    {
+      "name": "Module Type Validator",
+      "emoji": "✅",
+      "outputFile": "module-type-validator.out",
+      "testPath": "./scripts/module-type-validator",
+      "coverPkg": "./scripts/module-type-validator"
+    },
+    {
+      "name": "Module Validator",
+      "emoji": "🔎",
+      "outputFile": "module-validator.out",
+      "testPath": "./scripts/module-validator",
+      "coverPkg": "./scripts/module-validator"
+    },
+    {
+      "name": "PR OPA Policy Test",
+      "emoji": "📋",
+      "outputFile": "pr-opa-policy-test.out",
+      "testPath": "./scripts/pr-opa-policy-test",
+      "coverPkg": "./scripts/pr-opa-policy-test"
+    },
+    {
+      "name": "Terraform File Collector",
+      "emoji": "📁",
+      "outputFile": "terraform-file-collector.out",
+      "testPath": "./scripts/terraform-file-collector",
+      "coverPkg": "./scripts/terraform-file-collector"
+    },
+    {
+      "name": "Lint",
+      "emoji": "🧹",
+      "outputFile": "lint.out",
+      "testPath": "./scripts/lint",
+      "coverPkg": "./scripts/lint"
+    }
+  ]
 }

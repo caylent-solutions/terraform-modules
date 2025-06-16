@@ -6,21 +6,9 @@ This policy enforces that Pull Requests (PRs) must contain at least one file cha
 
 ## Integration with Repository
 
-This policy is implemented as a Rego file at `policies/opa/global/empty_pr_policy.rego` and is evaluated during PR validation using the `make pr-opa-policy-test` command.
+This policy is implemented as a Rego file at `policies/opa/global/empty_pr_policy.rego` and is evaluated during PR validation.
 
-The policy uses the same configuration as other policies via the `pr-policy-config.json` file.
-
-## Example Usage
-
-To test your changes locally before submitting a PR:
-
-```bash
-# Update the test_changed_files in pr-policy-config.json to match your changes
-# Then run:
-make pr-opa-policy-test
-```
-
-In CI/CD pipelines, this policy is automatically evaluated against the actual changed files in the PR.
+The policy uses the configuration from the `monorepo-config.json` file.
 
 ## Edge Case Behavior
 

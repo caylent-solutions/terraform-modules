@@ -26,17 +26,13 @@ This repository contains a collection of Terraform modules organized in a poly-r
 This repository implements governance policies to ensure consistent and maintainable code:
 
 1. **Single Module Policy**: PRs must change only one Terraform module at a time
-2. **Monorepo Code Policy**: PRs modifying non-module files must not touch module files
+2. **Separation Policy**: PRs must either modify exactly one module OR only non-module files (not both)
 3. **Empty PR Policy**: PRs must contain at least one file change
 4. **Module Type Policies**: Each module type has specific content requirements
 5. **Module Structure Policies**: All modules must follow a standardized structure
 6. **File Organization Policies**: Terraform declarations must be in specific files
 
-These policies are enforced using Open Policy Agent (OPA) and can be tested locally using:
-
-```bash
-make pr-opa-policy-test
-```
+These policies are enforced using Open Policy Agent (OPA) in the CI/CD pipeline.
 
 ## Module Types
 
@@ -100,10 +96,9 @@ make install-tools
 3. Configure the environment: `make configure`
 4. Create a new module from the skeleton: `cp -r skeletons/generic-skeleton your/new/module`
 5. Implement your module following the [structure requirements](docs/terraform-module-structure.md)
-6. Format and lint your code: `make format` and `make lint`
-7. Test your changes locally: `make pr-opa-policy-test`
-8. Validate your module: `make module-validate MODULE_PATH=your/new/module MODULE_TYPE=module_type`
-9. Submit a PR
+6. Format and lint your code: `make go-format` and `make go-lint`
+7. Validate your module: `make module-validate MODULE_PATH=your/new/module MODULE_TYPE=module_type`
+8. Submit a PR
 
 For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -118,6 +113,7 @@ Pull requests are automatically validated using GitHub Actions:
 - Based on the type of changes, it triggers either:
   - `terraform-module-validation.yml` for Terraform module changes
   - `non-terraform-validation.yml` for non-Terraform changes
+    - Includes Go code quality checks with minimum 20% test coverage requirement
 
 ## Documentation
 
@@ -127,4 +123,13 @@ Pull requests are automatically validated using GitHub Actions:
 - [Terraform Module Testing](docs/terraform-module-testing.md)
 - [Module Validation](docs/module-validation.md)
 - [Monorepo Configuration](docs/monorepo-config.md)
-- [PR OPA Policy Test Script](docs/scripts/pr-opa-policy-test.md)
+
+### Scripts Documentation
+- [Detect Proposed Git Repo Changes](docs/scripts/detect-proposed-git-repo-changes.md)
+- [Go Unit Test](docs/scripts/go-unit-test.md)
+- [Install Tools](docs/scripts/install-tools.md)
+- [Lint](docs/scripts/lint.md)
+- [Module Type Validator](docs/scripts/module-type-validator.md)
+- [Module Validator](docs/scripts/module-validator.md)
+- [PR OPA Policy Test](docs/scripts/pr-opa-policy-test.md)
+- [Terraform File Collector](docs/scripts/terraform-file-collector.md)

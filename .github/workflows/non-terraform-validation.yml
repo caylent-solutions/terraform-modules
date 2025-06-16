@@ -11,6 +11,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
       - name: Install ASDF
         run: |
           git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
@@ -29,12 +37,28 @@ jobs:
         run: make configure
 
       - name: Run Go linting
-        run: make lint
+        run: make go-lint
 
       - name: Run Go formatting
-        run: make format
+        run: make go-format
 
-      - name: Placeholder for additional non-Terraform validations
+      - name: Run Go Unit Tests
+        run: make go-unit-test
+
+      - name: Run Go Test Coverage
+        run: make go-unit-test-coverage
+        
+      - name: Check Go Test Coverage Threshold
         run: |
-          echo "This is a placeholder for additional non-Terraform validations"
-          echo "Add specific validation steps for non-Terraform changes here"
+          echo "Running coverage check..."
+          COVERAGE_JSON=$(make go-unit-test-coverage-json 2>/dev/null)
+          COVERAGE=$(echo "$COVERAGE_JSON" | grep -o '"total": [0-9.]*' | awk '{print $2}')
+          THRESHOLD=20
+          
+          if (( $(echo "$COVERAGE >= $THRESHOLD" | bc -l) )); then
+            echo -e "\033[32mPASS: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
+            exit 0
+          else
+            echo -e "\033[31mFAIL: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
+            exit 1
+          fi
