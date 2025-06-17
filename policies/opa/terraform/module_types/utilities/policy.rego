@@ -2,13 +2,14 @@ package terraform.module.utility
 
 import future.keywords.in
 import future.keywords.if
+import future.keywords.contains
 
 # Enforces that utility modules:
 # - Do not contain terraform resource blocks
-violation[result] {
+violation[result] if {
     # Check for resource blocks
     has_resource_blocks
-
+    
     result := {
         "policy": "utility_module_policy",
         "severity": "error",
@@ -19,9 +20,9 @@ violation[result] {
 }
 
 # Helper to check if any .tf files contain resource blocks
-has_resource_blocks {
+has_resource_blocks if {
     files := input.terraform_files
     count(files) > 0
-    some file_path, content in files
+    some _, content in files
     contains(content, "resource \"")
 }

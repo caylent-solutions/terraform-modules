@@ -13,6 +13,7 @@ This directory contains documentation for the various scripts used in the Terraf
 | [Module Type Validator](module-type-validator.md) | Detects the type of a Terraform module based on its path |
 | [Module Validator](module-validator.md) | Validates Terraform modules against type-specific policies |
 | [PR OPA Policy Test](pr-opa-policy-test.md) | Evaluates pull requests against Open Policy Agent (OPA) policies |
+| [Rego Unit Test](rego-unit-test.md) | Runs unit tests for OPA Rego policies and generates coverage reports |
 | [Terraform File Collector](terraform-file-collector.md) | Collects and processes Terraform files for policy evaluation |
 
 ## Usage
@@ -25,6 +26,9 @@ make install-tools
 
 # Run Go unit tests with coverage
 make go-unit-test-coverage
+
+# Run Rego unit tests with coverage
+make rego-unit-test-coverage
 
 # Validate a module
 make module-validate MODULE_PATH=providers/aws/primitives/s3-bucket MODULE_TYPE=primitive
@@ -41,8 +45,12 @@ These scripts form the backbone of the monorepo's CI/CD pipeline:
 3. For module changes:
    - The `module-type-validator` script determines the module type
    - The `module-validator` script validates the module against type-specific policies
-4. For non-module changes:
-   - The `lint` script checks code quality
-   - The `go-unit-test` script runs tests and checks coverage
+4. For non-module changes (via `non-terraform-validation.yml`):
+   - The `lint` script checks Go code quality
+   - The `go-format` script ensures Go code is properly formatted
+   - The `go-unit-test` script runs Go tests and checks coverage
+   - The `rego-lint` script checks Rego code quality
+   - The `rego-format` script ensures Rego code is properly formatted
+   - The `rego-unit-test` script runs OPA policy tests and checks coverage
 
 This ensures that all changes adhere to the monorepo's governance policies and quality standards.

@@ -2,9 +2,10 @@ package terraform.module.naming
 
 import future.keywords.in
 import future.keywords.if
+import future.keywords.contains
 
 # Check for dynamically generated resource names
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -33,14 +34,14 @@ violation[result] {
 }
 
 # Helper function to detect dynamic resource name generation
-contains_dynamic_resource_name(content) {
+contains_dynamic_resource_name(content) if {
     # Look for resource blocks with dynamic names
     # This checks for interpolation in the resource name
-    re_match(`resource\s+"[^"]+"\s+"[${}]`, content)
+    regex.match(`resource\s+"[^"]+"\s+"[${}]`, content)
 }
 
-contains_dynamic_resource_name(content) {
+contains_dynamic_resource_name(content) if {
     # Look for resource blocks with dynamic names using functions
     # This checks for common functions used in resource names
-    re_match(`resource\s+"[^"]+"\s+"[^"]*\b(concat|format|join|lower|upper|replace|substr|uuid|timestamp)\b`, content)
+    regex.match(`resource\s+"[^"]+"\s+"[^"]*\b(concat|format|join|lower|upper|replace|substr|uuid|timestamp)\b`, content)
 }

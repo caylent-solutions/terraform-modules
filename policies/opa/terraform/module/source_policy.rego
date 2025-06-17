@@ -2,9 +2,10 @@ package terraform.module.source
 
 import future.keywords.in
 import future.keywords.if
+import future.keywords.contains
 
 # Check for local module sources
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -33,7 +34,7 @@ violation[result] {
 }
 
 # Check for missing version constraints in module sources
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -52,7 +53,7 @@ violation[result] {
     content := input.files[file]
     
     # Find module blocks
-    re_match(`module\s+"[^"]+"\s+{`, content)
+    regex.match(`module\s+"[^"]+"\s+{`, content)
     
     # Check if it has a source but no version
     contains(content, "source")
@@ -68,7 +69,7 @@ violation[result] {
 }
 
 # Check for non-pinned versions in external modules
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -87,7 +88,7 @@ violation[result] {
     content := input.files[file]
     
     # Find module blocks with external sources (not from caylent)
-    re_match(`module\s+"[^"]+"\s+{`, content)
+    regex.match(`module\s+"[^"]+"\s+{`, content)
     contains(content, "source")
     not is_caylent_source(content)
     
@@ -105,32 +106,32 @@ violation[result] {
 }
 
 # Helper functions
-contains_local_module_source(content) {
+contains_local_module_source(content) if {
     # Check for relative paths in module sources
-    re_match(`source\s*=\s*"\.\.?/`, content)
+    regex.match(`source\s*=\s*"\.\.?/`, content)
 }
 
-contains_local_module_source(content) {
+contains_local_module_source(content) if {
     # Check for absolute paths in module sources
-    re_match(`source\s*=\s*"/`, content)
+    regex.match(`source\s*=\s*"/`, content)
 }
 
-contains_version_constraint(content) {
+contains_version_constraint(content) if {
     # Check for version constraint in module block
-    re_match(`module\s+"[^"]+"\s+{[^}]*version\s*=`, content)
+    regex.match(`module\s+"[^"]+"\s+{[^}]*version\s*=`, content)
 }
 
-is_caylent_source(content) {
+is_caylent_source(content) if {
     # Check if source is from caylent GitHub or provider
-    re_match(`source\s*=\s*"github.com/caylent-solutions/terraform-modules`, content)
+    regex.match(`source\s*=\s*"github.com/caylent-solutions/terraform-modules`, content)
 }
 
-is_caylent_source(content) {
+is_caylent_source(content) if {
     # Check if source is from caylent provider
-    re_match(`source\s*=\s*"terraform.provider.solutions.caylent.com`, content)
+    regex.match(`source\s*=\s*"terraform.provider.solutions.caylent.com`, content)
 }
 
-contains_pinned_version(content) {
+contains_pinned_version(content) if {
     # Check for pinned version (exact version)
-    re_match(`version\s*=\s*"[0-9]+\.[0-9]+\.[0-9]+"`, content)
+    regex.match(`version\s*=\s*"[0-9]+\.[0-9]+\.[0-9]+"`, content)
 }

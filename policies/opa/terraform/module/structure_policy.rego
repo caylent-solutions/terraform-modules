@@ -2,9 +2,10 @@ package terraform.module.structure
 
 import future.keywords.in
 import future.keywords.if
+import future.keywords.contains
 
 # Check for required files in the root of the module
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -33,7 +34,7 @@ violation[result] {
 }
 
 # Check for non-empty required files
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -63,7 +64,7 @@ violation[result] {
 }
 
 # Check for only allowed .tf files in the root
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -77,13 +78,11 @@ violation[result] {
     }
     
     # Get all .tf files in the root
-    tf_files := {file | 
-        file := list_files(module_path)
-        endswith(file, ".tf")
-    }
+    tf_files := list_files(module_path)
     
     # Check for disallowed .tf files
     some file in tf_files
+    endswith(file, ".tf")
     not file in allowed_tf_files
     
     result := {
@@ -96,7 +95,7 @@ violation[result] {
 }
 
 # Check for examples directory and required files
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -113,7 +112,7 @@ violation[result] {
 }
 
 # Check for tests directory and required structure
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -130,21 +129,21 @@ violation[result] {
 }
 
 # Helper functions
-file_exists(module_path, file) {
+file_exists(module_path, file) if {
     input.files[sprintf("%s/%s", [module_path, file])]
 }
 
-file_is_empty(module_path, file) {
+file_is_empty(module_path, file) if {
     content := input.files[sprintf("%s/%s", [module_path, file])]
     count(trim_space(content)) == 0
 }
 
-dir_exists(module_path, dir) {
-    some file in input.files
+dir_exists(module_path, dir) if {
+    some file in object.keys(input.files)
     startswith(file, sprintf("%s/%s/", [module_path, dir]))
 }
 
-list_files(dir) = files {
+list_files(dir) = files if {
     files := {file | 
         some path in object.keys(input.files)
         startswith(path, sprintf("%s/", [dir]))

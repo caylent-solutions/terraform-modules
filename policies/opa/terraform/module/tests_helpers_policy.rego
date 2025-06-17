@@ -2,9 +2,10 @@ package terraform.module.tests.helpers
 
 import future.keywords.in
 import future.keywords.if
+import future.keywords.contains
 
 # Check for helpers directory requirements
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -28,7 +29,7 @@ violation[result] {
 }
 
 # Check for README.md in helpers directory
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -52,7 +53,7 @@ violation[result] {
 }
 
 # Check for empty helpers.go file
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -78,7 +79,7 @@ violation[result] {
 }
 
 # Helper function to check if directory exists
-dir_exists(module_path, dir) {
+dir_exists(module_path, dir) if {
     some file in object.keys(input.files)
     startswith(file, sprintf("%s/%s/", [module_path, dir]))
 }

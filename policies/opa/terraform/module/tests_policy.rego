@@ -2,9 +2,10 @@ package terraform.module.tests
 
 import future.keywords.in
 import future.keywords.if
+import future.keywords.contains
 
 # Check for test directories matching example directories
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -34,7 +35,7 @@ violation[result] {
 }
 
 # Check for common test directory if there are multiple examples
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -61,7 +62,7 @@ violation[result] {
 }
 
 # Check for required files in each test directory
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -83,7 +84,7 @@ violation[result] {
     # Check if any required file is missing in any test directory
     some dir in test_dirs
     some file in required_test_files
-    not test_file_exists(module_path, dir, file)
+    not file_exists_in_test_dir(module_path, dir, file)
     
     result := {
         "policy": "terraform_module_tests_policy",
@@ -95,7 +96,7 @@ violation[result] {
 }
 
 # Check for README.md in tests directory
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -115,7 +116,7 @@ violation[result] {
 }
 
 # Check for non-empty required files in tests
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -137,8 +138,8 @@ violation[result] {
     # Check if any required file is empty in any test directory
     some dir in test_dirs
     some file in non_empty_test_files
-    test_file_exists(module_path, dir, file)
-    test_file_is_empty(module_path, dir, file)
+    file_exists_in_test_dir(module_path, dir, file)
+    is_file_empty_in_test_dir(module_path, dir, file)
     
     result := {
         "policy": "terraform_module_tests_policy",
@@ -150,7 +151,7 @@ violation[result] {
 }
 
 # Check if tests/README.md is empty
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -168,7 +169,7 @@ violation[result] {
 }
 
 # Check for terraform-terratest-framework import in test files
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -196,7 +197,7 @@ violation[result] {
 }
 
 # Check for go.mod file with terraform-terratest-framework dependency
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -214,7 +215,7 @@ violation[result] {
 }
 
 # Check for test.config file
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -232,7 +233,7 @@ violation[result] {
 }
 
 # Check if go.mod contains terraform-terratest-framework
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -252,7 +253,7 @@ violation[result] {
 }
 
 # Check if test.config contains TERRATEST_IDEMPOTENCY setting
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -272,25 +273,26 @@ violation[result] {
 }
 
 # Helper functions
-dir_exists(module_path, dir) {
+dir_exists(module_path, dir) if {
     some file in object.keys(input.files)
     startswith(file, sprintf("%s/%s/", [module_path, dir]))
 }
 
-file_exists(module_path, file) {
+file_exists(module_path, file) if {
     input.files[sprintf("%s/%s", [module_path, file])]
 }
 
-file_is_empty(module_path, file) {
+file_is_empty(module_path, file) if {
     content := input.files[sprintf("%s/%s", [module_path, file])]
     count(trim_space(content)) == 0
 }
 
-test_file_exists(module_path, test_dir, file) {
+# Renamed helper functions to avoid conflicts
+file_exists_in_test_dir(module_path, test_dir, file) if {
     input.files[sprintf("%s/tests/%s/%s", [module_path, test_dir, file])]
 }
 
-test_file_is_empty(module_path, test_dir, file) {
+is_file_empty_in_test_dir(module_path, test_dir, file) if {
     content := input.files[sprintf("%s/tests/%s/%s", [module_path, test_dir, file])]
     count(trim_space(content)) == 0
 }

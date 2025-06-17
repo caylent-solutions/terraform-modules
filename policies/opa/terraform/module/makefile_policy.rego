@@ -2,9 +2,10 @@ package terraform.module.makefile
 
 import future.keywords.in
 import future.keywords.if
+import future.keywords.contains
 
 # Check if Makefile matches the skeleton Makefile
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -30,7 +31,7 @@ violation[result] {
 }
 
 # Check for nested modules
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -44,8 +45,8 @@ violation[result] {
     
     # Check if it's in a subdirectory but not in examples or tests
     contains(rel_path, "/")
-    not startswith(rel_path, "/examples/")
-    not startswith(rel_path, "/tests/")
+    not contains(rel_path, "/examples/")
+    not contains(rel_path, "/tests/")
     
     result := {
         "policy": "terraform_module_makefile_policy",
@@ -57,6 +58,6 @@ violation[result] {
 }
 
 # Helper function
-file_exists(module_path, file) {
+file_exists(module_path, file) if {
     input.files[sprintf("%s/%s", [module_path, file])]
 }

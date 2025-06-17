@@ -1,4 +1,4 @@
-.PHONY: build-terraform-file-collector configure detect-module-changes go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate pr-opa-policy-test tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
+.PHONY: build-terraform-file-collector configure detect-module-changes go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate pr-opa-policy-test rego-format rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
 
 # Build and install terraform-file-collector binary
 build-terraform-file-collector:
@@ -105,6 +105,32 @@ pr-opa-policy-test:
 		--policy-dirs ${POLICY_DIRS} \
 		--feature-branch $(FEATURE_BRANCH) \
 		--primary-branch ${PRIMARY_BRANCH:-main}
+
+# Run all Rego unit tests based on monorepo-config.json
+rego-unit-test:
+	@echo "Running Rego unit tests based on monorepo-config.json..."
+	@go run scripts/rego-unit-test/main.go --no-coverage --data-path $(PWD) monorepo-config.json
+
+# Run all Rego unit tests with coverage
+rego-unit-test-coverage:
+	@mkdir -p tmp/coverage
+	@go run scripts/rego-unit-test/main.go --coverage-text --data-path $(PWD) monorepo-config.json
+
+# Run all Rego unit tests with coverage and output as JSON
+rego-unit-test-coverage-json:
+	@mkdir -p tmp/coverage
+	@go run scripts/rego-unit-test/main.go --coverage-json --data-path $(PWD) monorepo-config.json
+
+# Check Rego files for linting issues
+rego-lint:
+	@echo "Checking Rego files for linting issues..."
+	@find policies -name "*.rego" -type f | xargs -I{} opa check {} || echo "Rego lint check failed ❌"
+	@echo "Rego lint check complete"
+
+# Fix Rego formatting issues
+rego-format:
+	@echo "Fixing Rego formatting issues..."
+	@find policies tests -name "*.rego" -type f | xargs -I{} opa fmt -w {}
 
 # Generate Terraform documentation
 # Usage: make tf-docs MODULE_PATH=path/to/module

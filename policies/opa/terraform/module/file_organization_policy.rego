@@ -2,9 +2,10 @@ package terraform.module.organization
 
 import future.keywords.in
 import future.keywords.if
+import future.keywords.contains
 
 # Check that variable declarations are only in variables.tf
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -22,7 +23,7 @@ violation[result] {
     # Check each file for variable declarations
     some file in tf_files
     content := input.files[file]
-    re_match(`variable\s+"[^"]*"\s*{`, content)
+    regex.match(`variable\s+"[^"]*"\s*{`, content)
     
     result := {
         "policy": "terraform_file_organization_policy",
@@ -34,7 +35,7 @@ violation[result] {
 }
 
 # Check that output declarations are only in outputs.tf
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -52,7 +53,7 @@ violation[result] {
     # Check each file for output declarations
     some file in tf_files
     content := input.files[file]
-    re_match(`output\s+"[^"]*"\s*{`, content)
+    regex.match(`output\s+"[^"]*"\s*{`, content)
     
     result := {
         "policy": "terraform_file_organization_policy",
@@ -64,7 +65,7 @@ violation[result] {
 }
 
 # Check that terraform and required_providers blocks are only in versions.tf
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -82,7 +83,7 @@ violation[result] {
     # Check each file for terraform blocks
     some file in tf_files
     content := input.files[file]
-    re_match(`terraform\s*{`, content)
+    regex.match(`terraform\s*{`, content)
     
     result := {
         "policy": "terraform_file_organization_policy",
@@ -94,7 +95,7 @@ violation[result] {
 }
 
 # Check that required_providers blocks are only in versions.tf
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -112,7 +113,7 @@ violation[result] {
     # Check each file for required_providers blocks
     some file in tf_files
     content := input.files[file]
-    re_match(`required_providers\s*{`, content)
+    regex.match(`required_providers\s*{`, content)
     
     result := {
         "policy": "terraform_file_organization_policy",
@@ -124,7 +125,7 @@ violation[result] {
 }
 
 # Check that locals blocks are only in locals.tf
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -142,7 +143,7 @@ violation[result] {
     # Check each file for locals blocks
     some file in tf_files
     content := input.files[file]
-    re_match(`locals\s*{`, content)
+    regex.match(`locals\s*{`, content)
     
     result := {
         "policy": "terraform_file_organization_policy",

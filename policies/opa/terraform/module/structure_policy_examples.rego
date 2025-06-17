@@ -2,14 +2,15 @@ package terraform.module.structure
 
 import future.keywords.in
 import future.keywords.if
+import future.keywords.contains
 
 # Check for example subdirectories in examples directory
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
     # Check if examples directory exists but has no subdirectories
-    dir_exists(module_path, "examples")
+    examples_dir_exists(module_path)
     example_dirs := {dir | 
         some file in object.keys(input.files)
         startswith(file, sprintf("%s/examples/", [module_path]))
@@ -29,7 +30,7 @@ violation[result] {
 }
 
 # Check for required files in each example directory
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -67,7 +68,7 @@ violation[result] {
 }
 
 # Check for non-empty required files in examples
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -106,11 +107,16 @@ violation[result] {
 }
 
 # Helper functions for examples
-example_file_exists(module_path, example_dir, file) {
+examples_dir_exists(module_path) if {
+    some file in object.keys(input.files)
+    startswith(file, sprintf("%s/examples/", [module_path]))
+}
+
+example_file_exists(module_path, example_dir, file) if {
     input.files[sprintf("%s/examples/%s/%s", [module_path, example_dir, file])]
 }
 
-example_file_is_empty(module_path, example_dir, file) {
+example_file_is_empty(module_path, example_dir, file) if {
     content := input.files[sprintf("%s/examples/%s/%s", [module_path, example_dir, file])]
     count(trim_space(content)) == 0
 }

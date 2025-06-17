@@ -4,7 +4,7 @@ import future.keywords.in
 import future.keywords.if
 
 # Check for disallowed cloud providers
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     

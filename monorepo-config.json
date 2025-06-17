@@ -38,8 +38,22 @@
   "scripts": {
     "terraform_file_collector": "terraform-file-collector",
     "temp_file_pattern": "terraform-files-*.json",
-    "go_unit_test": "./scripts/go-unit-test/main.go"
+    "go_unit_test": "./scripts/go-unit-test/main.go",
+    "rego_unit_test": "./scripts/rego-unit-test/main.go"
   },
+  "rego_tests": [
+    "tests/opa/unit/global",
+    "tests/opa/unit/terraform/module",
+    "tests/opa/unit/terraform/module_types",
+    "tests/opa/unit/terraform/provider"
+  ],
+  "rego_policy_dirs": {
+    "tests/opa/unit/global": "policies/opa/global",
+    "tests/opa/unit/terraform/module": "policies/opa/terraform/module",
+    "tests/opa/unit/terraform/module_types": "policies/opa/terraform/module_types",
+    "tests/opa/unit/terraform/provider": "policies/opa/terraform/provider"
+  },
+  "rego_helpers_dir": "tests/opa/unit/helpers",
   "coverage_groups": [
     {
       "name": "Go Unit Test",
@@ -96,6 +110,13 @@
       "outputFile": "lint.out",
       "testPath": "./scripts/lint",
       "coverPkg": "./scripts/lint"
+    },
+    {
+      "name": "Rego Unit Test",
+      "emoji": "🔍",
+      "outputFile": "rego-unit-test.out",
+      "testPath": "./scripts/rego-unit-test",
+      "coverPkg": "./scripts/rego-unit-test"
     }
   ]
 }

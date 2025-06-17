@@ -2,9 +2,10 @@ package terraform.module.hardcoded
 
 import future.keywords.in
 import future.keywords.if
+import future.keywords.contains
 
 # Check for hard-coded values in Terraform files
-violation[result] {
+violation[result] if {
     # Get module path from input
     module_path := input.module_path
     
@@ -34,41 +35,41 @@ violation[result] {
 }
 
 # Helper functions to detect hard-coded values in Terraform code
-contains_hardcoded_value(content) {
+contains_hardcoded_value(content) if {
     # Look for resource blocks with hard-coded string values
     # Match attribute assignments in resource blocks that don't use variable interpolation
-    re_match(`resource\s+"[^"]+"\s+"[^"]+"\s+{[^}]*\w+\s*=\s*"[^${}][^"]*"[^}]*}`, content)
+    regex.match(`resource\s+"[^"]+"s+"[^"]+"\s+{[^}]*\w+\s*=\s*"[^${}][^"]*"[^}]*}`, content)
 }
 
-contains_hardcoded_value(content) {
+contains_hardcoded_value(content) if {
     # Look for attribute assignments with hardcoded string values
     # Exclude variable references (${var.name}), local references (${local.name}),
     # and other interpolation expressions
-    re_match(`\w+\s*=\s*"[^${}][^"]*"`, content)
+    regex.match(`\w+\s*=\s*"[^${}][^"]*"`, content)
 }
 
 # Also check for hardcoded numbers
-contains_hardcoded_value(content) {
+contains_hardcoded_value(content) if {
     # Look for attribute assignments with hardcoded numbers
-    re_match(`\w+\s*=\s*\d+`, content)
+    regex.match(`\w+\s*=\s*\d+`, content)
 }
 
 # Check for hardcoded boolean values
-contains_hardcoded_value(content) {
+contains_hardcoded_value(content) if {
     # Look for attribute assignments with hardcoded boolean values
-    re_match(`\w+\s*=\s*(true|false)`, content)
+    regex.match(`\w+\s*=\s*(true|false)`, content)
 }
 
 # Check for hardcoded JSON objects
-contains_hardcoded_value(content) {
+contains_hardcoded_value(content) if {
     # Look for attribute assignments with hardcoded JSON objects
     # Match patterns like: attribute = { key = "value" }
-    re_match(`\w+\s*=\s*\{[^${}]*"[^${}][^"]*"[^}]*\}`, content)
+    regex.match(`\w+\s*=\s*\{[^${}]*"[^${}][^"]*"[^}]*\}`, content)
 }
 
 # Check for hardcoded YAML heredocs
-contains_hardcoded_value(content) {
+contains_hardcoded_value(content) if {
     # Look for attribute assignments with hardcoded YAML heredocs
     # Match patterns like: attribute = <<YAML ... YAML
-    re_match(`\w+\s*=\s*<<(YAML|YML)[^${}]*`, content)
+    regex.match(`\w+\s*=\s*<<(YAML|YML)[^${}]*`, content)
 }
