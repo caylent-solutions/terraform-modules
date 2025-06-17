@@ -86,14 +86,14 @@ func TestGetChangedFiles(t *testing.T) {
 		"modules/data/other/file.tf",
 	}
 	
-	files := getChangedFiles(config)
+	files := getChangedFiles("feature-branch", "main", config)
 	if !reflect.DeepEqual(files, expected) {
 		t.Errorf("getChangedFiles() = %v, want %v", files, expected)
 	}
 	
 	// Test with no files in config (should try to use git, but we'll just check it doesn't crash)
 	config = map[string]interface{}{}
-	files = getChangedFiles(config)
+	files = getChangedFiles("feature-branch", "main", config)
 	// We don't assert anything specific here since git might not be available in the test environment
 }
 

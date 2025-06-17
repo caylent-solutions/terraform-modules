@@ -13,25 +13,50 @@ The `pr-opa-policy-test` script validates pull requests against a set of OPA pol
 - Uses color-coded output for better readability
 - Supports testing with simulated changed files
 - Integrates with the monorepo's configuration system
+- Compares feature branch changes against primary branch
 
 ## Usage
 
-The script is primarily used in CI/CD pipelines to validate pull requests:
+The script can be used to validate changes between branches:
 
 ```bash
-go run scripts/pr-opa-policy-test/main.go --config monorepo-config.json --policy-dir policies/pr
+go run scripts/pr-opa-policy-test/main.go \
+  --config monorepo-config.json \
+  --policy-dirs policies/opa/global \
+  --feature-branch feature-branch \
+  --primary-branch main
+```
+
+Or using the Makefile:
+
+```bash
+POLICY_DIRS=./policies/opa/global make pr-opa-policy-test FEATURE_BRANCH=feature-branch PRIMARY_BRANCH=main
 ```
 
 ## Command Line Options
 
 - `--config`: Path to the monorepo configuration file (required)
-- `--policy-dir`: Directory containing OPA policy files (required)
+- `--policy-dirs`: Comma-separated list of directories containing OPA policy files (required)
+- `--feature-branch`: Feature branch commit or reference (required)
+- `--primary-branch`: Primary branch to merge into (defaults to "main")
 
 ## Configuration
 
 The script uses the following sections from the `monorepo-config.json` file:
 
 - `test_changed_files`: (Optional) List of files to use for testing instead of git changes
+
+The script can also be configured through the Makefile with the following parameters:
+
+- `FEATURE_BRANCH`: The feature branch to compare (required)
+- `PRIMARY_BRANCH`: The primary branch to merge into (defaults to "main")
+- `POLICY_DIRS`: Comma-separated list of directories containing OPA policy files (required)
+
+The script can also be configured through the Makefile with the following parameters:
+
+- `FEATURE_BRANCH`: The feature branch to compare (required)
+- `PRIMARY_BRANCH`: The primary branch to merge into (defaults to "main")
+- `POLICY_DIRS`: Comma-separated list of directories containing OPA policy files (required)
 
 ## Policy Evaluation
 
@@ -102,7 +127,7 @@ The script works by:
 
 ### Changed Files Detection
 
-In a CI environment, the script gets the list of changed files from git by comparing the current commit with the previous one. For testing purposes, it can also use a list of files specified in the configuration.
+The script gets the list of changed files by comparing the feature branch with the primary branch. It finds the common ancestor (merge-base) of the two branches and then identifies all files that would be changed when merging the feature branch into the primary branch. For testing purposes, it can also use a list of files specified in the configuration.
 
 ## Integration with CI/CD
 

@@ -89,8 +89,22 @@ module-validate:
 	@go run ./scripts/module-validator/main.go --module-path $(MODULE_PATH) --module-type $(MODULE_TYPE) --config ./monorepo-config.json
 
 # Test PR against OPA policies
+# Usage: make pr-opa-policy-test FEATURE_BRANCH=feature-branch PRIMARY_BRANCH=main POLICY_DIRS=path/to/policies
 pr-opa-policy-test:
-	go run ./scripts/pr-opa-policy-test/main.go --config ./monorepo-config.json --policy-dir ./policies/opa/global
+	@if [ -z "$(FEATURE_BRANCH)" ]; then \
+		echo "Error: FEATURE_BRANCH is required"; \
+		exit 1; \
+	fi
+	@if [ -z "$(POLICY_DIRS)" ]; then \
+		echo "Error: POLICY_DIRS is required"; \
+		exit 1; \
+	fi
+	@echo "Testing PR from $(FEATURE_BRANCH) to ${PRIMARY_BRANCH:-main}..."
+	go run ./scripts/pr-opa-policy-test/main.go \
+		--config ./monorepo-config.json \
+		--policy-dirs ${POLICY_DIRS} \
+		--feature-branch $(FEATURE_BRANCH) \
+		--primary-branch ${PRIMARY_BRANCH:-main}
 
 # Generate Terraform documentation
 # Usage: make tf-docs MODULE_PATH=path/to/module

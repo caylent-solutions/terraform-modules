@@ -42,7 +42,9 @@ type PolicyOutput struct {
 
 func main() {
 	configPath := flag.String("config", "", "Path to the monorepo configuration file")
-	policyDir := flag.String("policy-dir", "", "Directory containing OPA policy files")
+	policyDirs := flag.String("policy-dirs", "", "Comma-separated list of directories containing OPA policy files")
+	featureBranch := flag.String("feature-branch", "", "Feature branch commit or reference")
+	primaryBranch := flag.String("primary-branch", "main", "Primary branch to merge into (default: main)")
 	flag.Parse()
 
 	// Validate input
@@ -51,8 +53,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if *policyDir == "" {
-		fmt.Printf("%sError: Policy directory is required. Use --policy-dir flag to specify the path.%s\n", ColorRed, ColorReset)
+	if *policyDirs == "" {
+		fmt.Printf("%sError: Policy directories are required. Use --policy-dirs flag to specify comma-separated paths.%s\n", ColorRed, ColorReset)
+		os.Exit(1)
+	}
+
+	if *featureBranch == "" {
+		fmt.Printf("%sError: Feature branch is required. Use --feature-branch flag to specify the branch.%s\n", ColorRed, ColorReset)
 		os.Exit(1)
 	}
 
@@ -63,8 +70,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Get changed files (in a real CI environment, this would come from git)
-	changedFiles := getChangedFiles(config)
+	// Get changed files between feature branch and primary branch
+	changedFiles := getChangedFiles(*featureBranch, *primaryBranch, config)
 
 	// Prepare input for OPA
 	input := PolicyInput{
@@ -72,9 +79,31 @@ func main() {
 		Config:       config,
 	}
 
-	// Evaluate policies
+	// Split policy directories
+	dirs := strings.Split(*policyDirs, ",")
+
+	// Evaluate policies from all directories
 	fmt.Printf("%s=== Evaluating PR policies ===%s\n", ColorBlue, ColorReset)
-	evaluatePolicies(input, *policyDir)
+	
+	violations := false
+	for _, dir := range dirs {
+		dir = strings.TrimSpace(dir)
+		if dir == "" {
+			continue
+		}
+		
+		fmt.Printf("Checking policies in directory: %s\n", dir)
+		if hasViolations := evaluatePolicies(input, dir); hasViolations {
+			violations = true
+		}
+	}
+
+	if violations {
+		fmt.Printf("%s=== Policy check failed ===%s\n", ColorRed, ColorReset)
+		os.Exit(1)
+	} else {
+		fmt.Printf("%s=== All policy checks passed ===%s\n", ColorGreen, ColorReset)
+	}
 }
 
 // loadConfig loads the configuration from a JSON file
@@ -92,8 +121,8 @@ func loadConfig(path string) (map[string]interface{}, error) {
 	return config, nil
 }
 
-// getChangedFiles gets the list of changed files from the configuration or git
-func getChangedFiles(config map[string]interface{}) []string {
+// getChangedFiles gets the list of changed files between feature branch and primary branch
+func getChangedFiles(featureBranch, primaryBranch string, config map[string]interface{}) []string {
 	// For testing, use files from config if provided
 	if files, ok := config["test_changed_files"].([]interface{}); ok && len(files) > 0 {
 		changedFiles := make([]string, len(files))
@@ -103,12 +132,25 @@ func getChangedFiles(config map[string]interface{}) []string {
 		return changedFiles
 	}
 
-	// In a real environment, get changed files from git
-	// This is a simplified example - in a real CI environment, you'd compare against the base branch
-	cmd := exec.Command("git", "diff", "--name-only", "HEAD~1", "HEAD")
+	// Get the merge-base (common ancestor) of the two branches
+	mergeBaseCmd := exec.Command("git", "merge-base", primaryBranch, featureBranch)
+	mergeBase, err := mergeBaseCmd.Output()
+	if err != nil {
+		fmt.Printf("%sWarning: Failed to find merge-base: %v%s\n", ColorYellow, err, ColorReset)
+		return []string{}
+	}
+	
+	// Get changed files that would be merged
+	cmd := exec.Command("git", "diff", "--name-only", strings.TrimSpace(string(mergeBase)), featureBranch)
 	output, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("%sWarning: Failed to get changed files from git: %v%s\n", ColorYellow, err, ColorReset)
+		return []string{}
+	}
+
+	if len(output) == 0 {
+		fmt.Printf("%sNo changed files detected between %s and %s%s\n", 
+			ColorYellow, primaryBranch, featureBranch, ColorReset)
 		return []string{}
 	}
 
@@ -116,25 +158,26 @@ func getChangedFiles(config map[string]interface{}) []string {
 	return files
 }
 
-// evaluatePolicies evaluates all OPA policies against the input
-func evaluatePolicies(input PolicyInput, policyDir string) {
+// evaluatePolicies evaluates all OPA policies in a directory against the input
+// Returns true if violations were found
+func evaluatePolicies(input PolicyInput, policyDir string) bool {
 	// Convert input to JSON
 	inputJSON, err := json.Marshal(input)
 	if err != nil {
 		fmt.Printf("%sError marshaling input: %v%s\n", ColorRed, err, ColorReset)
-		os.Exit(1)
+		return true
 	}
 
 	// Get policy files
 	policyFiles, err := filepath.Glob(filepath.Join(policyDir, "*.rego"))
 	if err != nil {
 		fmt.Printf("%sError finding policy files: %v%s\n", ColorRed, err, ColorReset)
-		os.Exit(1)
+		return true
 	}
 
 	if len(policyFiles) == 0 {
 		fmt.Printf("%sNo policy files found in %s%s\n", ColorYellow, policyDir, ColorReset)
-		os.Exit(0)
+		return false
 	}
 
 	// Evaluate each policy
@@ -180,10 +223,5 @@ func evaluatePolicies(input PolicyInput, policyDir string) {
 		}
 	}
 
-	if violations {
-		fmt.Printf("%s=== Policy check failed ===%s\n", ColorRed, ColorReset)
-		os.Exit(1)
-	} else {
-		fmt.Printf("%s=== All policy checks passed ===%s\n", ColorGreen, ColorReset)
-	}
+	return violations
 }
