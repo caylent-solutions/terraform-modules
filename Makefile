@@ -130,7 +130,7 @@ rego-lint:
 # Fix Rego formatting issues
 rego-format:
 	@echo "Fixing Rego formatting issues..."
-	@find policies tests -name "*.rego" -type f | xargs -I{} opa fmt -w {}
+	@find policies tests -name "*.rego" -type f -print0 | xargs -0 -I{} sh -c 'cp "{}" "{}.tmp" && opa fmt -w "{}" > /dev/null 2>&1 && if ! cmp -s "{}" "{}.tmp"; then echo "Fixed: {}"; fi && rm -f "{}.tmp"'
 
 # Generate Terraform documentation
 # Usage: make tf-docs MODULE_PATH=path/to/module
