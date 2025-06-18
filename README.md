@@ -126,6 +126,7 @@ Pull requests are automatically validated using GitHub Actions:
 
 ### Scripts Documentation
 - [Detect Proposed Git Repo Changes](docs/scripts/detect-proposed-git-repo-changes.md)
+- [Go Format](docs/scripts/go-format.md)
 - [Go Unit Test](docs/scripts/go-unit-test.md)
 - [Install Tools](docs/scripts/install-tools.md)
 - [Lint](docs/scripts/lint.md)

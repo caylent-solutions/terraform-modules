@@ -6,10 +6,8 @@ import future.keywords.in
 
 # Check for test directories matching example directories
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Get all example directories
 	example_dirs := {dir |
 		some file in object.keys(input.files)
 		startswith(file, sprintf("%s/examples/", [module_path]))
@@ -18,10 +16,8 @@ violation[result] if {
 		dir := parts[0]
 	}
 
-	# Check if tests directory exists
 	dir_exists(module_path, "tests")
 
-	# Check if each example has a corresponding test directory
 	some example_dir in example_dirs
 	not dir_exists(module_path, sprintf("tests/%s", [example_dir]))
 
@@ -36,10 +32,8 @@ violation[result] if {
 
 # Check for common test directory if there are multiple examples
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Get all example directories
 	example_dirs := {dir |
 		some file in object.keys(input.files)
 		startswith(file, sprintf("%s/examples/", [module_path]))
@@ -48,7 +42,6 @@ violation[result] if {
 		dir := parts[0]
 	}
 
-	# Check if there are multiple examples but no common test directory
 	count(example_dirs) > 1
 	not dir_exists(module_path, "tests/common")
 
@@ -63,25 +56,24 @@ violation[result] if {
 
 # Check for required files in each test directory
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Get all test directories
 	test_dirs := {dir |
 		some file in object.keys(input.files)
 		startswith(file, sprintf("%s/tests/", [module_path]))
-		parts := split(substring(file, count(sprintf("%s/tests/", [module_path])), -1), "/")
-		count(parts) > 0
+		rel_path := substring(file, count(sprintf("%s/tests/", [module_path])), -1)
+		parts := split(rel_path, "/")
+		count(parts) > 1
 		dir := parts[0]
 	}
 
-	# Required files in each test directory
 	required_test_files := {
 		"module_test.go",
 		"README.md",
 	}
 
-	# Check if any required file is missing in any test directory
+	required_test_files["helpers"] = "helpers.go"
+
 	some dir in test_dirs
 	some file in required_test_files
 	not file_exists_in_test_dir(module_path, dir, file)
@@ -97,13 +89,9 @@ violation[result] if {
 
 # Check for README.md in tests directory
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Check if tests directory exists
 	dir_exists(module_path, "tests")
-
-	# Check if README.md exists in tests directory
 	not file_exists(module_path, "tests/README.md")
 
 	result := {
@@ -117,25 +105,22 @@ violation[result] if {
 
 # Check for non-empty required files in tests
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Get all test directories
 	test_dirs := {dir |
 		some file in object.keys(input.files)
 		startswith(file, sprintf("%s/tests/", [module_path]))
-		parts := split(substring(file, count(sprintf("%s/tests/", [module_path])), -1), "/")
-		count(parts) > 0
+		rel_path := substring(file, count(sprintf("%s/tests/", [module_path])), -1)
+		parts := split(rel_path, "/")
+		count(parts) > 1
 		dir := parts[0]
 	}
 
-	# Files that cannot be empty in test directories
 	non_empty_test_files := {
 		"module_test.go",
 		"README.md",
 	}
 
-	# Check if any required file is empty in any test directory
 	some dir in test_dirs
 	some file in non_empty_test_files
 	file_exists_in_test_dir(module_path, dir, file)
@@ -152,10 +137,8 @@ violation[result] if {
 
 # Check if tests/README.md is empty
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Check if README.md in tests directory is empty
 	file_exists(module_path, "tests/README.md")
 	file_is_empty(module_path, "tests/README.md")
 
@@ -170,10 +153,8 @@ violation[result] if {
 
 # Check for terraform-terratest-framework import in test files
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Get all test files
 	test_files := {file |
 		some path in object.keys(input.files)
 		startswith(path, sprintf("%s/tests/", [module_path]))
@@ -181,7 +162,6 @@ violation[result] if {
 		file := path
 	}
 
-	# Check if any test file doesn't import the framework
 	some file in test_files
 	content := input.files[file]
 	count(content) > 0
@@ -198,10 +178,8 @@ violation[result] if {
 
 # Check for go.mod file with terraform-terratest-framework dependency
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Check if go.mod exists
 	go_mod_file := sprintf("%s/go.mod", [module_path])
 	not input.files[go_mod_file]
 
@@ -216,10 +194,8 @@ violation[result] if {
 
 # Check for test.config file
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Check if test.config exists
 	test_config_file := sprintf("%s/test.config", [module_path])
 	not input.files[test_config_file]
 
@@ -234,10 +210,8 @@ violation[result] if {
 
 # Check if go.mod contains terraform-terratest-framework
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Check if go.mod exists and contains the framework
 	go_mod_file := sprintf("%s/go.mod", [module_path])
 	input.files[go_mod_file]
 	content := input.files[go_mod_file]
@@ -254,10 +228,8 @@ violation[result] if {
 
 # Check if test.config contains TERRATEST_IDEMPOTENCY setting
 violation[result] if {
-	# Get module path from input
 	module_path := input.module_path
 
-	# Check if test.config exists and contains the idempotency setting
 	test_config_file := sprintf("%s/test.config", [module_path])
 	input.files[test_config_file]
 	content := input.files[test_config_file]
@@ -269,6 +241,27 @@ violation[result] if {
 		"message": "Missing TERRATEST_IDEMPOTENCY setting in test.config",
 		"details": sprintf("Module '%s' test.config file must include the TERRATEST_IDEMPOTENCY setting", [module_path]),
 		"resolution": "Add 'TERRATEST_IDEMPOTENCY=true' or 'TERRATEST_IDEMPOTENCY=false' to the test.config file",
+	}
+}
+
+# Check if test.config has valid TERRATEST_IDEMPOTENCY value
+violation[result] if {
+	module_path := input.module_path
+
+	test_config_file := sprintf("%s/test.config", [module_path])
+	input.files[test_config_file]
+	content := input.files[test_config_file]
+	
+	contains(content, "TERRATEST_IDEMPOTENCY=")
+	not contains(content, "TERRATEST_IDEMPOTENCY=true")
+	not contains(content, "TERRATEST_IDEMPOTENCY=false")
+
+	result := {
+		"policy": "terraform_module_tests_policy",
+		"severity": "error",
+		"message": "Invalid TERRATEST_IDEMPOTENCY value in test.config",
+		"details": sprintf("Module '%s' test.config file must set TERRATEST_IDEMPOTENCY to either 'true' or 'false'", [module_path]),
+		"resolution": "Set TERRATEST_IDEMPOTENCY to either 'true' or 'false' in the test.config file",
 	}
 }
 
@@ -287,7 +280,6 @@ file_is_empty(module_path, file) if {
 	count(trim_space(content)) == 0
 }
 
-# Renamed helper functions to avoid conflicts
 file_exists_in_test_dir(module_path, test_dir, file) if {
 	input.files[sprintf("%s/tests/%s/%s", [module_path, test_dir, file])]
 }

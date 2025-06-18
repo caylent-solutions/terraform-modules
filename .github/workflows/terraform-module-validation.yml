@@ -43,7 +43,7 @@ jobs:
       - name: Configure environment
         run: make configure
 
-      - name: Run module type validation
+      - name: Run module validation
         run: make module-validate MODULE_PATH=${{ inputs.module_path }} MODULE_TYPE=${{ inputs.module_type }}
 
       - name: Run Terraform linting

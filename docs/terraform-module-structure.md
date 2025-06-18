@@ -77,6 +77,8 @@ The tests directory must contain:
    - module_test.go
    - README.md
 
+
+
 ## Test Configuration
 
 The `test.config` file must contain:
@@ -85,13 +87,13 @@ The `test.config` file must contain:
 # Test configuration for this module
 # This file controls test behavior settings
 
-# Set to false to disable idempotency testing
+# Set to true or false to enable/disable idempotency testing
 TERRATEST_IDEMPOTENCY=true
 
 # Add other test configuration settings below
 ```
 
-This file controls test behavior and is required for all modules.
+This file controls test behavior and is required for all modules. The TERRATEST_IDEMPOTENCY setting must be explicitly set to either true or false.
 
 ## Additional Requirements
 

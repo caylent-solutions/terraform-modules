@@ -53,7 +53,7 @@ func main() {
 	coverageText := flag.Bool("coverage-text", false, "Output coverage as text")
 	coverageJSON := flag.Bool("coverage-json", false, "Output coverage as JSON")
 	flag.Parse()
-	
+
 	// Get JSON file path from command line
 	args := flag.Args()
 	if len(args) < 1 {
@@ -93,14 +93,14 @@ func main() {
 	// Run tests for each group
 	moduleResults := make([]CoverageResult, 0, len(groups))
 	errorCount := 0
-	
+
 	for _, group := range groups {
 		fmt.Fprintf(stderr, "%s Running tests for %s...\n", group.Emoji, group.Name)
-		
+
 		var coverage float64
 		var statements int
 		var testErr error
-		
+
 		if *noCoverage {
 			// Just run the tests without coverage
 			testErr = runTest(group.TestPath)
@@ -108,23 +108,23 @@ func main() {
 			// Run tests with coverage
 			coverage, statements, testErr = runTestWithCoverage(group.OutputFile, group.TestPath)
 		}
-		
+
 		result := CoverageResult{
 			Name:       group.Name,
 			Coverage:   coverage,
 			Statements: statements,
 		}
-		
+
 		if testErr != nil {
 			errorCount++
 			errorMsg := fmt.Sprintf("Error running tests: %v", testErr)
 			result.Error = errorMsg
-			
+
 			fmt.Fprintf(stderr, "❌ %s\n", errorMsg)
 		}
-		
+
 		moduleResults = append(moduleResults, result)
-		
+
 		// If text output and collecting coverage, print coverage details
 		if *coverageText && !*noCoverage {
 			outputPath := filepath.Join(coverageDir, group.OutputFile)
@@ -152,7 +152,7 @@ func main() {
 		totalCoveredStatements += float64(result.Statements) * result.Coverage / 100
 		totalStatements += result.Statements
 	}
-	
+
 	var averageCoverage float64
 	if totalStatements > 0 {
 		averageCoverage = totalCoveredStatements / float64(totalStatements) * 100
@@ -170,7 +170,7 @@ func main() {
 		fmt.Fprintf(stderr, "\nSummary:\n")
 		fmt.Fprintf(stderr, "%-40s %-10s %-10s\n", "Module", "Coverage", "Statements")
 		fmt.Fprintf(stderr, "%-40s %-10s %-10s\n", strings.Repeat("-", 40), strings.Repeat("-", 10), strings.Repeat("-", 10))
-		
+
 		for _, result := range moduleResults {
 			statusPrefix := "  "
 			if result.Error != "" {
@@ -178,10 +178,10 @@ func main() {
 			}
 			fmt.Fprintf(stderr, "%s%-38s %9.1f%% %10d\n", statusPrefix, result.Name, result.Coverage, result.Statements)
 		}
-		
+
 		fmt.Fprintf(stderr, "%-40s %-10s %-10s\n", strings.Repeat("-", 40), strings.Repeat("-", 10), strings.Repeat("-", 10))
 		fmt.Fprintf(stderr, "%-40s %9.1f%% %10d\n", "Total", averageCoverage, totalStatements)
-		
+
 		if errorCount > 0 {
 			fmt.Fprintf(stderr, "\n❌ %d test modules failed\n", errorCount)
 		}
@@ -194,7 +194,7 @@ func main() {
 		}
 		fmt.Fprintln(stdout, string(outputJSON))
 	}
-	
+
 	// Exit with error if any test failed
 	if errorCount > 0 {
 		os.Exit(1)
@@ -211,7 +211,7 @@ func runTest(testPath string) error {
 	cmd := execCommand("bash", "-c", fmt.Sprintf("cd %s && go test -v", testPath))
 	cmd.Stdout = stderr
 	cmd.Stderr = stderr
-	
+
 	return cmd.Run()
 }
 
@@ -227,39 +227,39 @@ func runTestWithCoverage(outputFile, testPath string) (float64, int, error) {
 	cmdCount := execCommand("bash", "-c", fmt.Sprintf("cd %s && go test -cover -count=1", testPath))
 	outputCount, err := cmdCount.CombinedOutput()
 	outputCountStr := string(outputCount)
-	
+
 	// If there was an error in the first run, return it
 	if err != nil {
 		return 0.0, 0, fmt.Errorf("%v: %s", err, outputCountStr)
 	}
-	
+
 	// Extract statement count
 	statements := extractStatementCount(outputCountStr)
-	
+
 	// Now run with coverage profile
 	cmd := execCommand("bash", "-c", fmt.Sprintf("cd %s && go test -cover -coverprofile=../../%s", testPath, outputPath))
 	output, cmdErr := cmd.CombinedOutput()
 	outputStr := string(output)
-	
+
 	// Extract coverage percentage
 	coverageStr := extractCoveragePercentage(outputStr)
 	coverage := parseCoveragePercentage(coverageStr)
-	
+
 	// If we couldn't get statement count from first run, try from second run
 	if statements == 0 {
 		statements = extractStatementCount(outputStr)
 	}
-	
+
 	// If we still don't have statement count, get it from the coverage file
 	if statements == 0 && fileExists(outputPath) {
 		statements = countLinesInFile(outputPath) - 1 // Subtract 1 for the header line
 	}
-	
+
 	// If statements is still 0, set it to 1 to avoid division by zero
 	if statements == 0 {
 		statements = 1
 	}
-	
+
 	return coverage, statements, cmdErr
 }
 

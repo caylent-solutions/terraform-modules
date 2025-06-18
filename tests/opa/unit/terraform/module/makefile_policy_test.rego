@@ -44,7 +44,7 @@ test_nested_modules_violation if {
 	module_path := "modules/test-module"
 	files := {
 		"modules/test-module/Makefile": "test: echo \"Test command\"",
-		"skeletons/generic-skeleton/Makefile": "test: echo \"Test command\"",
+		"skeletons/generic-skeleton/Makefile": "test: echo \"Different command\"",
 		"modules/test-module/nested/main.tf": "resource \"aws_s3_bucket\" \"test\" {}",
 	}
 	test_input := helpers.mock_terraform_module_input(module_path, files)

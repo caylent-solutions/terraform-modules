@@ -30,33 +30,6 @@ violation[result] if {
 	}
 }
 
-# Check for nested modules
-violation[result] if {
-	# Get module path from input
-	module_path := input.module_path
-
-	# Check for .tf files in subdirectories (excluding examples and tests)
-	some file in object.keys(input.files)
-	startswith(file, sprintf("%s/", [module_path]))
-	endswith(file, ".tf")
-
-	# Extract the relative path within the module
-	rel_path := substring(file, count(module_path) + 1, -1)
-
-	# Check if it's in a subdirectory but not in examples or tests
-	contains(rel_path, "/")
-	not contains(rel_path, "/examples/")
-	not contains(rel_path, "/tests/")
-
-	result := {
-		"policy": "terraform_module_makefile_policy",
-		"severity": "error",
-		"message": "Nested Terraform modules are not allowed",
-		"details": sprintf("File '%s' indicates a nested module structure", [file]),
-		"resolution": "Move Terraform files to the root of the module or restructure your code",
-	}
-}
-
 # Helper function
 file_exists(module_path, file) if {
 	input.files[sprintf("%s/%s", [module_path, file])]

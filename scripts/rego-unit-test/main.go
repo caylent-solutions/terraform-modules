@@ -25,19 +25,19 @@ type Config struct {
 
 // CoverageData represents the root of OPA JSON coverage output.
 type CoverageData struct {
-	Files           map[string]FileCoverage `json:"files"`            // File-specific coverage
-	CoveredLines    int                     `json:"covered_lines"`    // Count of lines covered
-	NotCoveredLines int                     `json:"not_covered_lines"`// Count of lines missed
-	Coverage        float64                 `json:"coverage"`         // Coverage percent (0–100)
+	Files           map[string]FileCoverage `json:"files"`             // File-specific coverage
+	CoveredLines    int                     `json:"covered_lines"`     // Count of lines covered
+	NotCoveredLines int                     `json:"not_covered_lines"` // Count of lines missed
+	Coverage        float64                 `json:"coverage"`          // Coverage percent (0–100)
 }
 
 // FileCoverage contains coverage info for one `.rego` file.
 type FileCoverage struct {
-	Covered         []LineRange `json:"covered"`          // Ranges of lines covered
-	NotCovered      []LineRange `json:"not_covered"`      // Ranges of lines not covered
-	CoveredLines    int         `json:"covered_lines"`    // Count of covered lines
-	NotCoveredLines int         `json:"not_covered_lines"`// Count of uncovered lines
-	Coverage        float64     `json:"coverage"`         // File-level percent coverage
+	Covered         []LineRange `json:"covered"`           // Ranges of lines covered
+	NotCovered      []LineRange `json:"not_covered"`       // Ranges of lines not covered
+	CoveredLines    int         `json:"covered_lines"`     // Count of covered lines
+	NotCoveredLines int         `json:"not_covered_lines"` // Count of uncovered lines
+	Coverage        float64     `json:"coverage"`          // File-level percent coverage
 }
 
 // LineRange represents a range of lines (start to end)

@@ -39,7 +39,11 @@
     "terraform_file_collector": "terraform-file-collector",
     "temp_file_pattern": "terraform-files-*.json",
     "go_unit_test": "./scripts/go-unit-test/main.go",
-    "rego_unit_test": "./scripts/rego-unit-test/main.go"
+    "rego_unit_test": "./scripts/rego-unit-test/main.go",
+    "run_opa_policies": "./scripts/run-opa-policies/main.go",
+    "excluded_dirs": [".terraform", ".git", "node_modules", ".terragrunt-cache"],
+    "important_dirs": ["examples", "tests"],
+    "directory_marker": "directory"
   },
   "rego_tests": [
     "tests/opa/unit/global",
@@ -54,6 +58,10 @@
     "tests/opa/unit/terraform/provider": "policies/opa/terraform/provider"
   },
   "rego_helpers_dir": "tests/opa/unit/helpers",
+  "module_validator_additional_policies": [
+    "tests/opa/unit/terraform/module",
+    "tests/opa/unit/terraform/provider"
+  ],
   "coverage_groups": [
     {
       "name": "Go Unit Test",
@@ -96,6 +104,13 @@
       "outputFile": "pr-opa-policy-test.out",
       "testPath": "./scripts/pr-opa-policy-test",
       "coverPkg": "./scripts/pr-opa-policy-test"
+    },
+    {
+      "name": "Run OPA Policies",
+      "emoji": "🔒",
+      "outputFile": "run-opa-policies.out",
+      "testPath": "./scripts/run-opa-policies",
+      "coverPkg": "./scripts/run-opa-policies"
     },
     {
       "name": "Terraform File Collector",

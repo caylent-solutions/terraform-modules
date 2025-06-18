@@ -38,14 +38,14 @@ func main() {
 
 	// Check if changes are in modules
 	modulePaths, moduleTypes := detectModuleChanges(changedFiles, config)
-	
+
 	// Get module roots from config
 	moduleRoots, ok := config["module_roots"].([]interface{})
 	if !ok {
 		fmt.Println("Error: module_roots not found in config")
 		os.Exit(1)
 	}
-	
+
 	// Identify non-module files
 	nonModuleFiles := []string{}
 	for _, file := range changedFiles {
@@ -64,7 +64,7 @@ func main() {
 			nonModuleFiles = append(nonModuleFiles, file)
 		}
 	}
-	
+
 	if len(modulePaths) > 1 {
 		fmt.Println("Error: Multiple modules detected in the same PR")
 		fmt.Println("Affected modules:")
@@ -85,11 +85,11 @@ func main() {
 	} else if len(modulePaths) == 1 {
 		modulePath := modulePaths[0]
 		moduleType := moduleTypes[0]
-		
+
 		fmt.Printf("MODULE_PATH=%s\n", modulePath)
 		fmt.Printf("MODULE_TYPE=%s\n", moduleType)
 		fmt.Println("IS_MODULE=true")
-		
+
 		if os.Getenv("GITHUB_ACTIONS") == "true" {
 			fmt.Printf("::set-output name=module_path::%s\n", modulePath)
 			fmt.Printf("::set-output name=module_type::%s\n", moduleType)
@@ -140,10 +140,10 @@ func detectModuleChanges(changedFiles []string, config map[string]interface{}) (
 		fmt.Println("Error: module_types not found in config")
 		return []string{}, []string{}
 	}
-	
+
 	// Maps to track unique modules
 	modulePathMap := make(map[string]string)
-	
+
 	// Check each file against module path patterns
 	for _, file := range changedFiles {
 		for typeName, typeConfig := range moduleTypes {
@@ -151,18 +151,18 @@ func detectModuleChanges(changedFiles []string, config map[string]interface{}) (
 			if !ok {
 				continue
 			}
-			
+
 			pathPatterns, ok := typeConfigMap["path_patterns"].([]interface{})
 			if !ok {
 				continue
 			}
-			
+
 			for _, pattern := range pathPatterns {
 				patternStr, ok := pattern.(string)
 				if !ok {
 					continue
 				}
-				
+
 				// Check if file matches the pattern
 				matched, modulePath := matchesPattern(file, patternStr)
 				if matched {
@@ -171,16 +171,16 @@ func detectModuleChanges(changedFiles []string, config map[string]interface{}) (
 			}
 		}
 	}
-	
+
 	// Convert maps to slices for return
 	modulePaths := []string{}
 	moduleTypesList := []string{}
-	
+
 	for path, typeName := range modulePathMap {
 		modulePaths = append(modulePaths, path)
 		moduleTypesList = append(moduleTypesList, typeName)
 	}
-	
+
 	return modulePaths, moduleTypesList
 }
 
@@ -189,12 +189,12 @@ func matchesPattern(filePath, pattern string) (bool, string) {
 	// Convert glob pattern to path components
 	patternParts := strings.Split(pattern, "/")
 	fileParts := strings.Split(filePath, "/")
-	
+
 	// Check if file path has enough components
 	if len(fileParts) < len(patternParts) {
 		return false, ""
 	}
-	
+
 	// Check each pattern component
 	modulePath := ""
 	for i, part := range patternParts {
@@ -209,9 +209,9 @@ func matchesPattern(filePath, pattern string) (bool, string) {
 			modulePath += "/" + part
 		}
 	}
-	
+
 	// Trim leading slash
 	modulePath = strings.TrimPrefix(modulePath, "/")
-	
+
 	return true, modulePath
 }

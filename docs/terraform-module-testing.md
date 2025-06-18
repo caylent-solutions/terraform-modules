@@ -51,21 +51,23 @@ At a minimum, each module must include the following tests:
 
 ## Test Configuration
 
-Each module can include a `test.config` file in its root directory to control test behavior:
+Each module must include a `test.config` file in its root directory to control test behavior:
 
 ```bash
 # Test configuration for this module
 # This file controls test behavior settings
 
-# Set to false to disable idempotency testing
+# Set to true or false to enable/disable idempotency testing
 TERRATEST_IDEMPOTENCY=true
 
 # Add other test configuration settings below
 ```
 
 This configuration file allows module authors to:
-- Disable idempotency testing when not applicable
-- Add other test-specific configuration options
+- Control idempotency testing by setting TERRATEST_IDEMPOTENCY to true or false
+- Add other test-specific configuration settings
+
+The TERRATEST_IDEMPOTENCY variable is loaded by the main Makefile and passed to the module's Makefile when running tests with `make tf-test`. The terraform-terratest-framework uses this environment variable to determine whether to run idempotency tests.
 
 ## Writing Tests
 
@@ -125,11 +127,11 @@ Idempotency testing ensures that applying the same Terraform code multiple times
 
 To control idempotency testing:
 
-1. Create a `test.config` file in the module root directory
+1. Edit the `test.config` file in the module root directory
 2. Set `TERRATEST_IDEMPOTENCY=false` to disable idempotency testing
-3. Set `TERRATEST_IDEMPOTENCY=true` (or omit the setting) to enable idempotency testing
+3. Set `TERRATEST_IDEMPOTENCY=true` to enable idempotency testing
 
-The CI/CD pipeline will automatically detect and apply these settings when running tests.
+When running tests with `make tf-test`, the main Makefile loads this setting from test.config and passes it to the module's Makefile, which then sets it as an environment variable for the terraform-terratest-framework. The framework uses this environment variable to determine whether to run idempotency tests.
 
 ## Example Test Cases
 

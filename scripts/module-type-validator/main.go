@@ -38,7 +38,7 @@ func main() {
 
 	moduleType := detectModuleType(*modulePath, config)
 	fmt.Printf("MODULE_TYPE=%s\n", moduleType)
-	
+
 	// Output for GitHub Actions
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		fmt.Printf("::set-output name=module_type::%s\n", moduleType)
@@ -68,32 +68,32 @@ func detectModuleType(modulePath string, config map[string]interface{}) string {
 		fmt.Printf("Error getting absolute path: %v\n", err)
 		return "unknown"
 	}
-	
+
 	// Get module types from config
 	moduleTypes, ok := config["module_types"].(map[string]interface{})
 	if !ok {
 		fmt.Println("Error: module_types not found in config")
 		return "unknown"
 	}
-	
+
 	// Check each module type's path patterns
 	for typeName, typeConfig := range moduleTypes {
 		typeConfigMap, ok := typeConfig.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		
+
 		pathPatterns, ok := typeConfigMap["path_patterns"].([]interface{})
 		if !ok {
 			continue
 		}
-		
+
 		for _, pattern := range pathPatterns {
 			patternStr, ok := pattern.(string)
 			if !ok {
 				continue
 			}
-			
+
 			// Convert glob pattern to regex
 			regexPattern := globToRegex(patternStr)
 			matched, err := regexp.MatchString(regexPattern, absPath)
@@ -102,7 +102,7 @@ func detectModuleType(modulePath string, config map[string]interface{}) string {
 			}
 		}
 	}
-	
+
 	return "unknown"
 }
 
@@ -112,7 +112,7 @@ func globToRegex(pattern string) string {
 	pattern = strings.ReplaceAll(pattern, ".", "\\.")
 	pattern = strings.ReplaceAll(pattern, "*", ".*")
 	pattern = strings.ReplaceAll(pattern, "?", ".")
-	
+
 	// Ensure the pattern matches the full path
 	return ".*" + pattern + ".*"
 }

@@ -12,7 +12,7 @@ The policy supports three types of changes:
 
 ## Integration with Repository
 
-This policy is implemented as a Rego file at `policies/opa/global/terraform_module_policy.rego` and is evaluated during PR validation.
+This policy is implemented as a Rego file at `policies/opa/terraform/module/single_module_policy.rego` and is evaluated during PR validation.
 
 The policy is configured via the `monorepo-config.json` file, which defines the module root directories to monitor.
 

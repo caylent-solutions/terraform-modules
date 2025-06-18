@@ -22,7 +22,7 @@ func TestExtractCoveragePercentage(t *testing.T) {
 			expected: "0.0%",
 		},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := extractCoveragePercentage(test.output)
@@ -51,7 +51,7 @@ func TestParseCoveragePercentage(t *testing.T) {
 			expected: 0.0,
 		},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := parseCoveragePercentage(test.input)
@@ -80,7 +80,7 @@ func TestExtractStatementCount(t *testing.T) {
 			expected: 0,
 		},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := extractStatementCount(test.output)
@@ -97,7 +97,7 @@ func TestFileExists(t *testing.T) {
 	if !fileExists("/bin/bash") {
 		t.Errorf("Expected /bin/bash to exist")
 	}
-	
+
 	// Test with a file that should not exist
 	if fileExists("/this/file/does/not/exist") {
 		t.Errorf("Expected /this/file/does/not/exist to not exist")

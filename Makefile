@@ -1,4 +1,4 @@
-.PHONY: build-terraform-file-collector configure detect-module-changes go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate pr-opa-policy-test rego-format rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
+.PHONY: build-terraform-file-collector configure detect-module-changes go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate pr-opa-policy-test rego-format rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
 
 # Build and install terraform-file-collector binary
 build-terraform-file-collector:
@@ -22,7 +22,7 @@ go-format:
 	@echo "Fixing code formatting and lint issues..."
 	@mkdir -p ./bin
 	@echo "Building format tool..."
-	@go build -o ./bin/format ./scripts/format/main.go
+	@go build -o ./bin/format ./scripts/go-format/main.go
 	@./bin/format --ignore="bin"
 	@rm -f ./bin/format
 
@@ -86,7 +86,7 @@ module-validate:
 		exit 1; \
 	fi
 	@echo "Validating $(MODULE_TYPE) module at $(MODULE_PATH)..."
-	@go run ./scripts/module-validator/main.go --module-path $(MODULE_PATH) --module-type $(MODULE_TYPE) --config ./monorepo-config.json
+	@go run ./scripts/module-validator/main.go --module-path $(MODULE_PATH) --module-type $(MODULE_TYPE) --config ./monorepo-config.json $(if $(VERBOSE),--verbose,)
 
 # Test PR against OPA policies
 # Usage: make pr-opa-policy-test FEATURE_BRANCH=feature-branch PRIMARY_BRANCH=main POLICY_DIRS=path/to/policies
@@ -120,6 +120,22 @@ rego-unit-test-coverage:
 rego-unit-test-coverage-json:
 	@mkdir -p tmp/coverage
 	@go run scripts/rego-unit-test/main.go --coverage-json --data-path $(PWD) monorepo-config.json
+
+# Run OPA policies against files in a target directory
+# Usage: make run-opa-policies TARGET_PATH=path/to/target POLICY_DIRS=path/to/policies
+run-opa-policies:
+	@if [ -z "$(TARGET_PATH)" ]; then \
+		echo "Error: TARGET_PATH is required"; \
+		exit 1; \
+	fi
+	@if [ -z "$(POLICY_DIRS)" ]; then \
+		echo "Error: POLICY_DIRS is required"; \
+		exit 1; \
+	fi
+	@echo "Running OPA policies on files in $(TARGET_PATH)..."
+	@go run ./scripts/run-opa-policies/main.go \
+		--target-path $(TARGET_PATH) \
+		--policy-dirs $(POLICY_DIRS)
 
 # Check Rego files for linting issues
 rego-lint:

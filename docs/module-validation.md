@@ -102,13 +102,13 @@ Each module must include a `test.config` file that controls test behavior:
 # Test configuration for this module
 # This file controls test behavior settings
 
-# Set to false to disable idempotency testing
+# Set to true or false to enable/disable idempotency testing
 TERRATEST_IDEMPOTENCY=true
 
 # Add other test configuration settings below
 ```
 
-This configuration is automatically loaded when running tests via `make tf-test`.
+This configuration is automatically loaded when running tests via `make tf-test`. The main Makefile reads this file and passes the TERRATEST_IDEMPOTENCY setting to the module's Makefile as an environment variable, which is then used by the terraform-terratest-framework to control idempotency testing.
 
 ## Adding New Module Types
 

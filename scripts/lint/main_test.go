@@ -61,10 +61,10 @@ func TestShouldIgnoreFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set up the global variable used by the function
 			ignoredDirs = tt.ignoreDirs
-			
+
 			// Call the function
 			result := shouldIgnoreFile(tt.filePath)
-			
+
 			// Check the result
 			if result != tt.expected {
 				t.Errorf("shouldIgnoreFile(%q) = %v, want %v", tt.filePath, result, tt.expected)

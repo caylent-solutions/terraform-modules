@@ -16,7 +16,7 @@ violation[result] if {
 	content := input.files[versions_file]
 
 	# Check if it contains the required version constraint
-	not contains(content, "required_version = \">= 1.12.1\"")
+	not regex.match(`required_version\s*=\s*">=\s*1\.12\.1"`, content)
 
 	result := {
 		"policy": "terraform_version_constraint_policy",

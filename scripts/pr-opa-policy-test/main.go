@@ -84,14 +84,14 @@ func main() {
 
 	// Evaluate policies from all directories
 	fmt.Printf("%s=== Evaluating PR policies ===%s\n", ColorBlue, ColorReset)
-	
+
 	violations := false
 	for _, dir := range dirs {
 		dir = strings.TrimSpace(dir)
 		if dir == "" {
 			continue
 		}
-		
+
 		fmt.Printf("Checking policies in directory: %s\n", dir)
 		if hasViolations := evaluatePolicies(input, dir); hasViolations {
 			violations = true
@@ -139,7 +139,7 @@ func getChangedFiles(featureBranch, primaryBranch string, config map[string]inte
 		fmt.Printf("%sWarning: Failed to find merge-base: %v%s\n", ColorYellow, err, ColorReset)
 		return []string{}
 	}
-	
+
 	// Get changed files that would be merged
 	cmd := exec.Command("git", "diff", "--name-only", strings.TrimSpace(string(mergeBase)), featureBranch)
 	output, err := cmd.Output()
@@ -149,7 +149,7 @@ func getChangedFiles(featureBranch, primaryBranch string, config map[string]inte
 	}
 
 	if len(output) == 0 {
-		fmt.Printf("%sNo changed files detected between %s and %s%s\n", 
+		fmt.Printf("%sNo changed files detected between %s and %s%s\n",
 			ColorYellow, primaryBranch, featureBranch, ColorReset)
 		return []string{}
 	}
@@ -187,7 +187,7 @@ func evaluatePolicies(input PolicyInput, policyDir string) bool {
 		fmt.Printf("Evaluating policy: %s\n", policyName)
 
 		// Run OPA evaluation
-		cmd := exec.Command("opa", "eval", "--format", "json", "--data", policyFile, 
+		cmd := exec.Command("opa", "eval", "--format", "json", "--data", policyFile,
 			"data."+strings.Replace(strings.TrimSuffix(filepath.Base(policyFile), ".rego"), "_", ".", -1)+".violation")
 		cmd.Stdin = strings.NewReader(string(inputJSON))
 		output, err := cmd.CombinedOutput()
@@ -210,7 +210,7 @@ func evaluatePolicies(input PolicyInput, policyDir string) bool {
 		if results, ok := result["result"].([]interface{}); ok && len(results) > 0 {
 			violations = true
 			fmt.Printf("%s✗ Policy violations found in %s%s\n", ColorRed, policyName, ColorReset)
-			
+
 			for _, r := range results {
 				if violation, ok := r.(map[string]interface{}); ok {
 					fmt.Printf("  %s%s%s\n", ColorRed, violation["message"], ColorReset)

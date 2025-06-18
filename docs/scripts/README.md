@@ -7,6 +7,7 @@ This directory contains documentation for the various scripts used in the Terraf
 | Script | Description |
 |--------|-------------|
 | [Detect Proposed Git Repo Changes](detect-proposed-git-repo-changes.md) | Detects and validates changes in pull requests to enforce the single module policy and separation policy |
+| [Go Format](go-format.md) | Automatically formats Go code in the repository according to Go's standard formatting rules |
 | [Go Unit Test](go-unit-test.md) | Runs Go unit tests and collects coverage metrics for Go code in the monorepo |
 | [Install Tools](install-tools.md) | Installs and manages development tools using ASDF version manager |
 | [Lint](lint.md) | Performs code quality checks on Go code using gofmt and go vet |
@@ -23,6 +24,9 @@ Most of these scripts are used automatically by the CI/CD pipeline or through ma
 ```bash
 # Install required tools
 make install-tools
+
+# Format Go code
+make go-format
 
 # Run Go unit tests with coverage
 make go-unit-test-coverage
@@ -46,8 +50,8 @@ These scripts form the backbone of the monorepo's CI/CD pipeline:
    - The `module-type-validator` script determines the module type
    - The `module-validator` script validates the module against type-specific policies
 4. For non-module changes (via `non-terraform-validation.yml`):
-   - The `lint` script checks Go code quality
    - The `go-format` script ensures Go code is properly formatted
+   - The `lint` script checks Go code quality
    - The `go-unit-test` script runs Go tests and checks coverage
    - The `rego-lint` script checks Rego code quality
    - The `rego-format` script ensures Rego code is properly formatted
