@@ -32,7 +32,7 @@ format:
 # Clean up temporary files
 clean:
 	@echo "Cleaning up temporary files..."
-	@rm -rf .terraform
+	@find . -type d -name ".terraform" -exec rm -rf {} +
 	@find . -name ".terraform.lock.hcl" -delete
 	@find . -name "terraform.tfstate*" -delete
 	@find . -name ".terraform.tfstate.lock.info" -delete

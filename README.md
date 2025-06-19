@@ -98,7 +98,8 @@ make install-tools
 5. Implement your module following the [structure requirements](docs/terraform-module-structure.md)
 6. Format and lint your code: `make go-format` and `make go-lint`
 7. Validate your module: `make module-validate MODULE_PATH=your/new/module MODULE_TYPE=module_type`
-8. Submit a PR
+8. Test all non-Terraform code: `make test-all-non-tf-module-code`
+9. Submit a PR
 
 For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -113,7 +114,9 @@ Pull requests are automatically validated using GitHub Actions:
 - Based on the type of changes, it triggers either:
   - `terraform-module-validation.yml` for Terraform module changes
   - `non-terraform-validation.yml` for non-Terraform changes
-    - Includes Go code quality checks with minimum 20% test coverage requirement
+    - Includes Go and Rego code quality checks
+    - Runs unit tests and integration tests
+    - Enforces minimum test coverage requirements
 
 ## Documentation
 

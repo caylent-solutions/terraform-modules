@@ -76,6 +76,9 @@ make tf-plan MODULE_PATH=$MODULE_PATH
 
 # Run functional tests
 make tf-test MODULE_PATH=$MODULE_PATH
+
+# Run OPA policy integration tests
+make rego-integration-test
 ```
 
 Alternatively, you can use the module detection script:

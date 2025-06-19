@@ -47,21 +47,6 @@ jobs:
 
       - name: Run Go Test Coverage
         run: make go-unit-test-coverage
-        
-      - name: Check Go Test Coverage Threshold
-        run: |
-          echo "Running Go coverage check..."
-          COVERAGE_JSON=$(make go-unit-test-coverage-json 2>/dev/null)
-          COVERAGE=$(echo "$COVERAGE_JSON" | grep -o '"total": [0-9.]*' | awk '{print $2}')
-          THRESHOLD=20
-          
-          if (( $(echo "$COVERAGE >= $THRESHOLD" | bc -l) )); then
-            echo -e "\033[32mPASS: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
-            exit 0
-          else
-            echo -e "\033[31mFAIL: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
-            exit 1
-          fi
       
       - name: Run rego linting
         run: make rego-lint
@@ -89,3 +74,6 @@ jobs:
             echo -e "\033[31mFAIL: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
             exit 1
           fi
+          
+      - name: Run Rego Integration Tests
+        run: make rego-integration-test

@@ -1,0 +1,23 @@
+# This is a bad Makefile that doesn't match the skeleton
+
+.PHONY: wrong-target clean-all
+
+wrong-target:
+	@echo "This is not the skeleton Makefile"
+	@echo "It has different content"
+
+bad-install:
+	@echo "Wrong install command"
+	npm install  # Wrong package manager
+
+bad-test:
+	@echo "Wrong test command"
+	pytest  # Wrong test framework
+
+clean-all:
+	@echo "Cleaning up temporary files..."
+	@find . -type d -name ".terraform" -exec rm -rf {} + 2>/dev/null || true
+	@find . -name ".terraform.lock.hcl" -delete 2>/dev/null || true
+	@find . -name "terraform.tfstate*" -delete 2>/dev/null || true
+	@find . -name ".terraform.tfstate.lock.info" -delete 2>/dev/null || true
+	@rm -rf /tmp/file-*.txt /tmp/hardcoded*.txt /tmp/nested-hardcoded.txt /tmp/hardcoded-config.json 2>/dev/null || true

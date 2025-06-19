@@ -106,6 +106,12 @@ This document outlines the policies enforced for all Terraform modules in this r
    - Common tests must include validation, formatting, and output verification
    - Example-specific tests must verify the unique features of each example
 
+4. **Policy Integration Tests**
+   - The repository includes a non-compliant module that fails all policies
+   - Integration tests verify that compliant modules pass all policies
+   - Integration tests verify that non-compliant modules fail all policies
+   - Run with `make rego-integration-test`
+
 ### Version and Provider Policies
 
 1. **Terraform Version Constraint**

@@ -9,10 +9,6 @@
     "providers/github/references/",
     "skeletons/"
   ],
-  "test_changed_files": [
-    "providers/aws/collections/example-module/main.tf",
-    "providers/aws/collections/example-module/variables.tf"
-  ],
   "module_types": {
     "skeleton": {
       "path_patterns": ["skeletons/*"],
@@ -97,13 +93,6 @@
       "outputFile": "module-validator.out",
       "testPath": "./scripts/module-validator",
       "coverPkg": "./scripts/module-validator"
-    },
-    {
-      "name": "PR OPA Policy Test",
-      "emoji": "📋",
-      "outputFile": "pr-opa-policy-test.out",
-      "testPath": "./scripts/pr-opa-policy-test",
-      "coverPkg": "./scripts/pr-opa-policy-test"
     },
     {
       "name": "Run OPA Policies",

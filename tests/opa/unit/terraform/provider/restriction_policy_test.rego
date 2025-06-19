@@ -5,18 +5,15 @@ import data.tests.opa.unit.helpers as helpers
 
 # Test that Azure provider violates the policy
 test_azure_provider_violation if {
-	# Mock input with Azure provider
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "provider \"azurerm\" {\n  features {}\n}"}
+	files := {
+		"modules/test-module/main.tf": "provider \"azurerm\" {\n  features {}\n}"
+	}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
-	# Check for violations
 	violations := policy.violation with input as test_input
-
-	# Expect one violation
 	count(violations) == 1
 
-	# Check that the violation is what we expect
 	violations[{
 		"policy": "provider_restriction_policy",
 		"severity": "error",
@@ -28,18 +25,15 @@ test_azure_provider_violation if {
 
 # Test that Google provider violates the policy
 test_google_provider_violation if {
-	# Mock input with Google provider
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "provider \"google\" {\n  project = \"my-project\"\n}"}
+	files := {
+		"modules/test-module/main.tf": "provider \"google\" {\n  project = \"my-project\"\n}"
+	}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
-	# Check for violations
 	violations := policy.violation with input as test_input
-
-	# Expect one violation
 	count(violations) == 1
 
-	# Check that the violation is what we expect
 	violations[{
 		"policy": "provider_restriction_policy",
 		"severity": "error",
@@ -51,18 +45,15 @@ test_google_provider_violation if {
 
 # Test that Google Beta provider violates the policy
 test_google_beta_provider_violation if {
-	# Mock input with Google Beta provider
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "provider \"google-beta\" {\n  project = \"my-project\"\n}"}
+	files := {
+		"modules/test-module/main.tf": "provider \"google-beta\" {\n  project = \"my-project\"\n}"
+	}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
-	# Check for violations
 	violations := policy.violation with input as test_input
-
-	# Expect one violation
 	count(violations) == 1
 
-	# Check that the violation is what we expect
 	violations[{
 		"policy": "provider_restriction_policy",
 		"severity": "error",
@@ -74,18 +65,15 @@ test_google_beta_provider_violation if {
 
 # Test that Azure AD provider violates the policy
 test_azuread_provider_violation if {
-	# Mock input with Azure AD provider
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "provider \"azuread\" {\n  tenant_id = \"tenant-id\"\n}"}
+	files := {
+		"modules/test-module/main.tf": "provider \"azuread\" {\n  tenant_id = \"tenant-id\"\n}"
+	}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
-	# Check for violations
 	violations := policy.violation with input as test_input
-
-	# Expect one violation
 	count(violations) == 1
 
-	# Check that the violation is what we expect
 	violations[{
 		"policy": "provider_restriction_policy",
 		"severity": "error",
@@ -97,28 +85,24 @@ test_azuread_provider_violation if {
 
 # Test that AWS provider passes the policy
 test_aws_provider_no_violation if {
-	# Mock input with AWS provider
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "provider \"aws\" {\n  region = \"us-west-2\"\n}"}
+	files := {
+		"modules/test-module/main.tf": "provider \"aws\" {\n  region = \"us-west-2\"\n}"
+	}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
-	# Check for violations
 	violations := policy.violation with input as test_input
-
-	# Expect no violations
 	count(violations) == 0
 }
 
 # Test that other non-cloud providers pass the policy
 test_other_providers_no_violation if {
-	# Mock input with other providers
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "provider \"random\" {}\n\nprovider \"local\" {}\n\nprovider \"null\" {}"}
+	files := {
+		"modules/test-module/main.tf": "provider \"random\" {}\n\nprovider \"local\" {}\n\nprovider \"null\" {}"
+	}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
-	# Check for violations
 	violations := policy.violation with input as test_input
-
-	# Expect no violations
 	count(violations) == 0
 }

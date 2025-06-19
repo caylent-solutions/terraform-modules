@@ -1,4 +1,4 @@
-.PHONY: build-terraform-file-collector configure detect-module-changes go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate pr-opa-policy-test rego-format rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
+.PHONY: build-terraform-file-collector configure detect-module-changes go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate rego-format rego-integration-test rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies test-all-non-tf-module-code tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
 
 # Build and install terraform-file-collector binary
 build-terraform-file-collector:
@@ -88,23 +88,7 @@ module-validate:
 	@echo "Validating $(MODULE_TYPE) module at $(MODULE_PATH)..."
 	@go run ./scripts/module-validator/main.go --module-path $(MODULE_PATH) --module-type $(MODULE_TYPE) --config ./monorepo-config.json $(if $(VERBOSE),--verbose,)
 
-# Test PR against OPA policies
-# Usage: make pr-opa-policy-test FEATURE_BRANCH=feature-branch PRIMARY_BRANCH=main POLICY_DIRS=path/to/policies
-pr-opa-policy-test:
-	@if [ -z "$(FEATURE_BRANCH)" ]; then \
-		echo "Error: FEATURE_BRANCH is required"; \
-		exit 1; \
-	fi
-	@if [ -z "$(POLICY_DIRS)" ]; then \
-		echo "Error: POLICY_DIRS is required"; \
-		exit 1; \
-	fi
-	@echo "Testing PR from $(FEATURE_BRANCH) to ${PRIMARY_BRANCH:-main}..."
-	go run ./scripts/pr-opa-policy-test/main.go \
-		--config ./monorepo-config.json \
-		--policy-dirs ${POLICY_DIRS} \
-		--feature-branch $(FEATURE_BRANCH) \
-		--primary-branch ${PRIMARY_BRANCH:-main}
+
 
 # Run all Rego unit tests based on monorepo-config.json
 rego-unit-test:
@@ -120,6 +104,42 @@ rego-unit-test-coverage:
 rego-unit-test-coverage-json:
 	@mkdir -p tmp/coverage
 	@go run scripts/rego-unit-test/main.go --coverage-json --data-path $(PWD) monorepo-config.json
+
+# Run all non-Terraform module code tests and linting
+test-all-non-tf-module-code:
+	@echo "Running all Go and Rego tests and linting..."
+	@echo "Running Go linting..."
+	@make go-lint
+	@echo "Running Go unit tests..."
+	@make go-unit-test
+	@echo "Running Rego linting..."
+	@make rego-lint
+	@echo "Running Rego unit tests..."
+	@make rego-unit-test
+	@echo "Running Rego integration tests..."
+	@make rego-integration-test
+	@echo "✅ All non-Terraform module code tests and linting passed"
+
+# Run integration tests for OPA policies against compliant and non-compliant modules
+rego-integration-test:
+	@echo "Running OPA policy integration tests..."
+	@echo "Testing compliant module (should pass all policies)..."
+	make module-validate MODULE_PATH=skeletons/generic-skeleton MODULE_TYPE=skeleton | tee /tmp/compliant-test.log
+	@echo "Checking validation results..."
+	@grep -q "Failed:.*0 policy files" /tmp/compliant-test.log || (echo "❌ Compliant module has failing policies" && exit 1)
+	@grep -q "Errors:.*0 policy files" /tmp/compliant-test.log || (echo "❌ Compliant module has policy errors" && exit 1)
+	@grep -q "Passed:.*policy files" /tmp/compliant-test.log || (echo "❌ Compliant module has no passing policies" && exit 1)
+	@echo "✅ Compliant module passed all policies"
+	@echo ""
+	@echo "Testing non-compliant module (should fail all policies)..."
+	make module-validate MODULE_PATH=tests/opa/test-fixture/non-compliant-tf-module MODULE_TYPE=skeleton | tee /tmp/non-compliant-test.log || true
+	@echo "Checking validation results..."
+	@grep -q "Passed:.*0 policy files" /tmp/non-compliant-test.log || (echo "❌ Non-compliant module has passing policies" && exit 1)
+	@grep -q "Errors:.*0 policy files" /tmp/non-compliant-test.log || (echo "❌ Non-compliant module has policy errors" && exit 1)
+	@grep -q "Failed:.*policy files" /tmp/non-compliant-test.log || (echo "❌ Non-compliant module has no failing policies" && exit 1)
+	@echo "✅ Non-compliant module failed policies as expected"
+	@echo ""
+	@echo "✅ All integration tests passed"
 
 # Run OPA policies against files in a target directory
 # Usage: make run-opa-policies TARGET_PATH=path/to/target POLICY_DIRS=path/to/policies
