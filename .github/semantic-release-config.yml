@@ -1,0 +1,10 @@
+branch: main
+major_on_zero: false
+commit_parser:
+  major_pattern: "^(feat|fix|refactor|perf|build|ci|chore|docs|style|test)(\\([\\w\\s-]+\\))?!:"
+  minor_pattern: "^feat(\\([\\w\\s-]+\\))?:"
+  patch_pattern: "^(fix|refactor|perf|build|ci|chore|docs|style|test)(\\([\\w\\s-]+\\))?:"
+changelog:
+  changelog_file: CHANGELOG.md
+  exclude_commit_patterns:
+    - "^chore\\(release\\):"

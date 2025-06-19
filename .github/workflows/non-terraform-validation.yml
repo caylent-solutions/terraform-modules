@@ -4,12 +4,53 @@ on:
   workflow_call:
 
 jobs:
-  validate-non-terraform:
-    name: Validate Non-Terraform Changes
+  pre-merge-codeql:
+    name: Pre-Merge CodeQL Analysis
     runs-on: ubuntu-24.04
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git checkout -b codeql-validation origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:go"
+
+  validate-non-terraform:
+    name: Validate Non-Terraform Changes
+    runs-on: ubuntu-24.04
+    outputs:
+      code-owners: ${{ steps.codeowners.outputs.owners }}
+      contributor-type: ${{ steps.contributor-check.outputs.contributor-type }}
+      contributor-username: ${{ steps.contributor-check.outputs.contributor-username }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git checkout -b non-terraform-validation origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
 
       - name: Install system dependencies for Python build
         run: |
@@ -77,3 +118,301 @@ jobs:
           
       - name: Run Rego Integration Tests
         run: make rego-integration-test
+
+      - name: Find code owners
+        id: codeowners
+        if: success()
+        run: |
+          DEFAULT_OWNER=""
+          if [ -f ".github/CODEOWNERS" ]; then
+            DEFAULT_OWNER=$(grep -E "^\*" .github/CODEOWNERS | awk '{print $2}')
+          fi
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} ${{ github.event.pull_request.head.sha }})
+          echo "Changed files: $CHANGED_FILES"
+
+          SPECIFIC_OWNERS=""
+          if [ -f ".github/CODEOWNERS" ]; then
+            for FILE in $CHANGED_FILES; do
+              while [[ "$FILE" == */* ]]; do
+                DIR=$(dirname "$FILE")
+                MATCH=$(grep -E "^$DIR/" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $MATCH"
+                  break
+                fi
+                FILE="$DIR"
+              done
+            done
+          fi
+
+          if [ -z "$SPECIFIC_OWNERS" ]; then
+            OWNERS="$DEFAULT_OWNER"
+          else
+            OWNERS="$SPECIFIC_OWNERS"
+          fi
+
+          UNIQUE_OWNERS=$(echo "$OWNERS" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ' | xargs)
+          echo "Final owners: $UNIQUE_OWNERS"
+          echo "owners=$UNIQUE_OWNERS" >> $GITHUB_OUTPUT
+
+      - name: Check contributor type and membership
+        id: contributor-check
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const { data: membership } = await github.rest.orgs.getMembershipForUser({
+              org: 'caylent-solutions',
+              username: pr.user.login
+            }).catch(() => ({ data: null }));
+            
+            const isInternal = membership && membership.state === 'active';
+            const contributorType = isInternal ? 'Internal' : 'External';
+            
+            core.setOutput('contributor-type', contributorType);
+            core.setOutput('contributor-username', pr.user.login);
+            core.setOutput('is-caylent', isInternal.toString());
+            
+      - name: Send PR review request to Slack
+        if: success()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "<!here> :mag: PR Ready for Review - ${{ github.repository }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!here> *PR Review Needed*"
+                  }
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":mag: PR Ready for Review - ${{ github.repository }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR #${{ github.event.pull_request.number }}*: ${{ github.event.pull_request.title }}\nAll validation checks have passed! This PR is ready for review.\n<${{ github.event.pull_request.html_url }}|View Pull Request>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Author:* ${{ steps.contributor-check.outputs.contributor-username }} (${{ steps.contributor-check.outputs.contributor-type }} contributor)\n*Code Owners:* ${{ steps.codeowners.outputs.owners }}\n*Repository:* ${{ github.repository }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Merge Approval
+        if: success() && steps.codeowners.outputs.owners != ''
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: ${{ steps.codeowners.outputs.owners }}
+          minimum-approvals: 1
+          issue-title: "PR Merge Approval Required"
+          issue-body: |
+            **Contributor:** ${{ steps.contributor-check.outputs.contributor-type }} contributor (@${{ steps.contributor-check.outputs.contributor-username }})
+            
+            Please approve this PR for merge.
+            
+            **Code owners:** ${{ steps.codeowners.outputs.owners }}
+
+      - name: Squash merge PR
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              merge_method: 'squash',
+              commit_title: `${pr.title} (#${pr.number})`,
+              commit_message: pr.body || 'Squash merge'
+            });
+
+  post-merge-validation:
+    name: Post-Merge Revalidation
+    runs-on: ubuntu-24.04
+    needs: [validate-non-terraform]
+    if: success()
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+
+      - name: Configure environment
+        run: make configure
+
+      - name: Run Go linting
+        run: make go-lint
+
+      - name: Run Go formatting
+        run: make go-format
+
+      - name: Run Go Unit Tests
+        run: make go-unit-test
+
+      - name: Run Go Test Coverage
+        run: make go-unit-test-coverage
+
+      - name: Run rego linting
+        run: make rego-lint
+
+      - name: Run rego formatting
+        run: make rego-format
+
+      - name: Run rego Unit Tests
+        run: make rego-unit-test
+
+      - name: Run rego Test Coverage
+        run: make rego-unit-test-coverage
+
+      - name: Check Rego Test Coverage Threshold
+        run: |
+          echo "Running Rego coverage check..."
+          COVERAGE_JSON=$(make rego-unit-test-coverage-json 2>/dev/null)
+          COVERAGE=$(echo "$COVERAGE_JSON" | grep -o '"total": [0-9.]*' | awk '{print $2}')
+          THRESHOLD=95
+          
+          if (( $(echo "$COVERAGE >= $THRESHOLD" | bc -l) )); then
+            echo -e "\033[32mPASS: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
+            exit 0
+          else
+            echo -e "\033[31mFAIL: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
+            exit 1
+          fi
+
+      - name: Run Rego Integration Tests
+        run: make rego-integration-test
+
+      - name: Send post-merge validation success to Slack
+        if: success()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "<!here> :white_check_mark: Post-Merge Tests Passed - QA Approval Required",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!here> *QA Certification & Release Approval Required*"
+                  }
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":white_check_mark: All Automated Tests Passed - ${{ github.repository }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "All automated tests have passed on the recent merge! Final QA certification and release approval required.\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Contributors:* ${{ needs.validate-non-terraform.outputs.contributor-username }} (${{ needs.validate-non-terraform.outputs.contributor-type }} contributor)\n*Code Owners:* ${{ needs.validate-non-terraform.outputs.code-owners }}\n*Repository:* ${{ github.repository }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  qa-certification:
+    name: QA Certification
+    runs-on: ubuntu-24.04
+    needs: [validate-non-terraform, post-merge-validation]
+    if: success()
+    steps:
+      - name: QA Certification Step
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: ${{ needs.validate-non-terraform.outputs.code-owners }}
+          minimum-approvals: 1
+          issue-title: "QA Certification & Release Approval Required"
+          issue-body: |
+            **Contributor:** ${{ needs.validate-non-terraform.outputs.contributor-type }} contributor (@${{ needs.validate-non-terraform.outputs.contributor-username }})
+            
+            Please certify QA validation and approve this versioned release for deployment.
+            
+            **Code owners:** ${{ needs.validate-non-terraform.outputs.code-owners }}
+
+      - name: Trigger release workflow
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yml',
+              ref: 'main',
+              inputs: {
+                release_type: 'non-terraform',
+                contributor_type: '${{ needs.validate-non-terraform.outputs.contributor-type }}',
+                contributor_username: '${{ needs.validate-non-terraform.outputs.contributor-username }}'
+              }
+            });

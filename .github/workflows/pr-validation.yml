@@ -9,6 +9,10 @@ jobs:
     name: Validate PR
     if: ${{ github.actor != 'caylent-platform-bot[bot]' }}
     runs-on: ubuntu-24.04
+    outputs:
+      is_module: ${{ steps.detect-module.outputs.is_module }}
+      module_path: ${{ steps.detect-module.outputs.module_path }}
+      module_type: ${{ steps.detect-module.outputs.module_type }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,8 +54,14 @@ jobs:
 
       - name: Run OPA Policy Validation
         run: |
+          echo "Running OPA policy syntax validation..."
           opa version
-          opa eval --format pretty data.global $(find policies/opa/global -name "*.rego")
+          if opa eval --data policies/opa/global --format pretty "data.global" >/dev/null 2>&1; then
+            echo "✅ OPA policies are syntactically valid"
+          else
+            echo "❌ OPA policy validation failed"
+            exit 1
+          fi
 
       - name: Get changed files
         id: changed-files
@@ -77,13 +87,17 @@ jobs:
             echo "module_type=$MODULE_TYPE" >> $GITHUB_OUTPUT
           fi
 
-      - name: Trigger Terraform module validation
-        if: steps.detect-module.outputs.is_module == 'true'
-        uses: ./.github/workflows/terraform-module-validation.yml
-        with:
-          module_path: ${{ steps.detect-module.outputs.module_path }}
-          module_type: ${{ steps.detect-module.outputs.module_type }}
+  terraform-module-validation:
+    name: Terraform Module Validation
+    if: needs.validate.outputs.is_module == 'true'
+    needs: validate
+    uses: ./.github/workflows/terraform-module-validation.yml
+    with:
+      module_path: ${{ needs.validate.outputs.module_path }}
+      module_type: ${{ needs.validate.outputs.module_type }}
 
-      - name: Trigger non-Terraform validation
-        if: steps.detect-module.outputs.is_module != 'true'
-        uses: ./.github/workflows/non-terraform-validation.yml
+  non-terraform-validation:
+    name: Non-Terraform Validation
+    if: needs.validate.outputs.is_module != 'true'
+    needs: validate
+    uses: ./.github/workflows/non-terraform-validation.yml

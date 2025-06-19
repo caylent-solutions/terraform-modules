@@ -258,6 +258,9 @@ func main() {
 
 		if i > 0 {
 			// Only add a blank line between policies
+			fmt.Printf("\n\n")
+		} else {
+			// For the first policy, just add a blank line
 			fmt.Printf("\n")
 		}
 
@@ -740,7 +743,7 @@ func main() {
 	fmt.Printf("\n%s=== Module Validation Summary ===%s\n", ColorBlue, ColorReset)
 	fmt.Printf("%s✅ Passed:%s %d policy files (%d rules)\n", ColorGreen, ColorReset, passedPolicyFiles, passedRules)
 	fmt.Printf("%s❌ Failed:%s %d policy files (%d rules)\n", ColorRed, ColorReset, failedPolicyFiles, failedRules)
-	fmt.Printf("%s⚠️  Errors:%s %d policy files (%d rules)\n", ColorYellow, ColorReset, errorPolicyFiles, errorRules)
+	fmt.Printf("%s⚠️ Errors:%s %d policy files (%d rules)\n", ColorYellow, ColorReset, errorPolicyFiles, errorRules)
 	fmt.Printf("%s🔍 Total:%s %d policy files (%d rules)\n", ColorCyan, ColorReset, len(allPolicyFiles), len(allRuleResults))
 
 	if violations {

@@ -2,14 +2,21 @@
 
 Thank you for your interest in contributing to our Terraform Modules repository! This document provides guidelines and instructions for contributing to this project.
 
+## Contribution Workflow Overview
+
+This repository uses an automated CI/CD pipeline that handles different contributor types:
+
+- **Internal Contributors** (Caylent employees): Streamlined workflow with automatic test execution
+- **External Contributors**: Fork-based workflow with manual approval for test execution
+
 ## How to Contribute
 
 ### For External Contributors
 
-If you're an external contributor (not a Caylent employee), please follow the standard open source fork and pull request workflow:
+External contributors must use the fork and pull request workflow:
 
 1. **Fork the Repository**:
-   - Fork the repository to your GitHub account.
+   - Fork the repository to your GitHub account
    - Clone your fork locally: `git clone https://github.com/YOUR-USERNAME/terraform-modules.git`
 
 2. **Create a Branch**:
@@ -20,9 +27,10 @@ If you're an external contributor (not a Caylent employee), please follow the st
    - Ensure your module adheres to all [module policies](docs/terraform-module-policies.md)
    - Write tests for your module following the required test structure
 
-4. **Validate Your Changes**:
-   - Run validation on your module: `make module-validate MODULE_PATH=your/module/path MODULE_TYPE=<module_type>`
-   - Ensure all tests pass: `cd your/module/path && make test`
+4. **Validate Your Changes Locally**:
+   - Install tools: `make install-tools`
+   - Run validation: `make module-validate MODULE_PATH=your/module/path MODULE_TYPE=<module_type>`
+   - Test locally: `cd your/module/path && make test`
 
 5. **Commit Your Changes**:
    - Use conventional commit messages:
@@ -34,26 +42,30 @@ If you're an external contributor (not a Caylent employee), please follow the st
    - Example: `feat: add aws s3 bucket primitive module`
 
 6. **Submit a Pull Request**:
-   - Go to the original repository and create a pull request from your branch.
-   - Provide a clear description of your module or changes.
-   - Reference any related issues.
+   - Create a pull request from your fork to the main repository
+   - Provide a clear description of your module or changes
+   - Reference any related issues
 
-7. **Review Process**:
-   - Maintainers will review your PR and may request changes.
-   - Once approved, your PR will be merged.
+7. **Automated Review Process**:
+   - **Security Scan**: CodeQL analysis runs automatically in parallel
+   - **Validation**: Your code is validated against all policies
+   - **Manual Approval Required**: A Caylent maintainer must approve test execution for security
+   - **Test Execution**: After approval, comprehensive tests run automatically
+   - **Code Review**: Maintainers review your changes
+   - **Auto-Merge**: Once approved, the PR is automatically merged
 
-### For Caylent Contributors
+### For Caylent Contributors (Internal)
 
-If you're a Caylent employee, please follow the internal development workflow:
+Internal contributors have direct repository access with streamlined workflow:
 
 1. **Clone the Repository**:
-   - Clone the repository directly: `git clone https://github.com/caylent-solutions/terraform-modules.git`
+   - Clone directly: `git clone https://github.com/caylent-solutions/terraform-modules.git`
 
 2. **Create a Branch**:
    - Create a feature branch: `git checkout -b feature/your-module-name`
 
 3. **Create Your Module**:
-   - Start from the skeleton: `cp -r skeletons/generic-skeleton providers/aws/primitives/your-module-name`
+   - Start from skeleton: `cp -r skeletons/generic-skeleton providers/aws/primitives/your-module-name`
    - Follow the [module structure requirements](docs/terraform-module-structure.md)
    - Implement your module functionality
    - Create examples and tests
@@ -62,14 +74,17 @@ If you're a Caylent employee, please follow the internal development workflow:
    - Run validation: `make module-validate MODULE_PATH=providers/aws/primitives/your-module-name MODULE_TYPE=primitive`
    - Run tests: `cd providers/aws/primitives/your-module-name && make test`
 
-5. **Create a Pull Request**:
+5. **Submit a Pull Request**:
    - Push your changes and create a PR to the main branch
-   - Get it reviewed by at least one team member
-   - Address any feedback
+   - Provide clear description and reference any issues
 
-6. **Merge Your PR**:
-   - Once approved, merge your PR to the main branch
-   - Delete your feature branch after merging
+6. **Automated Workflow**:
+   - **Security Scan**: CodeQL analysis runs automatically in parallel
+   - **Validation**: Code validated against all policies
+   - **Test Execution**: Tests run automatically (no manual approval needed)
+   - **Slack Notification**: Team notified when ready for review
+   - **Manual Approval**: Code owners approve the merge
+   - **Auto-Merge**: PR automatically merged after approval
 
 ## Module Types and Structure
 
@@ -118,13 +133,44 @@ When you submit a pull request:
 2. Code owners will be automatically notified for review
 3. All checks must pass and reviews must be approved before merging
 
-### Test Execution in Pull Requests
+## Automated CI/CD Pipeline
 
-- **For Caylent Contributors**: Tests will run automatically as part of the PR validation
-- **For External Contributors**: Tests require explicit approval from a Caylent maintainer before running
-  - This is a security measure to prevent potentially harmful code from running in our CI environment
-  - A Caylent maintainer will review your code and approve the test run if it appears safe
-  - After approval, tests will run automatically
+### Pull Request Validation Flow
+
+When you submit a pull request, the following automated process occurs:
+
+1. **Initial Validation** (`pr-validation.yml`):
+   - Detects if changes are Terraform modules or non-Terraform code
+   - Routes to appropriate validation workflow
+
+2. **For Terraform Module Changes** (`terraform-module-validation.yml`):
+   - **Security Scanning**: CodeQL analysis runs in parallel with validation
+   - **Module Validation**: Policies, linting, formatting, documentation, security checks
+   - **Contributor Detection**: Automatically identifies internal vs external contributors
+   - **Test Execution**:
+     - **Internal Contributors**: Tests run immediately after validation
+     - **External Contributors**: Tests require manual approval via GitHub Environment protection
+   - **Approval Process**: Code owners receive Slack notifications and must approve merge
+   - **Auto-Merge**: PR automatically merges after approval
+
+3. **For Non-Terraform Changes** (`non-terraform-validation.yml`):
+   - **Security Scanning**: CodeQL analysis runs in parallel
+   - **Code Quality**: Go and Rego linting, formatting, unit tests
+   - **Coverage Requirements**: Minimum 95% test coverage for Rego code
+   - **Integration Tests**: End-to-end policy validation
+   - **Auto-Merge**: PR automatically merges after code owner approval
+
+4. **Post-Merge Process**:
+   - **Re-validation**: All checks re-run on merged code
+   - **QA Certification**: Manual approval required for release
+   - **Automatic Release**: Semantic versioning and GitHub release creation
+
+### Security Measures
+
+- **External Contributor Protection**: Tests require explicit approval to prevent malicious code execution
+- **Environment Isolation**: External contributor tests run in protected environments
+- **Code Scanning**: All code scanned for security vulnerabilities before and after merge
+- **Manual Gates**: Multiple approval points ensure code quality and security
 
 ## Getting Help
 

@@ -114,24 +114,64 @@ This task runs the full validation suite (documentation, formatting, linting, OP
 
 For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## CI/CD
+## CI/CD Pipeline
 
-Pull requests are automatically validated using GitHub Actions:
+This repository implements a comprehensive automated CI/CD pipeline that handles different contributor types and change types:
 
-- The `pr-validation.yml` workflow runs on all PRs to the `main` branch
-- It simulates a merge with the target branch
-- It installs system dependencies and tools
-- It checks your changes against the monorepo policies
-- Based on the type of changes, it triggers either:
-  - `terraform-module-validation.yml` for Terraform module changes
-  - `non-terraform-validation.yml` for non-Terraform changes
-    - Includes Go and Rego code quality checks
-    - Runs unit tests and integration tests
-    - Enforces minimum test coverage requirements
+### Pull Request Workflow
+
+1. **Entry Point** (`pr-validation.yml`):
+   - Triggers on all PRs to `main` branch
+   - Simulates merge to test compatibility
+   - Detects change type (Terraform modules vs non-Terraform)
+   - Routes to appropriate validation workflow
+
+2. **Terraform Module Validation** (`terraform-module-validation.yml`):
+   - **Parallel Security Scanning**: CodeQL analysis runs alongside validation
+   - **Comprehensive Validation**: Policies, linting, formatting, docs, security, planning
+   - **Contributor-Aware Testing**:
+     - **Internal Contributors**: Automatic test execution
+     - **External Contributors**: Manual approval required for test execution
+   - **Automated Merge**: After code owner approval
+   - **Post-Merge Validation**: Re-runs all checks on merged code
+   - **QA Gate**: Manual certification required before release
+
+3. **Non-Terraform Validation** (`non-terraform-validation.yml`):
+   - **Parallel Security Scanning**: CodeQL analysis
+   - **Code Quality Checks**: Go and Rego linting, formatting, unit tests
+   - **Coverage Requirements**: 95% minimum test coverage for Rego code
+   - **Integration Testing**: End-to-end policy validation
+   - **Automated Merge**: After code owner approval
+   - **QA Certification**: Manual approval for release
+
+4. **Release Process** (`release.yml`):
+   - **Semantic Versioning**: Automatic version determination
+   - **Module-Specific Releases**: Individual versioning for Terraform modules
+   - **Repository-Wide Releases**: For non-Terraform changes
+   - **Automated Changelog**: Generated from conventional commits
+
+### Security Features
+
+- **Pre-Merge Security Scanning**: CodeQL analysis on all PRs
+- **Post-Merge Security Scanning**: Additional scanning on main branch
+- **External Contributor Protection**: Manual approval required for test execution
+- **Environment Isolation**: Protected environments for external contributions
+- **Multiple Approval Gates**: Code owners and QA certification required
+
+### Monitoring
+
+- **Weekly Health Checks**: All modules tested weekly via `weekly-module-health-check.yml`
+- **Slack Notifications**: Team notifications for reviews, approvals, and releases
+- **Comprehensive Logging**: Full audit trail of all automated processes
 
 ## Documentation
 
-- [Contributing Guidelines](CONTRIBUTING.md)
+### Contributor Guides
+- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute (internal vs external)
+- [Contributor Guide - SDLC Process](CONTRIBUTOR_GUIDE.md) - Complete development lifecycle
+- [Workflow Logic Documentation](WORKFLOW_LOGIC.md) - Detailed CI/CD flow explanation
+
+### Technical Documentation
 - [Terraform Module Structure](docs/terraform-module-structure.md)
 - [Terraform Module Policies](docs/terraform-module-policies.md)
 - [Terraform Module Testing](docs/terraform-module-testing.md)

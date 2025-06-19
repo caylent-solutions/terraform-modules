@@ -11,12 +11,54 @@ on:
         type: string
 
 jobs:
-  validate-module:
-    name: Validate Terraform Module
+  pre-merge-codeql:
+    name: Pre-Merge CodeQL Analysis
     runs-on: ubuntu-24.04
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git checkout -b codeql-validation origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:go"
+
+  validate-module:
+    name: Validate Terraform Module
+    runs-on: ubuntu-24.04
+    outputs:
+      code-owners: ${{ steps.codeowners.outputs.owners }}
+      contributor-type: ${{ steps.contributor-check.outputs.contributor-type }}
+      contributor-username: ${{ steps.contributor-check.outputs.contributor-username }}
+      is-caylent: ${{ steps.contributor-check.outputs.is-caylent }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git checkout -b module-validation origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
 
       - name: Install system dependencies for Python build
         run: |
@@ -60,32 +102,87 @@ jobs:
 
       - name: Run Terraform plan
         run: make tf-plan MODULE_PATH=${{ inputs.module_path }}
-      
-      - name: Check if user is a Caylent contributor
-        id: check-org
-        uses: actions/github-script@v6
+
+      - name: Check contributor type and membership
+        id: contributor-check
+        if: success()
+        uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const username = context.payload.sender.login;
-            try {
-              const { status } = await github.rest.orgs.checkMembershipForUser({
-                org: 'caylent-solutions',
-                username: username
-              });
-              return status === 204; // 204 means user is a member
-            } catch (error) {
-              return false;
-            }
-          result-encoding: string
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const { data: membership } = await github.rest.orgs.getMembershipForUser({
+              org: 'caylent-solutions',
+              username: pr.user.login
+            }).catch(() => ({ data: null }));
+            
+            const isInternal = membership && membership.state === 'active';
+            const contributorType = isInternal ? 'Internal' : 'External';
+            
+            core.setOutput('contributor-type', contributorType);
+            core.setOutput('contributor-username', pr.user.login);
+            core.setOutput('is-caylent', isInternal.toString());
+          
+      - name: Find code owners
+        id: codeowners
+        if: success()
+        run: |
+          DEFAULT_OWNER=""
+          if [ -f ".github/CODEOWNERS" ]; then
+            DEFAULT_OWNER=$(grep -E "^\*" .github/CODEOWNERS | awk '{print $2}')
+          fi
+
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} ${{ github.event.pull_request.head.sha }})
+          echo "Changed files: $CHANGED_FILES"
+
+          SPECIFIC_OWNERS=""
+          if [ -f ".github/CODEOWNERS" ]; then
+            for FILE in $CHANGED_FILES; do
+              while [[ "$FILE" == */* ]]; do
+                DIR=$(dirname "$FILE")
+                MATCH=$(grep -E "^$DIR/" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $MATCH"
+                  break
+                fi
+                FILE="$DIR"
+              done
+            done
+          fi
+
+          if [ -z "$SPECIFIC_OWNERS" ]; then
+            OWNERS="$DEFAULT_OWNER"
+          else
+            OWNERS="$SPECIFIC_OWNERS"
+          fi
+
+          UNIQUE_OWNERS=$(echo "$OWNERS" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ' | xargs)
+          echo "Final owners: $UNIQUE_OWNERS"
+          echo "owners=$UNIQUE_OWNERS" >> $GITHUB_OUTPUT
 
   run-tests-caylent:
     name: Run Terraform Module Tests (Caylent)
-    needs: validate-module
-    if: ${{ needs.validate-module.outputs.check-org == 'true' }}
+    needs: [validate-module]
+    if: ${{ needs.validate-module.outputs.is-caylent == 'true' }}
     runs-on: ubuntu-24.04
+    outputs:
+      result: ${{ always() && job.status }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git checkout -b caylent-tests origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
 
       - name: Install system dependencies for Python build
         run: |
@@ -116,16 +213,105 @@ jobs:
         run: |
           echo "Running tests with module-specific configuration"
           make tf-test MODULE_PATH=${{ inputs.module_path }}
+          
+      - name: Send PR review request to Slack
+        if: success()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "<!here> :mag: Terraform Module PR Ready for Review - ${{ inputs.module_path }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!here> *Terraform Module PR Review Needed*"
+                  }
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":mag: Module Ready for Review - ${{ inputs.module_path }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR #${{ github.event.pull_request.number }}*: ${{ github.event.pull_request.title }}\nAll validation checks have passed! This Terraform module is ready for review.\n<${{ github.event.pull_request.html_url }}|View Pull Request>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.validate-module.outputs.contributor-username }} (${{ needs.validate-module.outputs.contributor-type }} contributor)\n*Code Owners:* ${{ needs.validate-module.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          
+      - name: Merge Approval
+        if: success() && needs.validate-module.outputs.code-owners != ''
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: ${{ needs.validate-module.outputs.code-owners }}
+          minimum-approvals: 1
+          issue-title: "Terraform Module Merge Approval Required"
+          issue-body: |
+            **Module:** ${{ inputs.module_path }}
+            **Contributor:** ${{ needs.validate-module.outputs.contributor-type }} contributor (@${{ needs.validate-module.outputs.contributor-username }})
+            
+            Please approve this Terraform module PR for merge.
+            
+            **Code owners:** ${{ needs.validate-module.outputs.code-owners }}
+            
+      - name: Squash merge PR
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              merge_method: 'squash',
+              commit_title: `${pr.title} (#${pr.number})`,
+              commit_message: pr.body || 'Squash merge'
+            });
 
   run-tests-external:
     name: Run Terraform Module Tests (External)
-    needs: validate-module
-    if: ${{ needs.validate-module.outputs.check-org == 'false' }}
+    needs: [validate-module]
+    if: ${{ needs.validate-module.outputs.is-caylent == 'false' }}
     runs-on: ubuntu-24.04
     environment: external-contributor-test-approval
+    outputs:
+      result: ${{ always() && job.status }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git checkout -b external-tests origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
 
       - name: Install system dependencies for Python build
         run: |
@@ -156,3 +342,224 @@ jobs:
         run: |
           echo "Running tests with module-specific configuration"
           make tf-test MODULE_PATH=${{ inputs.module_path }}
+          
+      - name: Send PR review request to Slack
+        if: success()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "<!here> :mag: Terraform Module PR Ready for Review - ${{ inputs.module_path }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!here> *Terraform Module PR Review Needed*"
+                  }
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":mag: Module Ready for Review - ${{ inputs.module_path }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR #${{ github.event.pull_request.number }}*: ${{ github.event.pull_request.title }}\nAll validation checks have passed! This Terraform module is ready for review.\n<${{ github.event.pull_request.html_url }}|View Pull Request>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.validate-module.outputs.contributor-username }} (${{ needs.validate-module.outputs.contributor-type }} contributor)\n*Code Owners:* ${{ needs.validate-module.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          
+      - name: Merge Approval
+        if: success() && needs.validate-module.outputs.code-owners != ''
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: ${{ needs.validate-module.outputs.code-owners }}
+          minimum-approvals: 1
+          issue-title: "Terraform Module Merge Approval Required"
+          issue-body: |
+            **Module:** ${{ inputs.module_path }}
+            **Contributor:** ${{ needs.validate-module.outputs.contributor-type }} contributor (@${{ needs.validate-module.outputs.contributor-username }})
+            
+            Please approve this Terraform module PR for merge.
+            
+            **Code owners:** ${{ needs.validate-module.outputs.code-owners }}
+            
+      - name: Squash merge PR
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              merge_method: 'squash',
+              commit_title: `${pr.title} (#${pr.number})`,
+              commit_message: pr.body || 'Squash merge'
+            });
+
+  post-merge-validation:
+    name: Post-Merge Terraform Validation
+    runs-on: ubuntu-24.04
+    needs: [validate-module, run-tests-caylent, run-tests-external]
+    if: success() && (needs.run-tests-caylent.result == 'success' || needs.run-tests-external.result == 'success')
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run module validation
+        run: make module-validate MODULE_PATH=${{ inputs.module_path }} MODULE_TYPE=${{ inputs.module_type }}
+
+      - name: Run Terraform linting
+        run: make tf-lint MODULE_PATH=${{ inputs.module_path }}
+
+      - name: Run Terraform formatting check
+        run: make tf-format MODULE_PATH=${{ inputs.module_path }}
+
+      - name: Check Terraform documentation is up-to-date
+        run: make tf-docs-check MODULE_PATH=${{ inputs.module_path }}
+
+      - name: Run security checks
+        run: make tf-security MODULE_PATH=${{ inputs.module_path }}
+
+      - name: Run Terraform plan
+        run: make tf-plan MODULE_PATH=${{ inputs.module_path }}
+
+      - name: Run module tests
+        run: make tf-test MODULE_PATH=${{ inputs.module_path }}
+        
+      - name: Send post-merge validation success to Slack
+        if: success()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "<!here> :white_check_mark: Terraform Module Post-Merge Tests Passed - QA Approval Required",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!here> *QA Certification & Release Approval Required*"
+                  }
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":white_check_mark: All Automated Tests Passed - ${{ inputs.module_path }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "All automated tests have passed on the recent merge! Final QA certification and release approval required.\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Module:* ${{ inputs.module_path }}\n*Contributors:* ${{ needs.validate-module.outputs.contributor-username }} (${{ needs.validate-module.outputs.contributor-type }} contributor)\n*Code Owners:* ${{ needs.validate-module.outputs.code-owners }}\n*Repository:* ${{ github.repository }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  qa-certification:
+    name: QA Certification
+    runs-on: ubuntu-24.04
+    needs: [validate-module, post-merge-validation]
+    if: success()
+    steps:
+      - name: QA Certification Step
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: ${{ needs.validate-module.outputs.code-owners }}
+          minimum-approvals: 1
+          issue-title: "Terraform Module QA Certification & Release Approval Required"
+          issue-body: |
+            **Module:** ${{ inputs.module_path }}
+            **Contributor:** ${{ needs.validate-module.outputs.contributor-type }} contributor (@${{ needs.validate-module.outputs.contributor-username }})
+            
+            Please certify QA validation and approve this versioned release of the Terraform module for deployment.
+            
+            This approval certifies the code quality and authorizes a semantic version release.
+            
+            **Code owners:** ${{ needs.validate-module.outputs.code-owners }}
+
+      - name: Trigger release workflow
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yml',
+              ref: 'main',
+              inputs: {
+                release_type: 'terraform-module',
+                module_path: '${{ inputs.module_path }}',
+                module_type: '${{ inputs.module_type }}',
+                contributor_type: '${{ needs.validate-module.outputs.contributor-type }}',
+                contributor_username: '${{ needs.validate-module.outputs.contributor-username }}'
+              }
+            });
