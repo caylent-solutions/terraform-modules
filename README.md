@@ -169,7 +169,8 @@ This repository implements a comprehensive automated CI/CD pipeline that handles
 ### Contributor Guides
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute (internal vs external)
 - [Contributor Guide - SDLC Process](CONTRIBUTOR_GUIDE.md) - Complete development lifecycle
-- [Workflow Logic Documentation](WORKFLOW_LOGIC.md) - Detailed CI/CD flow explanation
+- [Workflow Logic Documentation](docs/workflow-logic.md) - Detailed CI/CD flow explanation
+- [GitHub Setup Requirements](docs/github-setup-requirements.md) - Required GitHub configuration
 
 ### Technical Documentation
 - [Terraform Module Structure](docs/terraform-module-structure.md)

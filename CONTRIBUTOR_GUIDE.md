@@ -163,7 +163,7 @@ git push origin feature/my-module
 - [Module Structure](docs/terraform-module-structure.md)
 - [Module Policies](docs/terraform-module-policies.md)
 - [Testing Requirements](docs/terraform-module-testing.md)
-- [Complete Workflow Logic](WORKFLOW_LOGIC.md)
+- [Complete Workflow Logic](docs/workflow-logic.md)
 
 ### Support Channels
 - **Issues**: Create GitHub issues for bugs or questions
