@@ -81,6 +81,17 @@ make tf-test MODULE_PATH=$MODULE_PATH
 make rego-integration-test
 ```
 
+## Repository-Wide Testing
+
+For maintainers and CI/CD systems, a comprehensive test suite validates all modules:
+
+```bash
+# Test all Terraform modules (used in weekly GitHub Actions)
+make test-all-terraform-modules
+```
+
+This task discovers all modules and runs the complete validation pipeline (tf-docs-check, tf-format, tf-lint, module-validate, tf-plan, tf-security, tf-test) for each module in parallel. It's designed for automated health checks and not required for individual module development.
+
 Alternatively, you can use the module detection script:
 
 ```bash

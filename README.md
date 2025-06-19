@@ -101,6 +101,17 @@ make install-tools
 8. Test all non-Terraform code: `make test-all-non-tf-module-code`
 9. Submit a PR
 
+### Repository Health Checks
+
+For repository maintainers, a comprehensive test suite is available to validate all Terraform modules:
+
+```bash
+# Test all Terraform modules (runs weekly via GitHub Actions)
+make test-all-terraform-modules
+```
+
+This task runs the full validation suite (documentation, formatting, linting, OPA policies, planning, security, and tests) across all modules in parallel. It's designed for CI/CD use and not required for regular development.
+
 For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## CI/CD

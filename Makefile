@@ -1,4 +1,4 @@
-.PHONY: build-terraform-file-collector configure detect-module-changes go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate rego-format rego-integration-test rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies test-all-non-tf-module-code tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
+.PHONY: build-terraform-file-collector configure detect-module-changes go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate rego-format rego-integration-test rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies test-all-non-tf-module-code test-all-terraform-modules tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
 
 # Build and install terraform-file-collector binary
 build-terraform-file-collector:
@@ -141,6 +141,28 @@ rego-integration-test:
 	@echo ""
 	@echo "✅ All integration tests passed"
 
+# Run tests for all Terraform modules in parallel
+test-all-terraform-modules:
+	@echo "Discovering and testing all Terraform modules..."
+	@find generics/utilities providers/aws/collections providers/aws/primitives providers/aws/references providers/github/collections providers/github/primitives providers/github/references skeletons -mindepth 1 -maxdepth 1 -type d 2>/dev/null | grep -v ".terraform" | sort | xargs -I {} -P 4 sh -c '\
+		echo "\n\033[1;36m=== Testing module: {} ===\033[0m"; \
+		echo "\033[36m→ Running tf-docs-check\033[0m"; \
+		$(MAKE) tf-docs-check MODULE_PATH={} || exit 1; \
+		echo "\033[36m→ Running tf-format\033[0m"; \
+		$(MAKE) tf-format MODULE_PATH={} || exit 1; \
+		echo "\033[36m→ Running tf-lint\033[0m"; \
+		$(MAKE) tf-lint MODULE_PATH={} || exit 1; \
+		echo "\033[36m→ Running module-validate\033[0m"; \
+		$(MAKE) module-validate MODULE_PATH={} MODULE_TYPE=skeleton || exit 1; \
+		echo "\033[36m→ Running tf-plan\033[0m"; \
+		$(MAKE) tf-plan MODULE_PATH={} || exit 1; \
+		echo "\033[36m→ Running tf-security\033[0m"; \
+		$(MAKE) tf-security MODULE_PATH={} || exit 1; \
+		echo "\033[36m→ Running tf-test\033[0m"; \
+		$(MAKE) tf-test MODULE_PATH={} || exit 1; \
+		echo "\033[1;32m✓ Module {} passed all tests\033[0m"; \
+	'
+
 # Run OPA policies against files in a target directory
 # Usage: make run-opa-policies TARGET_PATH=path/to/target POLICY_DIRS=path/to/policies
 run-opa-policies:
@@ -233,7 +255,14 @@ tf-plan:
 		exit 1; \
 	fi
 	@echo "Running Terraform plan for module at $(MODULE_PATH)..."
-	@cd $(MODULE_PATH) && terraform init -backend=false && terraform plan -out=plan.tfplan
+	@cd $(MODULE_PATH) && terraform init -backend=false && \
+	if [ -f "terraform.tfvars" ]; then \
+		terraform plan -out=plan.tfplan; \
+	elif [ -f "examples/basic/terraform.tfvars" ]; then \
+		terraform plan -var-file=examples/basic/terraform.tfvars -out=plan.tfplan; \
+	else \
+		terraform plan -input=false -out=plan.tfplan; \
+	fi
 
 # Check for security issues
 # Usage: make tf-security MODULE_PATH=path/to/module

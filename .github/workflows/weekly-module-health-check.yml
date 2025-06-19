@@ -1,0 +1,43 @@
+name: Weekly Module Health Check
+
+on:
+  schedule:
+    # Run every Sunday at 1:00 AM UTC
+    - cron: '0 1 * * 0'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  test-all-modules:
+    name: Test All Terraform Modules
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run comprehensive module tests
+        run: make test-all-terraform-modules
