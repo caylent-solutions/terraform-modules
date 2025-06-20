@@ -169,8 +169,7 @@ This repository implements a comprehensive automated CI/CD pipeline that handles
 ### Contributor Guides
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute (internal vs external)
 - [Contributor Guide - SDLC Process](CONTRIBUTOR_GUIDE.md) - Complete development lifecycle
-- [Workflow Logic Documentation](docs/workflow-logic.md) - Detailed CI/CD flow explanation
-- [GitHub Setup Requirements](docs/github-setup-requirements.md) - Required GitHub configuration
+- [Workflow Logic Documentation](docs/WORKFLOW_LOGIC.md) - Detailed CI/CD flow explanation
 
 ### Technical Documentation
 - [Terraform Module Structure](docs/terraform-module-structure.md)
@@ -180,13 +179,13 @@ This repository implements a comprehensive automated CI/CD pipeline that handles
 - [Monorepo Configuration](docs/monorepo-config.md)
 
 ### Scripts Documentation
+- [Scripts Documentation Index](docs/scripts/README.md) - Complete index of all scripts
 - [Detect Proposed Git Repo Changes](docs/scripts/detect-proposed-git-repo-changes.md)
 - [Go Format](docs/scripts/go-format.md)
+- [Go Lint](docs/scripts/go-lint.md)
 - [Go Unit Test](docs/scripts/go-unit-test.md)
 - [Install Tools](docs/scripts/install-tools.md)
-- [Go Format](docs/scripts/go-format.md)
-- [Go Lint](docs/scripts/go-lint.md)
 - [Module Type Validator](docs/scripts/module-type-validator.md)
 - [Module Validator](docs/scripts/module-validator.md)
-- [PR OPA Policy Test](docs/scripts/pr-opa-policy-test.md)
+- [Rego Unit Test](docs/scripts/rego-unit-test.md)
 - [Terraform File Collector](docs/scripts/terraform-file-collector.md)

@@ -26,7 +26,7 @@ This directory contains documentation for the Terraform Modules repository.
 - [Go Lint](scripts/go-lint.md) - Performs code quality checks on Go code
 - [Module Type Validator](scripts/module-type-validator.md) - Detects module type based on path
 - [Module Validator](scripts/module-validator.md) - Validates modules against type-specific policies
-- [PR OPA Policy Test](scripts/pr-opa-policy-test.md) - Evaluates PRs against OPA policies
+- [Rego Unit Test](scripts/rego-unit-test.md) - Runs OPA/Rego unit tests and collects coverage metrics
 - [Terraform File Collector](scripts/terraform-file-collector.md) - Collects Terraform files for policy evaluation
 
 ## Contributing

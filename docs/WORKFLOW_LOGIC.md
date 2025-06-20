@@ -9,6 +9,7 @@
    - Checkout code with full history
    - **Simulate merge** to test compatibility
    - Install system dependencies + ASDF + tools
+   - Install Go dependencies
    - Validate OPA policy syntax
    - Get changed files and update config
    - **Detect module changes** → Sets `IS_MODULE`, `MODULE_PATH`, `MODULE_TYPE`
@@ -33,9 +34,11 @@
 2. **Validate Module** (Runs in Parallel with CodeQL)
    - Checkout code
    - **Simulate merge** on `module-validation` branch
-   - Install dependencies + tools
+   - Install system dependencies + ASDF + tools
+   - Configure environment
    - Run module validation against policies
    - Run Terraform: lint, format check, docs check, security, plan
+   - Run Go: lint and format check on module tests
    - Check contributor type (Internal/External)
    - Find code owners from CODEOWNERS file
 
@@ -58,7 +61,10 @@
 
 5. **Post-Merge Validation** (Depends: successful merge)
    - Checkout main branch (no merge simulation needed)
+   - Install system dependencies + ASDF + tools
+   - Configure environment
    - Re-run all validation steps on merged code
+   - Run module tests
    - Send Slack notification for QA approval
 
 6. **QA Certification** (Depends: post-merge-validation)
@@ -81,7 +87,8 @@
 2. **Validate Non-Terraform** (Runs in Parallel with CodeQL)
    - Checkout code
    - **Simulate merge** on `non-terraform-validation` branch
-   - Install dependencies + tools
+   - Install system dependencies + ASDF + tools
+   - Configure environment
    - Run Go: lint, format, unit tests, coverage
    - Run Rego: lint, format, unit tests, coverage (95% threshold)
    - Run Rego integration tests
@@ -93,6 +100,8 @@
 
 3. **Post-Merge Validation** (Depends: validate-non-terraform)
    - Checkout main branch (no merge simulation needed)
+   - Install system dependencies + ASDF + tools
+   - Configure environment
    - Re-run all validation steps
    - Send Slack notification for QA approval
 
@@ -153,7 +162,8 @@
 
 ### Flow:
 - Checkout code (no merge simulation - testing main branch)
-- Install dependencies + tools
+- Install system dependencies + ASDF + tools
+- Configure environment
 - Run `test-all-terraform-modules` make target
 - Tests all modules in parallel (docs, format, lint, validate, plan, security, test)
 

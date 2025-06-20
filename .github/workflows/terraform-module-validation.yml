@@ -115,7 +115,6 @@ jobs:
 
       - name: Check contributor type and membership
         id: contributor-check
-        if: success()
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -125,15 +124,15 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             });
-            
+
             const { data: membership } = await github.rest.orgs.getMembershipForUser({
               org: 'caylent-solutions',
               username: pr.user.login
             }).catch(() => ({ data: null }));
-            
+
             const isInternal = membership && membership.state === 'active';
             const contributorType = isInternal ? 'Internal' : 'External';
-            
+
             core.setOutput('contributor-type', contributorType);
             core.setOutput('contributor-username', pr.user.login);
             core.setOutput('is-caylent', isInternal.toString());
@@ -180,8 +179,6 @@ jobs:
     needs: [validate-module]
     if: ${{ needs.validate-module.outputs.is-caylent == 'true' }}
     runs-on: ubuntu-24.04
-    outputs:
-      result: ${{ always() && job.status }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -281,7 +278,7 @@ jobs:
             Please approve this Terraform module PR for merge.
             
             **Code owners:** ${{ needs.validate-module.outputs.code-owners }}
-            
+        environment: merge-approval
       - name: Squash merge PR
         if: success()
         uses: actions/github-script@v7
@@ -309,8 +306,6 @@ jobs:
     if: ${{ needs.validate-module.outputs.is-caylent == 'false' }}
     runs-on: ubuntu-24.04
     environment: external-contributor-test-approval
-    outputs:
-      result: ${{ always() && job.status }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -410,7 +405,7 @@ jobs:
             Please approve this Terraform module PR for merge.
             
             **Code owners:** ${{ needs.validate-module.outputs.code-owners }}
-            
+        environment: merge-approval
       - name: Squash merge PR
         if: success()
         uses: actions/github-script@v7
@@ -436,7 +431,7 @@ jobs:
     name: Post-Merge Terraform Validation
     runs-on: ubuntu-24.04
     needs: [validate-module, run-tests-caylent, run-tests-external]
-    if: success() && (needs.run-tests-caylent.result == 'success' || needs.run-tests-external.result == 'success')
+    if: needs.run-tests-caylent.result == 'success' || needs.run-tests-external.result == 'success'
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4

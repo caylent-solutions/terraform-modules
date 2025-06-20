@@ -385,11 +385,17 @@ jobs:
     needs: [validate-non-terraform, post-merge-validation]
     if: success()
     steps:
+      - name: Determine Approvers
+        id: determine-approvers
+        run: |
+          # Use the code owners as approvers
+          echo "approvers=${{ needs.validate-non-terraform.outputs.code-owners }}" >> $GITHUB_OUTPUT
+
       - name: QA Certification Step
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ github.TOKEN }}
-          approvers: ${{ needs.validate-non-terraform.outputs.code-owners }}
+          approvers: ${{ steps.determine-approvers.outputs.approvers }}
           minimum-approvals: 1
           issue-title: "QA Certification & Release Approval Required"
           issue-body: |
