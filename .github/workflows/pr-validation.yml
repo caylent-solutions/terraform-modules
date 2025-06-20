@@ -77,8 +77,18 @@ jobs:
       - name: Detect proposed git repo changes
         id: detect-module
         run: |
-          # Run the module detection script
-          eval $(make detect-module-changes)
+          # Run the module detection script and capture output
+          OUTPUT=$(make detect-module-changes 2>&1)
+          echo "Script output:"
+          echo "$OUTPUT"
+          
+          # Extract variables from output
+          IS_MODULE=$(echo "$OUTPUT" | grep "^IS_MODULE=" | cut -d'=' -f2)
+          MODULE_PATH=$(echo "$OUTPUT" | grep "^MODULE_PATH=" | cut -d'=' -f2)
+          MODULE_TYPE=$(echo "$OUTPUT" | grep "^MODULE_TYPE=" | cut -d'=' -f2)
+          
+          # Set defaults if empty
+          IS_MODULE=${IS_MODULE:-false}
           
           # Pass the outputs to GitHub Actions
           echo "is_module=$IS_MODULE" >> $GITHUB_OUTPUT
