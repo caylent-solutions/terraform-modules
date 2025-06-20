@@ -36,7 +36,6 @@
     "temp_file_pattern": "terraform-files-*.json",
     "go_unit_test": "./scripts/go-unit-test/main.go",
     "rego_unit_test": "./scripts/rego-unit-test/main.go",
-    "run_opa_policies": "./scripts/run-opa-policies/main.go",
     "excluded_dirs": [".terraform", ".git", "node_modules", ".terragrunt-cache"],
     "important_dirs": ["examples", "tests"],
     "directory_marker": "directory",
@@ -105,13 +104,6 @@
       "outputFile": "module-validator.out",
       "testPath": "./scripts/module-validator",
       "coverPkg": "./scripts/module-validator"
-    },
-    {
-      "name": "Run OPA Policies",
-      "emoji": "🔒",
-      "outputFile": "run-opa-policies.out",
-      "testPath": "./scripts/run-opa-policies",
-      "coverPkg": "./scripts/run-opa-policies"
     },
     {
       "name": "Terraform File Collector",
