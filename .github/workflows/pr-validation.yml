@@ -91,6 +91,10 @@ jobs:
     name: Terraform Module Validation
     if: needs.validate.outputs.is_module == 'true'
     needs: validate
+    permissions:
+      actions: read
+      security-events: write
+      contents: read
     uses: ./.github/workflows/terraform-module-validation.yml
     with:
       module_path: ${{ needs.validate.outputs.module_path }}
@@ -100,4 +104,8 @@ jobs:
     name: Non-Terraform Validation
     if: needs.validate.outputs.is_module != 'true'
     needs: validate
+    permissions:
+      actions: read
+      security-events: write
+      contents: read
     uses: ./.github/workflows/non-terraform-validation.yml
