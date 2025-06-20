@@ -12,7 +12,7 @@ import (
 func main() {
 	modulePath := flag.String("module-path", "", "Path to the Terraform module")
 	outputPath := flag.String("output", "", "Path to output JSON file")
-	configPath := flag.String("config", "./monorepo-config.json", "Path to the monorepo configuration file")
+	configPath := flag.String("config", "", "Path to the monorepo configuration file")
 	flag.Parse()
 
 	if *modulePath == "" {
@@ -22,6 +22,11 @@ func main() {
 
 	if *outputPath == "" {
 		fmt.Println("Error: Output path is required")
+		os.Exit(1)
+	}
+
+	if *configPath == "" {
+		fmt.Println("Error: Configuration file path is required")
 		os.Exit(1)
 	}
 
