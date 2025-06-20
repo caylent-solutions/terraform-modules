@@ -28,8 +28,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git fetch origin ${{ github.base_ref }}
           git checkout -b codeql-validation origin/${{ github.base_ref }}
-          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
-
+          git merge --no-commit --no-ff ${{ github.sha }}
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -58,7 +57,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git fetch origin ${{ github.base_ref }}
           git checkout -b module-validation origin/${{ github.base_ref }}
-          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
+          git merge --no-commit --no-ff ${{ github.sha }}
 
       - name: Install system dependencies for Python build
         run: |
@@ -120,22 +119,29 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             try {
-              const { data: pr } = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: context.issue.number
-              });
-
-              const { data: membership } = await github.rest.orgs.getMembershipForUser({
-                org: 'caylent-solutions',
-                username: pr.user.login
-              }).catch(() => ({ data: null }));
-
-              const isInternal = membership && membership.state === 'active';
-              const contributorType = isInternal ? 'Internal' : 'External';
-
+              // Get PR information from context instead of API call
+              const username = context.payload.pull_request.user.login;
+              
+              // Try to get organization membership (may fail due to permissions)
+              let isInternal = false;
+              let contributorType = 'External';
+              
+              try {
+                const { data: membership } = await github.rest.orgs.getMembershipForUser({
+                  org: 'caylent-solutions',
+                  username: username
+                });
+                isInternal = membership && membership.state === 'active';
+                contributorType = isInternal ? 'Internal' : 'External';
+              } catch (orgError) {
+                console.log('Cannot check organization membership (may be due to permissions), defaulting to External');
+                // Default to External if we can't check org membership
+                isInternal = false;
+                contributorType = 'External';
+              }
+              
               core.setOutput('type', contributorType);
-              core.setOutput('username', pr.user.login);
+              core.setOutput('username', username);
               core.setOutput('internal', isInternal.toString());
             } catch (error) {
               console.log('Error checking contributor:', error);
@@ -153,7 +159,7 @@ jobs:
             DEFAULT_OWNER=$(grep -E "^\*" .github/CODEOWNERS | awk '{print $2}')
           fi
 
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} ${{ github.event.pull_request.head.sha }})
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD)
           echo "Changed files: $CHANGED_FILES"
 
           SPECIFIC_OWNERS=""
@@ -203,7 +209,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git fetch origin ${{ github.base_ref }}
           git checkout -b caylent-tests origin/${{ github.base_ref }}
-          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
+          git merge --no-commit --no-ff ${{ github.sha }}
 
       - name: Install system dependencies for Python build
         run: |
@@ -329,7 +335,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git fetch origin ${{ github.base_ref }}
           git checkout -b external-tests origin/${{ github.base_ref }}
-          git merge --no-commit --no-ff ${{ github.event.pull_request.head.sha }}
+          git merge --no-commit --no-ff ${{ github.sha }}
 
       - name: Install system dependencies for Python build
         run: |

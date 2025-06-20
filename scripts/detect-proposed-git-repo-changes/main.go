@@ -30,9 +30,6 @@ func main() {
 	if len(changedFiles) == 0 {
 		fmt.Println("No changed files detected")
 		fmt.Println("IS_MODULE=false")
-		if os.Getenv("GITHUB_ACTIONS") == "true" {
-			fmt.Println("::set-output name=is_module::false")
-		}
 		os.Exit(0)
 	}
 
@@ -89,18 +86,9 @@ func main() {
 		fmt.Printf("MODULE_PATH=%s\n", modulePath)
 		fmt.Printf("MODULE_TYPE=%s\n", moduleType)
 		fmt.Println("IS_MODULE=true")
-
-		if os.Getenv("GITHUB_ACTIONS") == "true" {
-			fmt.Printf("::set-output name=module_path::%s\n", modulePath)
-			fmt.Printf("::set-output name=module_type::%s\n", moduleType)
-			fmt.Println("::set-output name=is_module::true")
-		}
 	} else {
 		fmt.Println("No module changes detected")
 		fmt.Println("IS_MODULE=false")
-		if os.Getenv("GITHUB_ACTIONS") == "true" {
-			fmt.Println("::set-output name=is_module::false")
-		}
 	}
 }
 
