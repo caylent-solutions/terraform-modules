@@ -126,40 +126,49 @@ jobs:
         run: |
           set +e  # Allow commands to fail
           
-          DEFAULT_OWNER=""
-          if [ -f ".github/CODEOWNERS" ]; then
-            DEFAULT_OWNER=$(grep -E "^\*" .github/CODEOWNERS | awk '{print $2}')
-          fi
-
           CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...origin/${{ github.head_ref }})
           echo "Changed files: $CHANGED_FILES"
 
           SPECIFIC_OWNERS=""
           if [ -f ".github/CODEOWNERS" ]; then
             for FILE in $CHANGED_FILES; do
-              while [[ "$FILE" == */* ]]; do
-                DIR=$(dirname "$FILE")
-                MATCH=$(grep -E "^$DIR/" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
-                if [ -n "$MATCH" ]; then
-                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $MATCH"
+              # Check for exact file pattern matches (like *.yml, *.json)
+              FILE_EXT="${FILE##*.}"
+              if [ "$FILE_EXT" != "$FILE" ]; then
+                PATTERN_MATCH=$(grep -E "^\*\.$FILE_EXT" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$PATTERN_MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $PATTERN_MATCH"
+                  continue
+                fi
+              fi
+              
+              # Check for directory-based matches
+              TEMP_FILE="$FILE"
+              while [[ "$TEMP_FILE" == */* ]]; do
+                DIR=$(dirname "$TEMP_FILE")
+                # Check for exact directory match
+                DIR_MATCH=$(grep -E "^$DIR/" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$DIR_MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $DIR_MATCH"
                   break
                 fi
-                FILE="$DIR"
+                # Check for directory pattern with trailing slash
+                PATTERN_MATCH=$(grep -E "^/$DIR/" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$PATTERN_MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $PATTERN_MATCH"
+                  break
+                fi
+                TEMP_FILE="$DIR"
               done
             done
           fi
 
-          if [ -z "$SPECIFIC_OWNERS" ]; then
-            OWNERS="$DEFAULT_OWNER"
-          else
-            OWNERS="$SPECIFIC_OWNERS"
-          fi
-
-          UNIQUE_OWNERS=$(echo "$OWNERS" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ' | xargs)
-          # Fail if no code owners found
+          # Require specific owners to be found - no fallback to default
+          UNIQUE_OWNERS=$(echo "$SPECIFIC_OWNERS" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ' | xargs)
           if [ -z "$UNIQUE_OWNERS" ]; then
-            echo "❌ ERROR: No code owners found for the changed files"
-            echo "Please ensure CODEOWNERS file exists and covers all changed files"
+            echo "❌ ERROR: No specific code owners found for the changed files"
+            echo "Changed files must match specific patterns in CODEOWNERS, not just the default '*' pattern"
+            echo "Please ensure CODEOWNERS file has explicit patterns covering all changed files"
             exit 1
           fi
           echo "Final owners: $UNIQUE_OWNERS"
@@ -278,6 +287,60 @@ jobs:
               commit_title: `${pr.title} (#${pr.number})`,
               commit_message: pr.body || 'Squash merge'
             });
+
+      - name: Send PR failure notification to Slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "<!here> :x: Non-Terraform Validation Failed - ${{ github.repository }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!here> *Non-Terraform Validation Failed*"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:* ${{ steps.check-contributor.outputs.username }} (${{ steps.check-contributor.outputs.type }} contributor)"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Code Owners:* ${{ steps.codeowners.outputs.owners }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR:* <${{ github.event.pull_request.html_url || github.server_url }}/${{ github.repository }}/pull/${{ github.event.number }}|View PR>\n*Branch:* `${{ github.head_ref }}`"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow Run"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
   post-merge-validation:
     name: Post-Merge Revalidation
