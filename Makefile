@@ -23,7 +23,7 @@ go-format:
 	@mkdir -p ./bin
 	@echo "Building format tool..."
 	@go build -o ./bin/format ./scripts/go-format/main.go
-	@./bin/format --ignore="bin"
+	@./bin/format --config ./monorepo-config.json || { echo "Format check failed ❌"; rm -f ./bin/format; exit 1; }
 	@rm -f ./bin/format
 
 # Install Go dependencies
@@ -37,9 +37,9 @@ go-lint:
 	@mkdir -p ./bin
 	@echo "Building lint tool..."
 	@go build -o ./bin/lint ./scripts/lint/main.go
-	@./bin/lint --ignore="bin" || echo "Lint check failed ❌"
-	@rm -f ./bin/lint
+	@./bin/lint --config ./monorepo-config.json || { echo "Lint check failed ❌"; rm -f ./bin/lint; exit 1; }
 	@echo "Lint check complete"
+	@rm -f ./bin/lint
 
 # Run all Go unit tests based on monorepo-config.json
 go-unit-test:
@@ -182,7 +182,7 @@ run-opa-policies:
 # Check Rego files for linting issues
 rego-lint:
 	@echo "Checking Rego files for linting issues..."
-	@find policies -name "*.rego" -type f | xargs -I{} opa check {} || echo "Rego lint check failed ❌"
+	@find policies -name "*.rego" -type f | xargs -I{} opa check {} || { echo "Rego lint check failed ❌"; exit 1; }
 	@echo "Rego lint check complete"
 
 # Fix Rego formatting issues

@@ -39,7 +39,19 @@
     "run_opa_policies": "./scripts/run-opa-policies/main.go",
     "excluded_dirs": [".terraform", ".git", "node_modules", ".terragrunt-cache"],
     "important_dirs": ["examples", "tests"],
-    "directory_marker": "directory"
+    "directory_marker": "directory",
+    "lint_directories": [
+      "scripts/detect-proposed-git-repo-changes",
+      "scripts/go-format",
+      "scripts/go-unit-test",
+      "scripts/install-tools",
+      "scripts/lint",
+      "scripts/module-type-validator",
+      "scripts/module-validator",
+      "scripts/rego-unit-test",
+      "scripts/run-opa-policies",
+      "scripts/terraform-file-collector"
+    ]
   },
   "rego_tests": [
     "tests/opa/unit/global",

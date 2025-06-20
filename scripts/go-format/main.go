@@ -1,35 +1,48 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
 var (
-	ignoredDirs []string
+	ignoredDirs  []string
+	dirsToFormat []string
 )
 
+type Config struct {
+	Scripts struct {
+		LintDirectories []string `json:"lint_directories"`
+	} `json:"scripts"`
+}
+
 func main() {
-	ignoreFlag := flag.String("ignore", "", "Comma-separated list of directories to ignore during formatting")
+	configPath := flag.String("config", "", "Path to config JSON file (required)")
 	flag.Parse()
 
-	if *ignoreFlag != "" {
-		ignoredDirs = strings.Split(*ignoreFlag, ",")
-		for i, dir := range ignoredDirs {
-			ignoredDirs[i] = strings.TrimSpace(dir)
-		}
-		if len(ignoredDirs) == 1 {
-			fmt.Printf("⚠️  Ignoring directory during formatting: %s\n", ignoredDirs[0])
-		} else if len(ignoredDirs) > 1 {
-			fmt.Printf("⚠️  Ignoring directories during formatting: %s\n", strings.Join(ignoredDirs, ", "))
-		}
+	if *configPath == "" {
+		fmt.Println("Error: --config flag is required")
+		os.Exit(1)
 	}
 
-	loadAsdf()
+	// Load config file
+	config, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Printf("Error loading config file: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Set directories to format
+	dirsToFormat = config.Scripts.LintDirectories
+	if len(dirsToFormat) == 0 {
+		fmt.Println("Error: No directories to format specified in config")
+		os.Exit(1)
+	}
+
 	os.Setenv("GOGC", "off")
 
 	fmt.Println("Formatting Go code...")
@@ -37,43 +50,55 @@ func main() {
 }
 
 func fixGoFormatting() {
-	// First, find all files that need formatting
-	cmd := exec.Command("gofmt", "-l", ".")
-	output, err := cmd.Output()
-	if err != nil {
-		fmt.Printf("Error running gofmt: %v\n", err)
-		os.Exit(1)
-	}
-
-	files := strings.TrimSpace(string(output))
-	if files == "" {
-		fmt.Println("✅ All files already properly formatted")
-		return
-	}
-
-	// Format each file that needs it
 	filesFixed := 0
-	for _, file := range strings.Split(files, "\n") {
-		if shouldIgnoreFile(file) {
-			continue
-		}
+	exitCode := 0
 
-		// Format the file
-		cmd := exec.Command("gofmt", "-w", file)
-		_, err := cmd.CombinedOutput()
+	for _, dir := range dirsToFormat {
+		// Find files that need formatting in this directory
+		cmd := exec.Command("gofmt", "-l", dir)
+		output, err := cmd.Output()
 		if err != nil {
-			fmt.Printf("❌ Error formatting %s: %v\n", file, err)
+			fmt.Printf("Error running gofmt on %s: %v\n", dir, err)
+			os.Exit(1)
+		}
+
+		files := strings.TrimSpace(string(output))
+		if files == "" {
+			fmt.Printf("✅ All files in %s already properly formatted\n", dir)
 			continue
 		}
 
-		fmt.Printf("Fixed: %s\n", file)
-		filesFixed++
+		// Format each file that needs it
+		for _, file := range strings.Split(files, "\n") {
+			if file == "" {
+				continue
+			}
+			if shouldIgnoreFile(file) {
+				continue
+			}
+
+			// Format the file
+			cmd := exec.Command("gofmt", "-w", file)
+			_, err := cmd.CombinedOutput()
+			if err != nil {
+				fmt.Printf("❌ Error formatting %s: %v\n", file, err)
+				exitCode = 1
+				continue
+			}
+
+			fmt.Printf("Fixed: %s\n", file)
+			filesFixed++
+		}
 	}
 
 	if filesFixed > 0 {
 		fmt.Printf("\n✅ Formatting complete: fixed %d file(s)\n", filesFixed)
 	} else {
 		fmt.Println("\n✅ No files needed formatting")
+	}
+
+	if exitCode != 0 {
+		os.Exit(exitCode)
 	}
 }
 
@@ -89,27 +114,16 @@ func shouldIgnoreFile(filePath string) bool {
 	return false
 }
 
-func loadAsdf() {
-	homeDir, err := os.UserHomeDir()
+func loadConfig(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("failed to read config file: %v", err)
 	}
 
-	asdfPath := filepath.Join(homeDir, ".asdf", "asdf.sh")
-	if _, err := os.Stat(asdfPath); os.IsNotExist(err) {
-		// asdf not installed, skip loading
-		return
+	var config Config
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse config file: %v", err)
 	}
 
-	cmd := exec.Command("bash", "-c", fmt.Sprintf(". %s && env", asdfPath))
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return
-	}
-
-	for _, line := range strings.Split(string(output), "\n") {
-		if parts := strings.SplitN(line, "=", 2); len(parts) == 2 {
-			os.Setenv(parts[0], parts[1])
-		}
-	}
+	return &config, nil
 }
