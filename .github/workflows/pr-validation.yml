@@ -127,3 +127,26 @@ jobs:
       security-events: write
       contents: read
     uses: ./.github/workflows/non-terraform-validation.yml
+
+  validation-complete:
+    name: Validation Complete
+    runs-on: ubuntu-24.04
+    needs: [validate, terraform-module-validation, non-terraform-validation]
+    if: always() && needs.validate.result == 'success'
+    steps:
+      - name: Check validation results
+        run: |
+          if [[ "${{ needs.validate.outputs.is_module }}" == "true" ]]; then
+            if [[ "${{ needs.terraform-module-validation.result }}" != "success" ]]; then
+              echo "❌ Terraform module validation failed"
+              exit 1
+            fi
+            echo "✅ Terraform module validation passed"
+          else
+            if [[ "${{ needs.non-terraform-validation.result }}" != "success" ]]; then
+              echo "❌ Non-terraform validation failed"
+              exit 1
+            fi
+            echo "✅ Non-terraform validation passed"
+          fi
+          echo "🎉 All required validations completed successfully"
