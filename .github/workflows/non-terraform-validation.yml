@@ -121,8 +121,10 @@ jobs:
 
       - name: Find code owners
         id: codeowners
-        if: success()
+        if: always()
         run: |
+          set +e  # Allow commands to fail
+          
           DEFAULT_OWNER=""
           if [ -f ".github/CODEOWNERS" ]; then
             DEFAULT_OWNER=$(grep -E "^\*" .github/CODEOWNERS | awk '{print $2}')
@@ -153,33 +155,44 @@ jobs:
           fi
 
           UNIQUE_OWNERS=$(echo "$OWNERS" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ' | xargs)
+          # Fail if no code owners found
+          if [ -z "$UNIQUE_OWNERS" ]; then
+            echo "❌ ERROR: No code owners found for the changed files"
+            echo "Please ensure CODEOWNERS file exists and covers all changed files"
+            exit 1
+          fi
           echo "Final owners: $UNIQUE_OWNERS"
           echo "owners=$UNIQUE_OWNERS" >> $GITHUB_OUTPUT
 
       - name: Check contributor type and membership
         id: check-contributor
-        if: success()
+        if: always()
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number
-            });
-            
-            const { data: membership } = await github.rest.orgs.getMembershipForUser({
-              org: 'caylent-solutions',
-              username: pr.user.login
-            }).catch(() => ({ data: null }));
-            
-            const isInternal = membership && membership.state === 'active';
-            const contributorType = isInternal ? 'Internal' : 'External';
-            
-            core.setOutput('type', contributorType);
-            core.setOutput('username', pr.user.login);
-            core.setOutput('internal', isInternal.toString());
+            try {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number
+              });
+              
+              const { data: membership } = await github.rest.orgs.getMembershipForUser({
+                org: 'caylent-solutions',
+                username: pr.user.login
+              }).catch(() => ({ data: null }));
+              
+              const isInternal = membership && membership.state === 'active';
+              const contributorType = isInternal ? 'Internal' : 'External';
+              
+              core.setOutput('type', contributorType);
+              core.setOutput('username', pr.user.login);
+              core.setOutput('internal', isInternal.toString());
+            } catch (error) {
+              console.log('Error checking contributor:', error);
+              core.setFailed('Failed to determine contributor type and membership information');
+            }
             
       - name: Send PR review request to Slack
         if: success()

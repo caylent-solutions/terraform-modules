@@ -78,28 +78,36 @@ jobs:
         id: detect-module
         run: |
           # Run the module detection script and capture output
+          set +e  # Allow script to exit non-zero
           OUTPUT=$(make detect-module-changes 2>&1)
-          echo "Script output:"
+          EXIT_CODE=$?
+          set -e
+          
+          # Display the script output (it already contains all necessary messages)
           echo "$OUTPUT"
           
-          # Extract variables from output
-          IS_MODULE=$(echo "$OUTPUT" | grep "^IS_MODULE=" | cut -d'=' -f2)
-          MODULE_PATH=$(echo "$OUTPUT" | grep "^MODULE_PATH=" | cut -d'=' -f2)
-          MODULE_TYPE=$(echo "$OUTPUT" | grep "^MODULE_TYPE=" | cut -d'=' -f2)
-          
-          # Set defaults if empty
-          IS_MODULE=${IS_MODULE:-false}
-          
-          # Pass the outputs to GitHub Actions
-          echo "is_module=$IS_MODULE" >> $GITHUB_OUTPUT
-          if [ "$IS_MODULE" = "true" ]; then
-            echo "module_path=$MODULE_PATH" >> $GITHUB_OUTPUT
-            echo "module_type=$MODULE_TYPE" >> $GITHUB_OUTPUT
+          # Extract variables for GitHub Actions (only if script succeeded)
+          if [ $EXIT_CODE -eq 0 ]; then
+            IS_MODULE=$(echo "$OUTPUT" | grep "^IS_MODULE=" | cut -d'=' -f2)
+            MODULE_PATH=$(echo "$OUTPUT" | grep "^MODULE_PATH=" | cut -d'=' -f2)
+            MODULE_TYPE=$(echo "$OUTPUT" | grep "^MODULE_TYPE=" | cut -d'=' -f2)
+            
+            # Set defaults and outputs
+            IS_MODULE=${IS_MODULE:-false}
+            echo "is_module=$IS_MODULE" >> $GITHUB_OUTPUT
+            
+            if [ "$IS_MODULE" = "true" ]; then
+              echo "module_path=$MODULE_PATH" >> $GITHUB_OUTPUT
+              echo "module_type=$MODULE_TYPE" >> $GITHUB_OUTPUT
+            fi
           fi
+          
+          # Exit with the script's exit code
+          exit $EXIT_CODE
 
   terraform-module-validation:
     name: Terraform Module Validation
-    if: needs.validate.outputs.is_module == 'true'
+    if: needs.validate.result == 'success' && needs.validate.outputs.is_module == 'true'
     needs: validate
     permissions:
       actions: read
@@ -112,7 +120,7 @@ jobs:
 
   non-terraform-validation:
     name: Non-Terraform Validation
-    if: needs.validate.outputs.is_module != 'true'
+    if: needs.validate.result == 'success' && needs.validate.outputs.is_module != 'true'
     needs: validate
     permissions:
       actions: read
