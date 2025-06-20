@@ -48,7 +48,6 @@
       "scripts/module-type-validator",
       "scripts/module-validator",
       "scripts/rego-unit-test",
-      "scripts/run-opa-policies",
       "scripts/terraform-file-collector"
     ]
   },
