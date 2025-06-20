@@ -131,7 +131,7 @@ jobs:
             DEFAULT_OWNER=$(grep -E "^\*" .github/CODEOWNERS | awk '{print $2}')
           fi
 
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD)
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...origin/${{ github.head_ref }})
           echo "Changed files: $CHANGED_FILES"
 
           SPECIFIC_OWNERS=""
