@@ -182,10 +182,61 @@ make test-advanced
 make test-common
 
 # Run a specific test
-go test ./tests/common -run '^TestInputsMatchProvisioned$'
+go test ./tests/common -run '^TestInputsMatchProvisioned
+```
 
-# Format all test files
-make format
+For more information on the `tftest` CLI tool, see the [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/CLI_USAGE.md).
+
+## Developer Workflow
+
+1. **Clone the skeleton**: Start by cloning this skeleton to a new directory
+2. **Modify the module**: Update the module code to implement your functionality
+3. **Update examples**: Modify the examples to demonstrate your module's usage
+4. **Write tests**: Update the tests to verify your module's functionality
+5. **Run tests**: Run the tests using `make test`
+6. **Commit and push**: Commit your changes and push to your repository
+
+## References
+
+- [Terraform Terratest Framework](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/README.md)
+- [TestCtx Package Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/TESTCTX_PACKAGE.md)
+- [Assertions Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/ASSERTIONS.md)
+- [Directory Structure Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/DIRECTORY_STRUCTURE.md)
+- [Writing Tests Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/WRITING_TESTS.md)
+- [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/CLI_USAGE.md)
+
+# Lint Go test files
+make go-lint
+
+# Format Go test files
+make go-format
+
+# Generate Terraform documentation
+make tf-docs
+
+# Check Terraform documentation
+make tf-docs-check
+
+# Check Terraform formatting
+make tf-format
+
+# Fix Terraform formatting
+make tf-format-fix
+
+# Lint Terraform files
+make tf-lint
+
+# Run Terraform plan
+make tf-plan
+
+# Run security checks
+make tf-security
+
+# Run Terraform tests
+make tf-test
+
+# Run all tests (comprehensive test suite)
+make test-all
 
 # Clean up temporary files
 make clean

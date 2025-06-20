@@ -103,6 +103,16 @@ jobs:
       - name: Run Terraform plan
         run: make tf-plan MODULE_PATH=${{ inputs.module_path }}
 
+      - name: Run Go linting on module tests
+        run: |
+          cd ${{ inputs.module_path }}
+          make go-lint
+
+      - name: Run Go formatting check on module tests
+        run: |
+          cd ${{ inputs.module_path }}
+          make go-format
+
       - name: Check contributor type and membership
         id: contributor-check
         if: success()
@@ -475,6 +485,16 @@ jobs:
 
       - name: Run Terraform plan
         run: make tf-plan MODULE_PATH=${{ inputs.module_path }}
+
+      - name: Run Go linting on module tests
+        run: |
+          cd ${{ inputs.module_path }}
+          make go-lint
+
+      - name: Run Go formatting check on module tests
+        run: |
+          cd ${{ inputs.module_path }}
+          make go-format
 
       - name: Run module tests
         run: make tf-test MODULE_PATH=${{ inputs.module_path }}

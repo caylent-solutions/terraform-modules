@@ -10,7 +10,7 @@ This directory contains documentation for the various scripts used in the Terraf
 | [Go Format](go-format.md) | Automatically formats Go code in the repository according to Go's standard formatting rules |
 | [Go Unit Test](go-unit-test.md) | Runs Go unit tests and collects coverage metrics for Go code in the monorepo |
 | [Install Tools](install-tools.md) | Installs and manages development tools using ASDF version manager |
-| [Lint](lint.md) | Performs code quality checks on Go code using gofmt and go vet |
+| [Go Lint](go-lint.md) | Performs code quality checks on Go code using gofmt and go vet |
 | [Module Type Validator](module-type-validator.md) | Detects the type of a Terraform module based on its path |
 | [Module Validator](module-validator.md) | Validates Terraform modules against type-specific policies |
 | [PR OPA Policy Test](pr-opa-policy-test.md) | Evaluates pull requests against Open Policy Agent (OPA) policies |

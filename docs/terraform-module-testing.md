@@ -107,8 +107,11 @@ make test
 # Run only common tests
 make test-common
 
-# Format test files
-make format
+# Lint Go test files
+make go-lint
+
+# Format Go test files
+make go-format
 
 # Clean up temporary files
 make clean
@@ -120,6 +123,8 @@ make clean
 - Terraform >= 1.12.1
 - AWS credentials configured (if testing AWS resources)
 - The terraform-terratest-framework installed via `make install`
+- All Go test files must pass linting (`make go-lint`)
+- All Go test files must be properly formatted (`make go-format`)
 
 ## Controlling Idempotency Testing
 

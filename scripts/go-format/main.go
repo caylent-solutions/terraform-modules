@@ -21,26 +21,33 @@ type Config struct {
 }
 
 func main() {
-	configPath := flag.String("config", "", "Path to config JSON file (required)")
+	configPath := flag.String("config", "", "Path to config JSON file")
+	pathFlag := flag.String("path", "", "Direct path to format (bypasses config)")
 	flag.Parse()
 
-	if *configPath == "" {
-		fmt.Println("Error: --config flag is required")
-		os.Exit(1)
-	}
+	if *pathFlag != "" {
+		// Direct mode - use specified path
+		dirsToFormat = []string{*pathFlag}
+	} else {
+		// Config mode - require config file
+		if *configPath == "" {
+			fmt.Println("Error: --config flag is required when --path is not specified")
+			os.Exit(1)
+		}
 
-	// Load config file
-	config, err := loadConfig(*configPath)
-	if err != nil {
-		fmt.Printf("Error loading config file: %v\n", err)
-		os.Exit(1)
-	}
+		// Load config file
+		config, err := loadConfig(*configPath)
+		if err != nil {
+			fmt.Printf("Error loading config file: %v\n", err)
+			os.Exit(1)
+		}
 
-	// Set directories to format
-	dirsToFormat = config.Scripts.LintDirectories
-	if len(dirsToFormat) == 0 {
-		fmt.Println("Error: No directories to format specified in config")
-		os.Exit(1)
+		// Set directories to format
+		dirsToFormat = config.Scripts.LintDirectories
+		if len(dirsToFormat) == 0 {
+			fmt.Println("Error: No directories to format specified in config")
+			os.Exit(1)
+		}
 	}
 
 	os.Setenv("GOGC", "off")

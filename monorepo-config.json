@@ -43,9 +43,9 @@
     "lint_directories": [
       "scripts/detect-proposed-git-repo-changes",
       "scripts/go-format",
+      "scripts/go-lint",
       "scripts/go-unit-test",
       "scripts/install-tools",
-      "scripts/lint",
       "scripts/module-type-validator",
       "scripts/module-validator",
       "scripts/rego-unit-test",
@@ -124,8 +124,8 @@
       "name": "Lint",
       "emoji": "🧹",
       "outputFile": "lint.out",
-      "testPath": "./scripts/lint",
-      "coverPkg": "./scripts/lint"
+      "testPath": "./scripts/go-lint",
+      "coverPkg": "./scripts/go-lint"
     },
     {
       "name": "Rego Unit Test",

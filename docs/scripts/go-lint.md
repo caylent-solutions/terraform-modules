@@ -1,10 +1,10 @@
-# Lint Script
+# Go Lint Script
 
 This document describes the script used to perform code quality checks on Go code in the Terraform modules monorepo.
 
 ## Overview
 
-The `lint` script runs code quality checks on all Go code in the repository, ensuring consistent formatting and correctness. It enforces the repository's code quality standards by running `gofmt` and `go vet` on all Go files.
+The `go-lint` script runs code quality checks on all Go code in the repository, ensuring consistent formatting and correctness. It enforces the repository's code quality standards by running `gofmt` and `go vet` on all Go files.
 
 ## Features
 
@@ -25,8 +25,23 @@ make go-lint
 
 ## Command Line Options
 
-- `--ignore`: Comma-separated list of directories to ignore during linting
+- `--config`: Path to config JSON file (required when --path is not specified)
+- `--path`: Direct path to lint (bypasses config)
 - `--skip-prefix`: Package prefix to skip during linting
+
+## Usage Modes
+
+The script supports two modes of operation:
+
+1. **Config Mode** (default): Uses monorepo-config.json to determine directories to lint
+   ```bash
+   go run ./scripts/go-lint/main.go --config ./monorepo-config.json
+   ```
+
+2. **Direct Path Mode**: Lints a specific directory directly
+   ```bash
+   go run ./scripts/go-lint/main.go --path tests
+   ```
 
 ## Output
 

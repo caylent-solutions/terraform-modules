@@ -125,6 +125,8 @@ All modules must follow the required structure:
 - Follow the [test structure requirements](docs/terraform-module-testing.md)
 - Configure test behavior using the `test.config` file in the module root
 - Control idempotency testing with `TERRATEST_IDEMPOTENCY=true|false` in the config file
+- All Go test files must pass linting (`make go-lint`)
+- All Go test files must be properly formatted (`make go-format`)
 
 ## Pull Request Process
 

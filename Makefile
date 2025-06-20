@@ -36,7 +36,7 @@ go-lint:
 	@echo "Checking code for linting issues..."
 	@mkdir -p ./bin
 	@echo "Building lint tool..."
-	@go build -o ./bin/lint ./scripts/lint/main.go
+	@go build -o ./bin/lint ./scripts/go-lint/main.go
 	@./bin/lint --config ./monorepo-config.json || { echo "Lint check failed ❌"; rm -f ./bin/lint; exit 1; }
 	@echo "Lint check complete"
 	@rm -f ./bin/lint
@@ -146,6 +146,13 @@ test-all-terraform-modules:
 	@echo "Discovering and testing all Terraform modules..."
 	@find generics/utilities providers/aws/collections providers/aws/primitives providers/aws/references providers/github/collections providers/github/primitives providers/github/references skeletons -mindepth 1 -maxdepth 1 -type d 2>/dev/null | grep -v ".terraform" | sort | xargs -I {} -P 4 sh -c '\
 		echo "\n\033[1;36m=== Testing module: {} ===\033[0m"; \
+		( \
+			cd {} && \
+			echo "\033[36m→ Running go-lint on tests\033[0m" && \
+			make go-lint && \
+			echo "\033[36m→ Running go-format on tests\033[0m" && \
+			make go-format \
+		) || exit 1; \
 		echo "\033[36m→ Running tf-docs-check\033[0m"; \
 		$(MAKE) tf-docs-check MODULE_PATH={} || exit 1; \
 		echo "\033[36m→ Running tf-format\033[0m"; \
@@ -246,23 +253,48 @@ tf-lint:
 	@echo "Linting Terraform module at $(MODULE_PATH)..."
 	@cd $(MODULE_PATH) && tflint
 
-# Run Terraform plan
+# Run Terraform plan for all examples under MODULE_PATH
 # Usage: make tf-plan MODULE_PATH=path/to/module
 # In CI: Called with MODULE_PATH from detect-module-changes
+# Requirements:
+# - MODULE_PATH must exist
+# - MODULE_PATH/examples must exist
+# - Each example must contain terraform.tfvars
+# - Plan is executed per example; all failures are fatal
 tf-plan:
 	@if [ -z "$(MODULE_PATH)" ]; then \
-		echo "Error: MODULE_PATH is required"; \
+		echo "\033[1;31m❌ Error:\033[0m MODULE_PATH is required"; \
 		exit 1; \
 	fi
-	@echo "Running Terraform plan for module at $(MODULE_PATH)..."
-	@cd $(MODULE_PATH) && terraform init -backend=false && \
-	if [ -f "terraform.tfvars" ]; then \
-		terraform plan -out=plan.tfplan; \
-	elif [ -f "examples/basic/terraform.tfvars" ]; then \
-		terraform plan -var-file=examples/basic/terraform.tfvars -out=plan.tfplan; \
-	else \
-		terraform plan -input=false -out=plan.tfplan; \
+	@if [ ! -d "$(MODULE_PATH)" ]; then \
+		echo "\033[1;31m❌ Error:\033[0m Module directory $(MODULE_PATH) does not exist"; \
+		exit 1; \
 	fi
+	@if [ ! -d "$(MODULE_PATH)/examples" ]; then \
+		echo "\033[1;31m❌ Error:\033[0m No examples directory found at $(MODULE_PATH)/examples"; \
+		exit 1; \
+	fi
+	@found=0; \
+	for tfvars in $(MODULE_PATH)/examples/*/terraform.tfvars; do \
+		if [ -f "$$tfvars" ]; then \
+			dir=$$(dirname "$$tfvars"); \
+			name=$$(basename "$$dir"); \
+			absdir=$$(cd "$$dir" && pwd); \
+			echo ""; \
+			echo "\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+			echo "\033[1;36m🔍 Running plan for:\033[0m \033[1;32m$$name\033[0m"; \
+			echo "\033[1;90m📁 Path:\033[0m $$absdir"; \
+			echo "\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
+			terraform -chdir=$$dir init -backend=false > /dev/null || { echo "\033[1;31m❌ terraform init failed in $$dir\033[0m"; exit 1; }; \
+			terraform -chdir=$$dir plan -var-file=terraform.tfvars -out=$$(realpath $$dir)/plan-$$name.tfplan || { echo "\033[1;31m❌ terraform plan failed in $$dir\033[0m"; exit 1; }; \
+			found=1; \
+		fi; \
+	done; \
+	if [ "$$found" -eq 0 ]; then \
+		echo "\033[1;31m❌ Error:\033[0m No terraform.tfvars files found in any examples under $(MODULE_PATH)/examples/"; \
+		exit 1; \
+	fi
+
 
 # Check for security issues
 # Usage: make tf-security MODULE_PATH=path/to/module

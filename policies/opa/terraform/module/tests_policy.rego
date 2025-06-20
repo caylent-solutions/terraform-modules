@@ -72,7 +72,7 @@ violation[result] if {
 		"README.md",
 	}
 
-	required_test_files["helpers"] = "helpers.go"
+	required_test_files.helpers = "helpers.go"
 
 	some dir in test_dirs
 	some file in required_test_files
@@ -251,7 +251,7 @@ violation[result] if {
 	test_config_file := sprintf("%s/test.config", [module_path])
 	input.files[test_config_file]
 	content := input.files[test_config_file]
-	
+
 	contains(content, "TERRATEST_IDEMPOTENCY=")
 	not contains(content, "TERRATEST_IDEMPOTENCY=true")
 	not contains(content, "TERRATEST_IDEMPOTENCY=false")

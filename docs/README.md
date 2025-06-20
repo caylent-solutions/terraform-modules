@@ -22,7 +22,8 @@ This directory contains documentation for the Terraform Modules repository.
 - [Detect Proposed Git Repo Changes](scripts/detect-proposed-git-repo-changes.md) - Detects and validates PR changes
 - [Go Unit Test](scripts/go-unit-test.md) - Runs Go unit tests and collects coverage metrics
 - [Install Tools](scripts/install-tools.md) - Installs and manages development tools
-- [Lint](scripts/lint.md) - Performs code quality checks on Go code
+- [Go Format](scripts/go-format.md) - Automatically formats Go code according to standard formatting rules
+- [Go Lint](scripts/go-lint.md) - Performs code quality checks on Go code
 - [Module Type Validator](scripts/module-type-validator.md) - Detects module type based on path
 - [Module Validator](scripts/module-validator.md) - Validates modules against type-specific policies
 - [PR OPA Policy Test](scripts/pr-opa-policy-test.md) - Evaluates PRs against OPA policies

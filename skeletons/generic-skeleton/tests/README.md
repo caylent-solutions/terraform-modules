@@ -26,8 +26,11 @@ make test-advanced
 # Run only common tests
 make test-common
 
-# Format all test files
-make format
+# Lint Go test files
+make go-lint
+
+# Format Go test files
+make go-format
 
 # Clean up temporary files
 make clean
@@ -38,6 +41,8 @@ make clean
 - Go >= 1.23
 - Terraform >= 1.12.1
 - AWS credentials configured (if testing AWS resources)
+- All Go test files must pass linting (`make go-lint`)
+- All Go test files must be properly formatted (`make go-format`)
 
 ## Writing Tests
 
