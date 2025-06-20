@@ -20,8 +20,9 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git fetch origin ${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}
           git checkout -b codeql-validation origin/${{ github.base_ref }}
-          git merge --no-commit --no-ff ${{ github.sha }}
+          git merge --no-commit --no-ff origin/${{ github.head_ref }}
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -49,8 +50,9 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git fetch origin ${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}
           git checkout -b non-terraform-validation origin/${{ github.base_ref }}
-          git merge --no-commit --no-ff ${{ github.sha }}
+          git merge --no-commit --no-ff origin/${{ github.head_ref }}
 
       - name: Install system dependencies for Python build
         run: |
@@ -390,6 +392,47 @@ jobs:
                     "type": "mrkdwn",
                     "text": "*Contributors:* ${{ needs.validate-non-terraform.outputs.username }} (${{ needs.validate-non-terraform.outputs.type }} contributor)\n*Code Owners:* ${{ needs.validate-non-terraform.outputs.code-owners }}\n*Repository:* ${{ github.repository }}"
                   }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Send post-merge validation failure to Slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "<!here> :x: Post-Merge Validation Failed - ${{ github.repository }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!here> *Post-Merge Validation Failed* - Immediate attention required!"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Repository:* ${{ github.repository }}\n*Branch:* `main`\n*Commit:* `${{ github.sha }}`"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow Run"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
                 }
               ]
             }

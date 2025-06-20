@@ -24,8 +24,9 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git fetch origin ${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}
           git checkout -b pr-validation origin/${{ github.base_ref }}
-          git merge --no-commit --no-ff ${{ github.sha }}
+          git merge --no-commit --no-ff origin/${{ github.head_ref }}
 
       - name: Install system dependencies for Python build
         run: |
@@ -99,7 +100,18 @@ jobs:
             if [ "$IS_MODULE" = "true" ]; then
               echo "module_path=$MODULE_PATH" >> $GITHUB_OUTPUT
               echo "module_type=$MODULE_TYPE" >> $GITHUB_OUTPUT
+              echo ""
+              echo "✅ Detected Changes approved for further verification"
+              echo "   Module: $MODULE_PATH (Type: $MODULE_TYPE)"
+            else
+              echo ""
+              echo "✅ Detected Changes approved for further verification"
+              echo "   Type: Non-Terraform changes"
             fi
+          else
+            echo ""
+            echo "❌ Change detection failed: $(echo "$OUTPUT" | tail -n 1)"
+            echo "   Please review the error above and fix the issues"
           fi
           
           # Exit with the script's exit code
