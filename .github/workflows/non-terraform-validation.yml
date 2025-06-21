@@ -324,7 +324,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      issues: write
     environment: external-contributor-test-approval
     steps:
       - name: Checkout code
@@ -517,21 +516,6 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
-      - name: Merge Approval
-        if: success()
-        uses: trstringer/manual-approval@9f5e5d6bc511762e17f849775a3c56bdea6b4493  # v1
-        with:
-          secret: ${{ steps.github-app-token.outputs.token }}
-          approvers: ${{ needs.validate-non-terraform.outputs.code-owners }}
-          minimum-approvals: 1
-          issue-title: "PR Merge Approval Required"
-          issue-body: |
-            **Contributor:** ${{ needs.validate-non-terraform.outputs.type }} contributor (@${{ needs.validate-non-terraform.outputs.username }})
-            
-            Please approve this PR for merge.
-            
-            **Code owners:** ${{ needs.validate-non-terraform.outputs.code-owners }}
-
       - name: Squash merge PR
         if: success()
         uses: actions/github-script@v7
@@ -560,7 +544,6 @@ jobs:
     if: success() && needs.validate-non-terraform.outputs.internal == 'true'
     permissions:
       contents: write
-      issues: write
       id-token: write
     environment: merge-approval
     steps:
@@ -612,21 +595,6 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
-      - name: Merge Approval
-        if: success()
-        uses: trstringer/manual-approval@9f5e5d6bc511762e17f849775a3c56bdea6b4493  # v1
-        with:
-          secret: ${{ steps.github-app-token.outputs.token }}
-          approvers: ${{ needs.validate-non-terraform.outputs.code-owners }}
-          minimum-approvals: 1
-          issue-title: "PR Merge Approval Required"
-          issue-body: |
-            **Contributor:** ${{ needs.validate-non-terraform.outputs.type }} contributor (@${{ needs.validate-non-terraform.outputs.username }})
-            
-            Please approve this PR for merge.
-            
-            **Code owners:** ${{ needs.validate-non-terraform.outputs.code-owners }}
-
       - name: Squash merge PR
         if: success()
         uses: actions/github-script@v7
@@ -655,7 +623,6 @@ jobs:
     if: success() && needs.validate-non-terraform.outputs.internal == 'false'
     permissions:
       contents: write
-      issues: write
       id-token: write
     environment: external-contributor-merge-approval
     steps:
@@ -706,21 +673,6 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
-      - name: Merge Approval
-        if: success()
-        uses: trstringer/manual-approval@9f5e5d6bc511762e17f849775a3c56bdea6b4493  # v1
-        with:
-          secret: ${{ steps.github-app-token.outputs.token }}
-          approvers: ${{ needs.validate-non-terraform.outputs.code-owners }}
-          minimum-approvals: 1
-          issue-title: "External Contributor PR Merge Approval Required"
-          issue-body: |
-            **Contributor:** ${{ needs.validate-non-terraform.outputs.type }} contributor (@${{ needs.validate-non-terraform.outputs.username }})
-            
-            Please approve this external contributor's PR for merge.
-            
-            **Code owners:** ${{ needs.validate-non-terraform.outputs.code-owners }}
 
       - name: Squash merge PR
         if: success()
@@ -907,7 +859,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "<!here> *QA Certification & Release Approval Required*"
+                    "text": "<!here> *Release Approval Required*"
                   }
                 },
                 {
@@ -921,7 +873,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "All automated tests have passed on the recent merge! Final QA certification and release approval required.\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>"
+                    "text": "All automated tests have passed on the recent merge! Final release approval required.\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>"
                   }
                 },
                 {
@@ -999,13 +951,12 @@ jobs:
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
   qa-certification:
-    name: QA Certification
+    name: Release Approval
     runs-on: ubuntu-24.04
     needs: [validate-non-terraform, post-merge-validation]
     if: success()
     permissions:
       contents: read
-      issues: write
       id-token: write
     environment: qa-certification
     steps:
@@ -1021,20 +972,6 @@ jobs:
         run: |
           # Use the code owners as approvers
           echo "approvers=${{ needs.validate-non-terraform.outputs.code-owners }}" >> $GITHUB_OUTPUT
-
-      - name: QA Certification Step
-        uses: trstringer/manual-approval@9f5e5d6bc511762e17f849775a3c56bdea6b4493  # v1
-        with:
-          secret: ${{ steps.github-app-token.outputs.token }}
-          approvers: ${{ steps.determine-approvers.outputs.approvers }}
-          minimum-approvals: 1
-          issue-title: "QA Certification & Release Approval Required"
-          issue-body: |
-            **Contributor:** ${{ needs.validate-non-terraform.outputs.type }} contributor (@${{ needs.validate-non-terraform.outputs.username }})
-            
-            Please certify QA validation and approve this versioned release for deployment.
-            
-            **Code owners:** ${{ needs.validate-non-terraform.outputs.code-owners }}
 
       - name: Trigger release workflow
         if: success()

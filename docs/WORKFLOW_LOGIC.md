@@ -55,17 +55,17 @@
    - Checkout code + **simulate merge** on `caylent-tests` branch
    - Run Terraform tests
    - Send Slack notification for review
-   - **Manual approval** from code owners
+   - **Environment approval** from `merge-approval` environment (GitHub Environment protection)
    - **Auto-merge** PR on approval
 
 4. **Run Tests - External Contributors** (Depends: validate-module)
    - If contributor is external
-   - Requires `external-contributor-test-approval` environment
+   - Requires `external-contributor-test-approval` environment (GitHub Environment protection)
    - Checkout code + **simulate merge** on `external-tests` branch
    - Run same tests as internal
    - Send Slack notification
-   - **Manual approval** from code owners
-   - **Auto-merge** PR on approval
+   - **Environment approval** required from protected reviewers
+   - **Auto-merge** PR on approval (using `external-contributor-merge-approval` environment)
 
 5. **Post-Merge Validation** (Depends: successful merge)
    - Checkout main branch (no merge simulation needed)
@@ -76,7 +76,7 @@
    - Send Slack notification for QA approval
 
 6. **QA Certification** (Depends: post-merge-validation)
-   - **Manual QA approval** from code owners
+   - **Environment approval** from `qa-certification` environment (GitHub Environment protection)
    - **Trigger release workflow** with module details
 
 ---
@@ -103,7 +103,7 @@
    - Find code owners
    - Check contributor type
    - Send Slack notification
-   - **Manual approval** from code owners
+   - **Environment approval** from `merge-approval` environment (GitHub Environment protection)
    - **Auto-merge** PR on approval
 
 3. **Post-Merge Validation** (Depends: validate-non-terraform)
@@ -114,7 +114,7 @@
    - Send Slack notification for QA approval
 
 4. **QA Certification** (Depends: post-merge-validation)
-   - **Manual QA approval** from code owners
+   - **Environment approval** from `qa-certification` environment (GitHub Environment protection)
    - **Trigger release workflow** for non-terraform release
 
 ---
@@ -203,8 +203,27 @@
 ### Auto-Merge Conditions:
 - All validation tests pass
 - Security scans complete
-- Manual approval received
+- Environment approval received (via GitHub Environment protection rules)
 - Contributor type verified
+
+### GitHub Environment Protection Rules:
+The workflows use GitHub Environments for approval gates instead of issue-based manual approvals:
+
+1. **`merge-approval`**: Used for approving internal contributor PR merges
+   - Requires protected reviewers to approve before merge
+   - Applied to both terraform-module and non-terraform internal contributor flows
+
+2. **`external-contributor-test-approval`**: Used for approving external contributor test execution
+   - Requires protected reviewers to approve before running tests on external PRs
+   - Security gate to prevent malicious code execution
+
+3. **`external-contributor-merge-approval`**: Used for approving external contributor PR merges
+   - Requires protected reviewers to approve after tests pass
+   - Final gate before merging external contributor changes
+
+4. **`qa-certification`**: Used for final QA approval before release
+   - Requires QA team approval before triggering release workflow
+   - Applied to both terraform-module and non-terraform flows
 
 ### Merge Simulation Strategy:
 - **PR workflows**: Always simulate merge to test compatibility
