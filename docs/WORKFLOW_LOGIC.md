@@ -217,7 +217,7 @@
 
 ### 1. **GitHub Actions Security**
 - **SHA-Pinned Actions**: All third-party actions use commit SHAs instead of version tags
-- **Automated Security Management**: `security-scripts/action-security.py` discovers and manages action security
+- **Automated Security Management**: `make github-actions-security` discovers and manages action security
 - **Allowlist Generation**: Automatically generates GitHub Actions allowlist under 255-character limit
 - **Protected Actions**: Only pre-approved actions can be used in workflows
 

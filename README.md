@@ -45,7 +45,7 @@ This repository implements comprehensive security controls:
 5. **Manual Approval Gates**: Multiple approval points ensure code quality and security
 6. **Action Allowlist**: Only pre-approved GitHub Actions can be used in workflows
 
-Security is managed through automated scripts in the [`security-scripts/`](security-scripts/) directory.
+Security is managed through automated scripts in the [`security-scripts/`](security-scripts/) directory. Use `make github-actions-security` to update action allowlists.
 
 ## Module Types
 
@@ -138,7 +138,7 @@ This repository implements a comprehensive automated CI/CD pipeline that handles
 - **Automated Security Scanning**: CodeQL analysis runs on all pull requests in parallel with validation
 - **Environment Isolation**: External contributor tests run in protected environments
 - **Manual Approval Gates**: Multiple approval points ensure code quality and security
-- **Action Allowlist**: Only pre-approved GitHub Actions can be used (managed by `security-scripts/action-security.py`)
+- **Action Allowlist**: Only pre-approved GitHub Actions can be used (managed via `make github-actions-security`)
 
 ### Pull Request Workflow
 

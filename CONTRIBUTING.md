@@ -181,7 +181,7 @@ When modifying workflow files (`.github/workflows/*.yml`):
 
 1. **Run Security Script**: After adding, updating, or removing GitHub Actions:
    ```bash
-   ./security-scripts/action-security.py
+   make github-actions-security
    ```
 
 2. **Update GitHub Settings**: Copy the script output to:

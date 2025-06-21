@@ -22,6 +22,10 @@ This folder contains a script to maintain secure GitHub Actions by dynamically d
 
 **Usage**: 
 ```bash
+# Using make task (recommended)
+make github-actions-security
+
+# Or run directly
 ./action-security.py
 # or
 python action-security.py
@@ -40,7 +44,10 @@ python action-security.py
 
 ### When to Run
 ```bash
-# Run after any workflow changes:
+# Run after any workflow changes (recommended method):
+make github-actions-security
+
+# Or run directly:
 ./action-security.py
 
 # This should be run:
@@ -53,7 +60,7 @@ python action-security.py
 ### Process
 1. **Run the Security Script**: 
    ```bash
-   ./security-scripts/action-security.py
+   make github-actions-security
    ```
 
 2. **If Actions Changed**:
@@ -115,7 +122,7 @@ If you discover a compromised action:
 
 ### Maintenance Schedule
 
-- **After workflow changes**: Run `./security-scripts/action-security.py` immediately
+- **After workflow changes**: Run `make github-actions-security` immediately
 - **Quarterly audit**: Review all actions and update SHAs (March, June, September, December)
 - **Monthly**: Review security advisories for actions used
 - **As needed**: Remove/replace actions that become unmaintained

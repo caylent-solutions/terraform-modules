@@ -148,7 +148,7 @@ git push origin feature/my-module
 
 ### GitHub Actions Security
 - **SHA-Pinned Actions**: All third-party GitHub Actions are pinned to specific commit SHAs
-- **Automated Management**: `security-scripts/action-security.py` manages action security
+- **Automated Management**: `make github-actions-security` manages action security
 - **Allowlist Protection**: GitHub repository configured with action allowlist
 - **Supply Chain Protection**: Prevents malicious updates to third-party actions
 

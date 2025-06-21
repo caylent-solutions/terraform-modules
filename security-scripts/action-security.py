@@ -209,12 +209,12 @@ class ActionSecurityManager:
         
         print("\n📅 NEXT QUARTERLY UPDATE:")
         print("=" * 24)
-        print("Run this script again in 3 months")
+        print("Run 'make github-actions-security' again in 3 months")
         print("The script will automatically discover any new actions you've added")
         print()
         print("🚨 SECURITY REMINDER:")
         print("If you add new third-party actions to workflows:")
-        print("1. Run this script to update the allowlist")
+        print("1. Run 'make github-actions-security' to update the allowlist")
         print("2. Update GitHub settings with the new allowlist")
         print("3. Ensure new actions are pinned to SHAs in your workflows")
 

@@ -1,4 +1,4 @@
-.PHONY: build-terraform-file-collector configure detect-module-changes go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate rego-format rego-integration-test rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies test-all-non-tf-module-code test-all-terraform-modules tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
+.PHONY: build-terraform-file-collector configure detect-module-changes github-actions-security go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate rego-format rego-integration-test rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies test-all-non-tf-module-code test-all-terraform-modules tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
 
 # Build and install terraform-file-collector binary
 build-terraform-file-collector:
@@ -55,6 +55,18 @@ go-unit-test-coverage:
 go-unit-test-coverage-json:
 	@mkdir -p tmp/coverage
 	@go run scripts/go-unit-test/main.go --coverage-json monorepo-config.json
+
+# Update GitHub Actions security allowlist
+github-actions-security: ## Update GitHub Actions allowlist and security configuration
+	@echo "🔒 Running GitHub Actions security management..."
+	@./security-scripts/action-security.py
+	@echo "✅ GitHub Actions security update complete"
+	@echo ""
+	@echo "📋 Next steps:"
+	@echo "1. Copy the allowlist output above to GitHub Settings"
+	@echo "2. Go to Settings → Actions → General → Actions permissions"
+	@echo "3. Select 'Allow select actions and reusable workflows'"
+	@echo "4. Paste the allowlist content and save"
 
 # List all available make tasks with descriptions
 help:
