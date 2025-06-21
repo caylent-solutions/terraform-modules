@@ -46,10 +46,8 @@ jobs:
     name: Validate Non-Terraform Changes
     runs-on: ubuntu-24.04
     permissions:
-      contents: write
-      issues: write
+      contents: read
       id-token: write
-    environment: merge-approval
     outputs:
       code-owners: ${{ steps.codeowners.outputs.owners }}
       type: ${{ steps.check-contributor.outputs.type }}
@@ -272,20 +270,100 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
+      - name: Send validation success notification to Slack
+        if: success()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "✅ Non-Terraform validation completed successfully",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *Non-Terraform Validation Completed*\n\n*PR #${{ github.event.pull_request.number }}*: ${{ github.event.pull_request.title }}\n\nAll validation checks have passed! Ready for merge approval.\n<${{ github.event.pull_request.html_url }}|View Pull Request>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  merge-approval:
+    name: Merge Approval
+    runs-on: ubuntu-24.04
+    needs: [validate-non-terraform]
+    if: success() && needs.validate-non-terraform.outputs.code-owners != ''
+    permissions:
+      contents: write
+      issues: write
+      id-token: write
+    environment: merge-approval
+    steps:
+      - name: Generate GitHub App Token
+        id: github-app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - name: Send approval notification to Slack
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "<!here> :mag: Non-Terraform PR Ready for Review - ${{ github.repository }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!here> *Non-Terraform PR Review Needed*"
+                  }
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":mag: PR Ready for Review - ${{ github.repository }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR #${{ github.event.pull_request.number }}*: ${{ github.event.pull_request.title }}\nAll validation checks have passed! This PR is ready for review.\n<${{ github.event.pull_request.html_url }}|View Pull Request>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Author:* ${{ needs.validate-non-terraform.outputs.username }} (${{ needs.validate-non-terraform.outputs.type }} contributor)\n*Code Owners:* ${{ needs.validate-non-terraform.outputs.code-owners }}\n*Repository:* ${{ github.repository }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
       - name: Merge Approval
-        if: success() && steps.codeowners.outputs.owners != ''
+        if: success()
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ steps.github-app-token.outputs.token }}
-          approvers: ${{ steps.codeowners.outputs.owners }}
+          approvers: ${{ needs.validate-non-terraform.outputs.code-owners }}
           minimum-approvals: 1
           issue-title: "PR Merge Approval Required"
           issue-body: |
-            **Contributor:** ${{ steps.check-contributor.outputs.type }} contributor (@${{ steps.check-contributor.outputs.username }})
+            **Contributor:** ${{ needs.validate-non-terraform.outputs.type }} contributor (@${{ needs.validate-non-terraform.outputs.username }})
             
             Please approve this PR for merge.
             
-            **Code owners:** ${{ steps.codeowners.outputs.owners }}
+            **Code owners:** ${{ needs.validate-non-terraform.outputs.code-owners }}
 
       - name: Squash merge PR
         if: success()
@@ -365,7 +443,7 @@ jobs:
   post-merge-validation:
     name: Post-Merge Revalidation
     runs-on: ubuntu-24.04
-    needs: [validate-non-terraform]
+    needs: [validate-non-terraform, merge-approval]
     if: success()
     steps:
       - name: Checkout main branch
