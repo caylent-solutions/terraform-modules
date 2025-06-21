@@ -288,8 +288,17 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      issues: write
+      id-token: write
     environment: merge-approval
     steps:
+      - name: Generate GitHub App Token
+        id: github-app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -378,7 +387,7 @@ jobs:
         if: success()
         uses: trstringer/manual-approval@v1
         with:
-          secret: ${{ github.TOKEN }}
+          secret: ${{ steps.github-app-token.outputs.token }}
           approvers: ${{ needs.validate-module.outputs.code-owners }}
           minimum-approvals: 1
           issue-title: "Terraform Module Merge Approval Required"
@@ -417,8 +426,17 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      issues: write
+      id-token: write
     environment: external-contributor-test-approval
     steps:
+      - name: Generate GitHub App Token
+        id: github-app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -507,7 +525,7 @@ jobs:
         if: success()
         uses: trstringer/manual-approval@v1
         with:
-          secret: ${{ github.TOKEN }}
+          secret: ${{ steps.github-app-token.outputs.token }}
           approvers: ${{ needs.validate-module.outputs.code-owners }}
           minimum-approvals: 1
           issue-title: "Terraform Module Merge Approval Required"
@@ -707,11 +725,23 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [validate-module, post-merge-validation]
     if: success()
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    environment: qa-certification
     steps:
+      - name: Generate GitHub App Token
+        id: github-app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: QA Certification Step
         uses: trstringer/manual-approval@v1
         with:
-          secret: ${{ github.TOKEN }}
+          secret: ${{ steps.github-app-token.outputs.token }}
           approvers: ${{ needs.validate-module.outputs.code-owners }}
           minimum-approvals: 1
           issue-title: "Terraform Module QA Certification & Release Approval Required"
