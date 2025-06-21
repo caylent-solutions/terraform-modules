@@ -8,9 +8,10 @@ jobs:
     name: Pre-Merge CodeQL Analysis
     runs-on: ubuntu-24.04
     permissions:
+      contents: write
+      id-token: write
       security-events: write
       actions: read
-      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,11 +38,21 @@ jobs:
   validate-non-terraform:
     name: Validate Non-Terraform Changes
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
     outputs:
       code-owners: ${{ steps.codeowners.outputs.owners }}
       type: ${{ steps.check-contributor.outputs.type }}
       username: ${{ steps.check-contributor.outputs.username }}
     steps:
+      - name: Generate token from GitHub App
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -174,41 +185,40 @@ jobs:
           echo "Final owners: $UNIQUE_OWNERS"
           echo "owners=$UNIQUE_OWNERS" >> $GITHUB_OUTPUT
 
+      - name: Generate GitHub App Token
+        id: generate-token
+        if: always()
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: Check contributor type and membership
         id: check-contributor
         if: always()
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.generate_token.outputs.token }}
           script: |
             try {
               // Get PR information from context instead of API call
               const username = context.payload.pull_request.user.login;
               
-              // Try to get organization membership (may fail due to permissions)
-              let isInternal = false;
-              let contributorType = 'External';
+              // Try to get organization membership - must succeed for strict validation
+              const { data: membership } = await github.rest.orgs.getMembershipForUser({
+                org: 'caylent-solutions',
+                username: username
+              });
               
-              try {
-                const { data: membership } = await github.rest.orgs.getMembershipForUser({
-                  org: 'caylent-solutions',
-                  username: username
-                });
-                isInternal = membership && membership.state === 'active';
-                contributorType = isInternal ? 'Internal' : 'External';
-              } catch (orgError) {
-                console.log('Cannot check organization membership (may be due to permissions), defaulting to External');
-                // Default to External if we can't check org membership
-                isInternal = false;
-                contributorType = 'External';
-              }
+              const isInternal = membership && membership.state === 'active';
+              const contributorType = isInternal ? 'Internal' : 'External';
               
               core.setOutput('type', contributorType);
               core.setOutput('username', username);
               core.setOutput('internal', isInternal.toString());
             } catch (error) {
               console.log('Error checking contributor:', error);
-              core.setFailed('Failed to determine contributor type and membership information');
+              core.setFailed('Failed to determine contributor type and membership information - strict validation requires successful organization membership check');
             }
             
       - name: Send PR review request to Slack
