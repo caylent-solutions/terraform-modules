@@ -382,7 +382,7 @@ jobs:
   merge-approval-caylent:
     name: Merge Approval (Caylent)
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, run-tests-caylent]
+    needs: [terraform-and-contributor-analysis, validation-complete]
     if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'true' && needs.terraform-and-contributor-analysis.outputs.can-self-approve == 'false'
     permissions:
       contents: write
@@ -437,11 +437,11 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-          
+
   merge-self-approval-caylent:
     name: Self-Approval Merge (Caylent)
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, run-tests-caylent]
+    needs: [terraform-and-contributor-analysis, validation-complete]
     if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'true' && needs.terraform-and-contributor-analysis.outputs.can-self-approve == 'true'
     permissions:
       contents: write
@@ -497,27 +497,22 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
           
-      - name: Auto-merge PR (Self-Approval)
+      - name: Auto-merge PR (Self-Approval with Admin Bypass)
         if: success()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number
-            });
-            
-            console.log(`🔓 Auto-merging PR #${pr.number} by self-approval user: ${pr.user.login}`);
-            
-            await github.rest.pulls.merge({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-              merge_method: 'squash',
-              commit_title: `${pr.title} (#${pr.number})`,
-              commit_message: pr.body || 'Self-approved squash merge'
+        env:
+          GH_TOKEN: ${{ steps.github-app-token.outputs.token }}
+        run: |
+          echo "🔓 Auto-merging PR #${{ github.event.pull_request.number }} by self-approval user with admin bypass"
+          echo "PR Title: ${{ github.event.pull_request.title }}"
+          echo "Author: ${{ needs.terraform-and-contributor-analysis.outputs.username }}"
+          echo "Module: ${{ inputs.module_path }}"
+          
+          # Use GitHub CLI to merge with admin bypass to override branch protection rules
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --admin \
+            --squash \
+            --subject "${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})" \
+            --body "Self-approved squash merge by authorized user with admin privileges - Module: ${{ inputs.module_path }}"
             });
 
   run-tests-external:
@@ -615,10 +610,23 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
+  validation-complete:
+    name: Validation Complete
+    runs-on: ubuntu-24.04
+    needs: [terraform-and-contributor-analysis, run-tests-caylent, run-tests-external]
+    if: always() && needs.terraform-and-contributor-analysis.result == 'success' && (needs.run-tests-caylent.result == 'success' || needs.run-tests-external.result == 'success')
+    steps:
+      - name: Mark validation as complete
+        run: |
+          echo "✅ All validation checks have completed successfully"
+          echo "Terraform module validation is complete and ready for merge approval"
+          echo "Internal tests: ${{ needs.run-tests-caylent.result }}"
+          echo "External tests: ${{ needs.run-tests-external.result }}"
+
   merge-approval-external:
     name: Merge Approval (External)
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, run-tests-external]
+    needs: [terraform-and-contributor-analysis, validation-complete]
     if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'false'
     permissions:
       contents: write
@@ -698,8 +706,8 @@ jobs:
   post-merge-validation:
     name: Post-Merge Terraform Validation
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, run-tests-caylent, run-tests-external, merge-self-approval-caylent, merge-approval-caylent, merge-approval-external]
-    if: needs.merge-self-approval-caylent.result == 'success' || needs.merge-approval-caylent.result == 'success' || needs.merge-approval-external.result == 'success'
+    needs: [terraform-and-contributor-analysis, merge-self-approval-caylent, merge-approval-caylent, merge-approval-external]
+    if: always() && needs.terraform-and-contributor-analysis.result == 'success' && (needs.merge-self-approval-caylent.result == 'success' || needs.merge-approval-caylent.result == 'success' || needs.merge-approval-external.result == 'success')
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4

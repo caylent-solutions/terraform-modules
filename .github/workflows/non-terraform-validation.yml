@@ -523,7 +523,7 @@ jobs:
   merge-self-approval-internal:
     name: Self-Approval Merge (Internal)
     runs-on: ubuntu-24.04
-    needs: [contributor-analysis, run-tests-internal]
+    needs: [contributor-analysis, validation-complete]
     if: success() && needs.contributor-analysis.outputs.internal == 'true' && needs.contributor-analysis.outputs.can-self-approve == 'true'
     permissions:
       contents: write
@@ -579,33 +579,26 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
           
-      - name: Auto-merge PR (Self-Approval)
+      - name: Auto-merge PR (Self-Approval with Admin Bypass)
         if: success()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number
-            });
-            
-            console.log(`🔓 Auto-merging PR #${pr.number} by self-approval user: ${pr.user.login}`);
-            
-            await github.rest.pulls.merge({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-              merge_method: 'squash',
-              commit_title: `${pr.title} (#${pr.number})`,
-              commit_message: pr.body || 'Self-approved squash merge'
-            });
+        env:
+          GH_TOKEN: ${{ steps.github-app-token.outputs.token }}
+        run: |
+          echo "🔓 Auto-merging PR #${{ github.event.pull_request.number }} by self-approval user with admin bypass"
+          echo "PR Title: ${{ github.event.pull_request.title }}"
+          echo "Author: ${{ needs.contributor-analysis.outputs.username }}"
+          
+          # Use GitHub CLI to merge with admin bypass to override branch protection rules
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --admin \
+            --squash \
+            --subject "${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})" \
+            --body "Self-approved squash merge by authorized user with admin privileges"
 
   merge-approval-internal:
     name: Merge Approval (Internal)
     runs-on: ubuntu-24.04
-    needs: [contributor-analysis, run-tests-internal]
+    needs: [contributor-analysis, validation-complete]
     if: success() && needs.contributor-analysis.outputs.internal == 'true' && needs.contributor-analysis.outputs.can-self-approve == 'false'
     permissions:
       contents: write
@@ -685,7 +678,7 @@ jobs:
   merge-approval-external:
     name: Merge Approval (External)
     runs-on: ubuntu-24.04
-    needs: [contributor-analysis, run-tests-external]
+    needs: [contributor-analysis, validation-complete]
     if: success() && needs.contributor-analysis.outputs.internal == 'false'
     permissions:
       contents: write
@@ -755,7 +748,7 @@ jobs:
             
             await github.rest.pulls.merge({
               owner: context.repo.owner,
-              repo: context.repo.repo,
+              repo: context.repo,
               pull_number: context.issue.number,
               merge_method: 'squash',
               commit_title: `${pr.title} (#${pr.number})`,
@@ -1056,4 +1049,16 @@ jobs:
                 contributor_type: '${{ needs.contributor-analysis.outputs.type }}',
                 contributor_username: '${{ needs.contributor-analysis.outputs.username }}'
               }
-            });
+            })
+
+  validation-complete:
+    name: Validation Complete
+    runs-on: ubuntu-24.04
+    needs: [contributor-analysis, run-tests-internal, run-tests-external]
+    if: always() && (needs.run-tests-internal.result == 'success' || needs.run-tests-external.result == 'success')
+    steps:
+      - name: Mark validation as complete
+        run: |
+          echo "✅ All non-terraform validation checks have completed successfully"
+          echo "Contributor: ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }})"
+          echo "Tests completed: ${{ (needs.run-tests-internal.result == 'success' && 'Internal') || (needs.run-tests-external.result == 'success' && 'External') }}"
