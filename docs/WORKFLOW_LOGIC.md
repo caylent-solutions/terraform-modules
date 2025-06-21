@@ -2,10 +2,18 @@
 
 ## 1. PR Validation Entry Point (`pr-validation.yml`)
 **Trigger**: Pull request to `main` branch
-**Purpose**: Route PRs to appropriate validation workflow
+**Purpose**: Route PRs to appropriate validation workflow and enforce security controls
 
 ### Flow:
-1. **Validate Job**
+1. **Security Check Job** (First Gate - Runs for all PRs except bot PRs)
+   - Generate GitHub App token for elevated permissions
+   - Checkout code with full history
+   - Check contributor type (Internal Caylent employee vs External contributor)
+   - **Security Control**: Block external contributors from modifying workflow files
+   - If external contributor modifies `.github/workflows/` files → **FAIL PR**
+   - If internal contributor → Allow workflow modifications
+
+2. **Validate Job** (Runs in parallel with security check)
    - Checkout code with full history
    - **Simulate merge** to test compatibility
    - Install system dependencies + ASDF + tools
@@ -14,7 +22,7 @@
    - Get changed files and update config
    - **Detect module changes** → Sets `IS_MODULE`, `MODULE_PATH`, `MODULE_TYPE`
 
-2. **Route to Validation**
+3. **Route to Validation** (Depends on validate job)
    - If `IS_MODULE=true` → Call `terraform-module-validation.yml`
    - If `IS_MODULE=false` → Call `non-terraform-validation.yml`
 
@@ -204,3 +212,27 @@
 - **Release workflows**: Work directly on main branch
 - **Health checks**: Work directly on main branch
 - Each job uses unique branch names to avoid conflicts
+
+## Key Security Features Across All Workflows
+
+### 1. **GitHub Actions Security**
+- **SHA-Pinned Actions**: All third-party actions use commit SHAs instead of version tags
+- **Automated Security Management**: `security-scripts/action-security.py` discovers and manages action security
+- **Allowlist Generation**: Automatically generates GitHub Actions allowlist under 255-character limit
+- **Protected Actions**: Only pre-approved actions can be used in workflows
+
+### 2. **External Contributor Protection**
+- **Workflow Modification Block**: External contributors cannot modify `.github/workflows/` files
+- **Manual Test Approval**: External contributor tests require manual approval before execution
+- **Environment Isolation**: External tests run in protected `external-contributor-test-approval` environment
+- **Token Scoping**: Limited GitHub token permissions for external contributors
+
+### 3. **Code Security Scanning**
+- **Pre-Merge CodeQL**: Security analysis runs in parallel with validation on simulated merge
+- **Comprehensive Coverage**: Scans Go code for security vulnerabilities
+- **Integration**: CodeQL results block merge if security issues are found
+
+### 4. **Access Control**
+- **GitHub App Authentication**: Uses GitHub App tokens instead of personal access tokens
+- **Code Owner Enforcement**: CODEOWNERS file controls who can approve changes
+- **Multi-Stage Approval**: Separate validation, testing, and QA approval gates

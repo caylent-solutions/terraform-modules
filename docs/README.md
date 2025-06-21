@@ -6,6 +6,12 @@ This directory contains documentation for the Terraform Modules repository.
 
 - [GitHub Actions Security Scripts](../security-scripts/README.md) - Tools for maintaining secure GitHub Actions
 
+## Workflow and Process
+
+- [Complete Workflow Logic](WORKFLOW_LOGIC.md) - Detailed flow of all CI/CD workflows
+- [Contributor Guide](../CONTRIBUTOR_GUIDE.md) - Complete SDLC process for contributors
+- [Contributing Guidelines](../CONTRIBUTING.md) - How to contribute to this repository
+
 ## Module Development
 
 - [Terraform Module Structure](terraform-module-structure.md) - Required structure for all modules

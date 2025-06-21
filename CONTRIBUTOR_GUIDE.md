@@ -144,6 +144,25 @@ git push origin feature/my-module
 - **Environment isolation**: Protected CI environment
 - **Enhanced review**: Additional security scrutiny
 
+## Security Controls
+
+### GitHub Actions Security
+- **SHA-Pinned Actions**: All third-party GitHub Actions are pinned to specific commit SHAs
+- **Automated Management**: `security-scripts/action-security.py` manages action security
+- **Allowlist Protection**: GitHub repository configured with action allowlist
+- **Supply Chain Protection**: Prevents malicious updates to third-party actions
+
+### External Contributor Protection
+- **Workflow Modification Block**: External contributors cannot modify `.github/workflows/` files
+- **Manual Test Approval**: Tests for external contributors require manual approval
+- **Environment Isolation**: External tests run in protected environments
+- **Token Limitations**: Limited GitHub token permissions for external contributions
+
+### Code Security
+- **CodeQL Analysis**: Automated security scanning runs on all PRs
+- **Pre-Merge Scanning**: Security analysis completes before merge approval
+- **Vulnerability Detection**: Blocks merge if security vulnerabilities are found
+
 ## Monitoring and Maintenance
 
 ### Continuous Monitoring

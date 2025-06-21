@@ -34,6 +34,19 @@ This repository implements governance policies to ensure consistent and maintain
 
 These policies are enforced using Open Policy Agent (OPA) in the CI/CD pipeline.
 
+## Security
+
+This repository implements comprehensive security controls:
+
+1. **GitHub Actions Security**: All third-party actions are SHA-pinned to prevent supply chain attacks
+2. **External Contributor Protection**: External contributors cannot modify workflow files
+3. **Automated Security Scanning**: CodeQL analysis runs on all pull requests
+4. **Environment Isolation**: External contributor tests run in protected environments
+5. **Manual Approval Gates**: Multiple approval points ensure code quality and security
+6. **Action Allowlist**: Only pre-approved GitHub Actions can be used in workflows
+
+Security is managed through automated scripts in the [`security-scripts/`](security-scripts/) directory.
+
 ## Module Types
 
 The repository supports several types of Terraform modules:
@@ -118,25 +131,39 @@ For detailed contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 This repository implements a comprehensive automated CI/CD pipeline that handles different contributor types and change types:
 
+### Security Features
+
+- **GitHub Actions Security**: All third-party actions are SHA-pinned to prevent supply chain attacks
+- **External Contributor Protection**: External contributors cannot modify workflow files
+- **Automated Security Scanning**: CodeQL analysis runs on all pull requests in parallel with validation
+- **Environment Isolation**: External contributor tests run in protected environments
+- **Manual Approval Gates**: Multiple approval points ensure code quality and security
+- **Action Allowlist**: Only pre-approved GitHub Actions can be used (managed by `security-scripts/action-security.py`)
+
 ### Pull Request Workflow
 
-1. **Entry Point** (`pr-validation.yml`):
+1. **Security Check** (`pr-validation.yml`):
+   - **Contributor Validation**: Determines if contributor is internal (Caylent) or external
+   - **Workflow Protection**: Blocks external contributors from modifying `.github/workflows/` files
+   - **Access Control**: Uses GitHub App tokens for elevated permissions
+
+2. **Entry Point** (`pr-validation.yml`):
    - Triggers on all PRs to `main` branch
    - Simulates merge to test compatibility
    - Detects change type (Terraform modules vs non-Terraform)
    - Routes to appropriate validation workflow
 
-2. **Terraform Module Validation** (`terraform-module-validation.yml`):
+3. **Terraform Module Validation** (`terraform-module-validation.yml`):
    - **Parallel Security Scanning**: CodeQL analysis runs alongside validation
    - **Comprehensive Validation**: Policies, linting, formatting, docs, security, planning
    - **Contributor-Aware Testing**:
      - **Internal Contributors**: Automatic test execution
-     - **External Contributors**: Manual approval required for test execution
+     - **External Contributors**: Manual approval required for test execution in protected environment
    - **Automated Merge**: After code owner approval
    - **Post-Merge Validation**: Re-runs all checks on merged code
    - **QA Gate**: Manual certification required before release
 
-3. **Non-Terraform Validation** (`non-terraform-validation.yml`):
+4. **Non-Terraform Validation** (`non-terraform-validation.yml`):
    - **Parallel Security Scanning**: CodeQL analysis
    - **Code Quality Checks**: Go and Rego linting, formatting, unit tests
    - **Coverage Requirements**: 95% minimum test coverage for Rego code
@@ -144,13 +171,13 @@ This repository implements a comprehensive automated CI/CD pipeline that handles
    - **Automated Merge**: After code owner approval
    - **QA Certification**: Manual approval for release
 
-4. **Release Process** (`release.yml`):
+5. **Release Process** (`release.yml`):
    - **Semantic Versioning**: Automatic version determination
    - **Module-Specific Releases**: Individual versioning for Terraform modules
    - **Repository-Wide Releases**: For non-Terraform changes
    - **Automated Changelog**: Generated from conventional commits
 
-### Security Features
+### Monitoring
 
 - **Pre-Merge Security Scanning**: CodeQL analysis on all PRs
 - **Post-Merge Security Scanning**: Additional scanning on main branch
