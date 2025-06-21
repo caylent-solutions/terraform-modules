@@ -479,6 +479,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      issues: write
+    environment: external-contributor-test-approval
     steps:
 
       - name: Checkout code
@@ -574,7 +576,7 @@ jobs:
       contents: write
       issues: write
       id-token: write
-    environment: external-contributor-test-approval
+    environment: external-contributor-merge-approval
     steps:
       - name: Generate GitHub App Token
         id: github-app-token
