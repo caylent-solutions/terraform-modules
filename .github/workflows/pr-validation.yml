@@ -126,6 +126,7 @@ jobs:
       security-events: write
       contents: write
       id-token: write
+      issues: write
     uses: ./.github/workflows/terraform-module-validation.yml
     with:
       module_path: ${{ needs.validate.outputs.module_path }}
@@ -144,6 +145,7 @@ jobs:
       security-events: write
       contents: write
       id-token: write
+      issues: write
     uses: ./.github/workflows/non-terraform-validation.yml
     secrets:
       GH_APP_ID: ${{ secrets.GH_APP_ID }}
