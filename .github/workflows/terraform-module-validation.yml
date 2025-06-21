@@ -31,6 +31,7 @@ jobs:
       type: ${{ steps.check-contributor.outputs.type }}
       username: ${{ steps.check-contributor.outputs.username }}
       internal: ${{ steps.check-contributor.outputs.internal }}
+      can-self-approve: ${{ steps.check-contributor.outputs.can-self-approve }}
     steps:
       - name: Generate token from GitHub App
         id: generate_token
@@ -113,6 +114,12 @@ jobs:
               // Get PR information from context instead of API call
               const username = context.payload.pull_request.user.login;
               
+              // Check if user has self-approval privileges via repository variable
+              // Repository variable should be named SELF_APPROVAL_USERS and contain comma-separated usernames
+              const selfApprovalUsersVar = '${{ vars.SELF_APPROVAL_USERS }}';
+              const selfApprovalUsers = selfApprovalUsersVar ? selfApprovalUsersVar.split(',').map(u => u.trim()) : [];
+              const canSelfApprove = selfApprovalUsers.includes(username);
+              
               // Try to get organization membership - must succeed for strict validation
               const { data: membership } = await github.rest.orgs.getMembershipForUser({
                 org: 'caylent-solutions',
@@ -124,6 +131,7 @@ jobs:
               
               // Display colorful results
               const emoji = isInternal ? '🏢' : '🌍';
+              const approvalEmoji = canSelfApprove ? '🔓' : '🔒';
               const color = isInternal ? '\u001b[32m' : '\u001b[34m'; // Green for internal, Blue for external
               const reset = '\u001b[0m';
               
@@ -131,10 +139,13 @@ jobs:
               console.log(`${color}  👤 Username: ${username}${reset}`);
               console.log(`${color}  🏷️  Type: ${contributorType}${reset}`);
               console.log(`${color}  🔒 Internal: ${isInternal}${reset}`);
+              console.log(`${color}  ${approvalEmoji} Self-Approve: ${canSelfApprove}${reset}`);
+              console.log(`${color}  📋 Self-Approval Users: ${selfApprovalUsers.join(', ') || 'None configured'}${reset}`);
               
               core.setOutput('type', contributorType);
               core.setOutput('username', username);
               core.setOutput('internal', isInternal.toString());
+              core.setOutput('can-self-approve', canSelfApprove.toString());
             } catch (error) {
               console.log('❌ Error checking contributor:', error);
               core.setFailed('Failed to determine contributor type and membership information - strict validation requires successful organization membership check');
@@ -276,8 +287,8 @@ jobs:
 
   run-tests-caylent:
     name: Run Terraform Module Tests (Caylent)
-    needs: [contributor-analysis]
-    if: ${{ needs.contributor-analysis.outputs.internal == 'true' }}
+    needs: [terraform-and-contributor-analysis]
+    if: ${{ needs.terraform-and-contributor-analysis.outputs.internal == 'true' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -359,7 +370,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.terraform-and-contributor-analysis.outputs.username }} (${{ needs.terraform-and-contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.terraform-and-contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
                   }
                 }
               ]
@@ -371,8 +382,8 @@ jobs:
   merge-approval-caylent:
     name: Merge Approval (Caylent)
     runs-on: ubuntu-24.04
-    needs: [contributor-analysis, run-tests-caylent]
-    if: success() && needs.contributor-analysis.outputs.internal == 'true'
+    needs: [terraform-and-contributor-analysis, run-tests-caylent]
+    if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'true' && needs.terraform-and-contributor-analysis.outputs.can-self-approve == 'false'
     permissions:
       contents: write
       id-token: write
@@ -418,7 +429,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.terraform-and-contributor-analysis.outputs.username }} (${{ needs.terraform-and-contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.terraform-and-contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
                   }
                 }
               ]
@@ -427,7 +438,66 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
           
-      - name: Squash merge PR
+  merge-self-approval-caylent:
+    name: Self-Approval Merge (Caylent)
+    runs-on: ubuntu-24.04
+    needs: [terraform-and-contributor-analysis, run-tests-caylent]
+    if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'true' && needs.terraform-and-contributor-analysis.outputs.can-self-approve == 'true'
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+    # No environment needed for self-approval users
+    steps:
+      - name: Generate GitHub App Token
+        id: github-app-token
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - name: Send self-approval notification to Slack
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
+        with:
+          payload: |
+            {
+              "text": ":white_check_mark: Auto-Approved Terraform Module Merge - ${{ github.repository }}/${{ inputs.module_path }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":white_check_mark: *Auto-Approved Terraform Module Merge*"
+                  }
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":rocket: Self-Approved Merge - ${{ github.repository }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR #${{ github.event.pull_request.number }}*: ${{ github.event.pull_request.title }}\nAll validation checks passed! Module auto-merged by authorized user.\n<${{ github.event.pull_request.html_url }}|View Pull Request>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.terraform-and-contributor-analysis.outputs.username }} (${{ needs.terraform-and-contributor-analysis.outputs.type }} contributor with self-approval privileges)\n*Code Owners:* ${{ needs.terraform-and-contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          
+      - name: Auto-merge PR (Self-Approval)
         if: success()
         uses: actions/github-script@v7
         with:
@@ -439,19 +509,21 @@ jobs:
               pull_number: context.issue.number
             });
             
+            console.log(`🔓 Auto-merging PR #${pr.number} by self-approval user: ${pr.user.login}`);
+            
             await github.rest.pulls.merge({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
               merge_method: 'squash',
               commit_title: `${pr.title} (#${pr.number})`,
-              commit_message: pr.body || 'Squash merge'
+              commit_message: pr.body || 'Self-approved squash merge'
             });
 
   run-tests-external:
     name: Run Terraform Module Tests (External)
-    needs: [contributor-analysis]
-    if: ${{ needs.contributor-analysis.outputs.internal == 'false' }}
+    needs: [terraform-and-contributor-analysis]
+    if: ${{ needs.terraform-and-contributor-analysis.outputs.internal == 'false' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -534,7 +606,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.terraform-and-contributor-analysis.outputs.username }} (${{ needs.terraform-and-contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.terraform-and-contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
                   }
                 }
               ]
@@ -546,8 +618,8 @@ jobs:
   merge-approval-external:
     name: Merge Approval (External)
     runs-on: ubuntu-24.04
-    needs: [contributor-analysis, run-tests-external]
-    if: success() && needs.contributor-analysis.outputs.internal == 'false'
+    needs: [terraform-and-contributor-analysis, run-tests-external]
+    if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'false'
     permissions:
       contents: write
       id-token: write
@@ -593,7 +665,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.terraform-and-contributor-analysis.outputs.username }} (${{ needs.terraform-and-contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.terraform-and-contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
                   }
                 }
               ]
@@ -626,8 +698,8 @@ jobs:
   post-merge-validation:
     name: Post-Merge Terraform Validation
     runs-on: ubuntu-24.04
-    needs: [contributor-analysis, run-tests-caylent, run-tests-external, merge-approval-caylent, merge-approval-external]
-    if: needs.merge-approval-caylent.result == 'success' || needs.merge-approval-external.result == 'success'
+    needs: [terraform-and-contributor-analysis, run-tests-caylent, run-tests-external, merge-self-approval-caylent, merge-approval-caylent, merge-approval-external]
+    if: needs.merge-self-approval-caylent.result == 'success' || needs.merge-approval-caylent.result == 'success' || needs.merge-approval-external.result == 'success'
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4
@@ -723,7 +795,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Contributors:* ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.contributor-analysis.outputs.code-owners }}"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Contributors:* ${{ needs.terraform-and-contributor-analysis.outputs.username }} (${{ needs.terraform-and-contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.terraform-and-contributor-analysis.outputs.code-owners }}"
                   }
                 }
               ]
@@ -809,7 +881,7 @@ jobs:
   qa-certification:
     name: Release Approval
     runs-on: ubuntu-24.04
-    needs: [contributor-analysis, post-merge-validation]
+    needs: [terraform-and-contributor-analysis, post-merge-validation]
     if: success()
     permissions:
       contents: read
@@ -838,7 +910,7 @@ jobs:
                 release_type: 'terraform-module',
                 module_path: '${{ inputs.module_path }}',
                 module_type: '${{ inputs.module_type }}',
-                type: '${{ needs.contributor-analysis.outputs.type }}',
-                username: '${{ needs.contributor-analysis.outputs.username }}'
+                type: '${{ needs.terraform-and-contributor-analysis.outputs.type }}',
+                username: '${{ needs.terraform-and-contributor-analysis.outputs.username }}'
               }
             });
