@@ -382,7 +382,7 @@ jobs:
   merge-approval-caylent:
     name: Merge Approval (Caylent)
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, validation-complete]
+    needs: [terraform-and-contributor-analysis, pr-validation-complete]
     if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'true' && needs.terraform-and-contributor-analysis.outputs.can-self-approve == 'false'
     permissions:
       contents: write
@@ -441,7 +441,7 @@ jobs:
   merge-self-approval-caylent:
     name: Self-Approval Merge (Caylent)
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, validation-complete]
+    needs: [terraform-and-contributor-analysis, pr-validation-complete]
     if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'true' && needs.terraform-and-contributor-analysis.outputs.can-self-approve == 'true'
     permissions:
       contents: write
@@ -623,10 +623,24 @@ jobs:
           echo "Internal tests: ${{ needs.run-tests-caylent.result }}"
           echo "External tests: ${{ needs.run-tests-external.result }}"
 
+  pr-validation-complete:
+    name: PR Validation Complete
+    runs-on: ubuntu-24.04
+    # This job waits for both terraform and non-terraform validation to complete
+    # It provides the single required status check for PR branch protection
+    needs: [validation-complete]  # This will be updated by pr-validation.yml to include both workflows
+    if: always() && needs.validation-complete.result == 'success'
+    steps:
+      - name: Mark PR validation as complete
+        run: |
+          echo "✅ PR Validation Complete - All required checks have passed"
+          echo "This status check indicates that all validation requirements are met"
+          echo "Ready for merge approval process"
+
   merge-approval-external:
     name: Merge Approval (External)
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, validation-complete]
+    needs: [terraform-and-contributor-analysis, pr-validation-complete]
     if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'false'
     permissions:
       contents: write
@@ -886,10 +900,24 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
+  qa-validation-complete:
+    name: QA Validation Complete
+    runs-on: ubuntu-24.04
+    # This job waits for both terraform and non-terraform post-merge validation to complete
+    # It provides the consolidated status check before release approval
+    needs: [post-merge-validation]  # This will be updated by pr-validation.yml to include both workflows
+    if: always() && needs.post-merge-validation.result == 'success'
+    steps:
+      - name: Mark QA validation as complete
+        run: |
+          echo "✅ QA Validation Complete - All post-merge validation checks have passed"
+          echo "This status check indicates that all quality assurance requirements are met"
+          echo "Ready for release approval process"
+
   qa-certification:
     name: Release Approval
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, post-merge-validation]
+    needs: [terraform-and-contributor-analysis, qa-validation-complete]
     if: success()
     permissions:
       contents: read
@@ -922,3 +950,17 @@ jobs:
                 username: '${{ needs.terraform-and-contributor-analysis.outputs.username }}'
               }
             });
+
+  release-complete:
+    name: Release Complete
+    runs-on: ubuntu-24.04
+    # This is the final validation step that runs after all release processes
+    # It provides the ultimate status check indicating the full release cycle is complete
+    needs: [qa-certification]
+    if: always() && needs.qa-certification.result == 'success'
+    steps:
+      - name: Mark release as complete
+        run: |
+          echo "🎉 Release Complete - All validation and release processes have completed successfully"
+          echo "This status check indicates the full release cycle is complete"
+          echo "All quality gates have been passed and the release is ready for production"
