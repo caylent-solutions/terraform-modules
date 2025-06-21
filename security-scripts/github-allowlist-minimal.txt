@@ -1,5 +1,1 @@
-actions/*
-github/*
-slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001
-tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
-trstringer/manual-approval@9f5e5d6bc511762e17f849775a3c56bdea6b4493
+actions/*,github/*,slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001,tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a,trstringer/manual-approval@9f5e5d6bc511762e17f849775a3c56bdea6b4493

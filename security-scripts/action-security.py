@@ -118,20 +118,22 @@ class ActionSecurityManager:
         """Generate the allowlist content"""
         print("\n📝 Generating GitHub Actions Allowlist...")
         
-        lines = [
+        # Try compact format first (comma-separated for GitHub Enterprise compatibility)
+        items = [
             "actions/*",
             "github/*"
         ]
         
         # Add third-party actions with SHAs
         for repo, sha in sorted(third_party_shas.items()):
-            lines.append(f"{repo}@{sha}")
+            items.append(f"{repo}@{sha}")
         
-        content = '\n'.join(lines) + '\n'
+        # Generate compact format (comma-separated, single line)
+        content = ','.join(items)
         
         # Check character count
         char_count = len(content)
-        print(f"   📊 Character count: {char_count}/255")
+        print(f"   📊 Character count: {char_count}/255 (compact format)")
         
         if char_count > 255:
             print(f"   ❌ ERROR: Allowlist too long! ({char_count} > 255 characters)")
