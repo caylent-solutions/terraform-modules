@@ -124,7 +124,8 @@ jobs:
     permissions:
       actions: read
       security-events: write
-      contents: read
+      contents: write
+      id-token: write
     uses: ./.github/workflows/terraform-module-validation.yml
     with:
       module_path: ${{ needs.validate.outputs.module_path }}
@@ -137,7 +138,8 @@ jobs:
     permissions:
       actions: read
       security-events: write
-      contents: read
+      contents: write
+      id-token: write
     uses: ./.github/workflows/non-terraform-validation.yml
 
   validation-complete:
