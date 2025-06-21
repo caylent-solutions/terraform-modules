@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Generate token from GitHub App
         id: generate_token
-        uses: tibdex/github-app-token@v2
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
         with:
           app_id: ${{ secrets.GH_APP_ID }}
           private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
@@ -248,7 +248,7 @@ jobs:
 
       - name: Send PR review request to Slack
         if: success()
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
         with:
           payload: |
             {
@@ -290,7 +290,7 @@ jobs:
 
       - name: Send validation success notification to Slack
         if: success()
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
         with:
           payload: |
             {
@@ -408,7 +408,7 @@ jobs:
 
       - name: Send PR review request to Slack
         if: success()
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
         with:
           payload: |
             {
@@ -450,7 +450,7 @@ jobs:
 
       - name: Send validation success notification to Slack
         if: success()
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
         with:
           payload: |
             {
@@ -477,7 +477,7 @@ jobs:
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
       - name: Send approval notification to Slack
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
         with:
           payload: |
             {
@@ -519,7 +519,7 @@ jobs:
 
       - name: Merge Approval
         if: success()
-        uses: trstringer/manual-approval@v1
+        uses: trstringer/manual-approval@9f5e5d6bc511762e17f849775a3c56bdea6b4493  # v1
         with:
           secret: ${{ steps.github-app-token.outputs.token }}
           approvers: ${{ needs.validate-non-terraform.outputs.code-owners }}
@@ -566,13 +566,13 @@ jobs:
     steps:
       - name: Generate GitHub App Token
         id: github-app-token
-        uses: tibdex/github-app-token@v2
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
         with:
           app_id: ${{ secrets.GH_APP_ID }}
           private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
       - name: Send approval notification to Slack
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
         with:
           payload: |
             {
@@ -614,7 +614,7 @@ jobs:
 
       - name: Merge Approval
         if: success()
-        uses: trstringer/manual-approval@v1
+        uses: trstringer/manual-approval@9f5e5d6bc511762e17f849775a3c56bdea6b4493  # v1
         with:
           secret: ${{ steps.github-app-token.outputs.token }}
           approvers: ${{ needs.validate-non-terraform.outputs.code-owners }}
@@ -661,13 +661,13 @@ jobs:
     steps:
       - name: Generate GitHub App Token
         id: github-app-token
-        uses: tibdex/github-app-token@v2
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
         with:
           app_id: ${{ secrets.GH_APP_ID }}
           private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
       - name: Send approval notification to Slack
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
         with:
           payload: |
             {
@@ -709,7 +709,7 @@ jobs:
 
       - name: Merge Approval
         if: success()
-        uses: trstringer/manual-approval@v1
+        uses: trstringer/manual-approval@9f5e5d6bc511762e17f849775a3c56bdea6b4493  # v1
         with:
           secret: ${{ steps.github-app-token.outputs.token }}
           approvers: ${{ needs.validate-non-terraform.outputs.code-owners }}
@@ -745,7 +745,7 @@ jobs:
 
       - name: Send PR failure notification to Slack
         if: failure()
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
         with:
           payload: |
             {
@@ -897,7 +897,7 @@ jobs:
 
       - name: Send post-merge validation success to Slack
         if: success()
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
         with:
           payload: |
             {
@@ -939,7 +939,7 @@ jobs:
 
       - name: Send post-merge validation failure to Slack
         if: failure()
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
         with:
           payload: |
             {
@@ -1011,7 +1011,7 @@ jobs:
     steps:
       - name: Generate GitHub App Token
         id: github-app-token
-        uses: tibdex/github-app-token@v2
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
         with:
           app_id: ${{ secrets.GH_APP_ID }}
           private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
@@ -1023,7 +1023,7 @@ jobs:
           echo "approvers=${{ needs.validate-non-terraform.outputs.code-owners }}" >> $GITHUB_OUTPUT
 
       - name: QA Certification Step
-        uses: trstringer/manual-approval@v1
+        uses: trstringer/manual-approval@9f5e5d6bc511762e17f849775a3c56bdea6b4493  # v1
         with:
           secret: ${{ steps.github-app-token.outputs.token }}
           approvers: ${{ steps.determine-approvers.outputs.approvers }}

@@ -157,6 +157,7 @@ This repository implements a comprehensive automated CI/CD pipeline that handles
 - **External Contributor Protection**: Manual approval required for test execution
 - **Environment Isolation**: Protected environments for external contributions
 - **Multiple Approval Gates**: Code owners and QA certification required
+- **GitHub Actions Security**: SHA-pinned actions prevent supply chain attacks
 
 ### Monitoring
 
@@ -180,6 +181,7 @@ This repository implements a comprehensive automated CI/CD pipeline that handles
 
 ### Scripts Documentation
 - [Scripts Documentation Index](docs/scripts/README.md) - Complete index of all scripts
+- [GitHub Actions Security Scripts](security-scripts/README.md) - Secure GitHub Actions management
 - [Detect Proposed Git Repo Changes](docs/scripts/detect-proposed-git-repo-changes.md)
 - [Go Format](docs/scripts/go-format.md)
 - [Go Lint](docs/scripts/go-lint.md)

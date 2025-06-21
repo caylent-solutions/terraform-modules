@@ -2,6 +2,10 @@
 
 This directory contains documentation for the Terraform Modules repository.
 
+## Security
+
+- [GitHub Actions Security Scripts](../security-scripts/README.md) - Tools for maintaining secure GitHub Actions
+
 ## Module Development
 
 - [Terraform Module Structure](terraform-module-structure.md) - Required structure for all modules

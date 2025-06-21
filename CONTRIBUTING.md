@@ -173,6 +173,32 @@ When you submit a pull request, the following automated process occurs:
 - **Environment Isolation**: External contributor tests run in protected environments
 - **Code Scanning**: All code scanned for security vulnerabilities before and after merge
 - **Manual Gates**: Multiple approval points ensure code quality and security
+- **Action Security**: GitHub Actions are SHA-pinned to prevent supply chain attacks
+
+### GitHub Actions Security
+
+When modifying workflow files (`.github/workflows/*.yml`):
+
+1. **Run Security Script**: After adding, updating, or removing GitHub Actions:
+   ```bash
+   ./security-scripts/action-security.py
+   ```
+
+2. **Update GitHub Settings**: Copy the script output to:
+   - Settings → Actions → General → Actions permissions
+   - Select "Allow select actions and reusable workflows"
+   - Paste the allowlist content and save
+
+3. **Use SHA-Pinned Actions**: All third-party actions must use commit SHAs instead of version tags:
+   ```yaml
+   # ✅ Correct
+   uses: someaction/action@a1b2c3d4e5f6...  # v1.0.0
+   
+   # ❌ Incorrect  
+   uses: someaction/action@v1.0.0
+   ```
+
+4. **Security Review**: External contributors cannot modify workflow files for security reasons
 
 ## Getting Help
 
