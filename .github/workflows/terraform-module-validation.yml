@@ -18,8 +18,10 @@ on:
         required: true
 
 jobs:
-  validate-module:
-    name: Validate Terraform Module
+  contributor-analysis:
+    name: Contributor Analysis & Workflow Routing
+    # This job determines contributor type (internal vs external) and identifies code owners
+    # to route the workflow to appropriate approval paths and populate notification context
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -39,7 +41,6 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Simulate merge
         run: |
           git config --global user.name "GitHub Actions"
@@ -48,7 +49,6 @@ jobs:
           git fetch origin ${{ github.head_ref }}
           git checkout -b module-validation origin/${{ github.base_ref }}
           git merge --no-commit --no-ff origin/${{ github.head_ref }}
-
       - name: Install system dependencies for Python build
         run: |
           sudo apt-get update
@@ -102,7 +102,7 @@ jobs:
           cd ${{ inputs.module_path }}
           make go-format
 
-      - name: Check contributor type and membership
+      - name: Analyze contributor type (Internal vs External)
         id: check-contributor
         if: always()
         uses: actions/github-script@v7
@@ -140,7 +140,7 @@ jobs:
               core.setFailed('Failed to determine contributor type and membership information - strict validation requires successful organization membership check');
             }
           
-      - name: Find code owners
+      - name: Identify code owners for changed files
         id: codeowners
         if: always()
         run: |
@@ -276,8 +276,8 @@ jobs:
 
   run-tests-caylent:
     name: Run Terraform Module Tests (Caylent)
-    needs: [validate-module]
-    if: ${{ needs.validate-module.outputs.internal == 'true' }}
+    needs: [contributor-analysis]
+    if: ${{ needs.contributor-analysis.outputs.internal == 'true' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -359,7 +359,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.validate-module.outputs.username }} (${{ needs.validate-module.outputs.type }} contributor)\n*Code Owners:* ${{ needs.validate-module.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
                   }
                 }
               ]
@@ -371,8 +371,8 @@ jobs:
   merge-approval-caylent:
     name: Merge Approval (Caylent)
     runs-on: ubuntu-24.04
-    needs: [validate-module, run-tests-caylent]
-    if: success() && needs.validate-module.outputs.internal == 'true'
+    needs: [contributor-analysis, run-tests-caylent]
+    if: success() && needs.contributor-analysis.outputs.internal == 'true'
     permissions:
       contents: write
       id-token: write
@@ -418,7 +418,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.validate-module.outputs.username }} (${{ needs.validate-module.outputs.type }} contributor)\n*Code Owners:* ${{ needs.validate-module.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
                   }
                 }
               ]
@@ -450,8 +450,8 @@ jobs:
 
   run-tests-external:
     name: Run Terraform Module Tests (External)
-    needs: [validate-module]
-    if: ${{ needs.validate-module.outputs.internal == 'false' }}
+    needs: [contributor-analysis]
+    if: ${{ needs.contributor-analysis.outputs.internal == 'false' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -534,7 +534,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.validate-module.outputs.username }} (${{ needs.validate-module.outputs.type }} contributor)\n*Code Owners:* ${{ needs.validate-module.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
                   }
                 }
               ]
@@ -546,8 +546,8 @@ jobs:
   merge-approval-external:
     name: Merge Approval (External)
     runs-on: ubuntu-24.04
-    needs: [validate-module, run-tests-external]
-    if: success() && needs.validate-module.outputs.internal == 'false'
+    needs: [contributor-analysis, run-tests-external]
+    if: success() && needs.contributor-analysis.outputs.internal == 'false'
     permissions:
       contents: write
       id-token: write
@@ -593,7 +593,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.validate-module.outputs.username }} (${{ needs.validate-module.outputs.type }} contributor)\n*Code Owners:* ${{ needs.validate-module.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.contributor-analysis.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
                   }
                 }
               ]
@@ -626,7 +626,7 @@ jobs:
   post-merge-validation:
     name: Post-Merge Terraform Validation
     runs-on: ubuntu-24.04
-    needs: [validate-module, run-tests-caylent, run-tests-external, merge-approval-caylent, merge-approval-external]
+    needs: [contributor-analysis, run-tests-caylent, run-tests-external, merge-approval-caylent, merge-approval-external]
     if: needs.merge-approval-caylent.result == 'success' || needs.merge-approval-external.result == 'success'
     steps:
       - name: Checkout main branch
@@ -723,7 +723,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Contributors:* ${{ needs.validate-module.outputs.username }} (${{ needs.validate-module.outputs.type }} contributor)\n*Code Owners:* ${{ needs.validate-module.outputs.code-owners }}"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ inputs.module_path }}\n*Contributors:* ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }} contributor)\n*Code Owners:* ${{ needs.contributor-analysis.outputs.code-owners }}"
                   }
                 }
               ]
@@ -809,7 +809,7 @@ jobs:
   qa-certification:
     name: Release Approval
     runs-on: ubuntu-24.04
-    needs: [validate-module, post-merge-validation]
+    needs: [contributor-analysis, post-merge-validation]
     if: success()
     permissions:
       contents: read
@@ -838,7 +838,7 @@ jobs:
                 release_type: 'terraform-module',
                 module_path: '${{ inputs.module_path }}',
                 module_type: '${{ inputs.module_type }}',
-                type: '${{ needs.validate-module.outputs.type }}',
-                username: '${{ needs.validate-module.outputs.username }}'
+                type: '${{ needs.contributor-analysis.outputs.type }}',
+                username: '${{ needs.contributor-analysis.outputs.username }}'
               }
             });
