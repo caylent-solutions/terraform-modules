@@ -9,6 +9,13 @@ on:
       module_type:
         required: true
         type: string
+    secrets:
+      GH_APP_ID:
+        required: true
+      GH_APP_PRIVATE_KEY:
+        required: true
+      SLACK_WEBHOOK_URL:
+        required: true
 
 jobs:
   pre-merge-codeql:
