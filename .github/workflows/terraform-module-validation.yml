@@ -287,17 +287,9 @@ jobs:
     if: ${{ needs.validate-module.outputs.internal == 'true' }}
     runs-on: ubuntu-24.04
     permissions:
-      contents: write
-      issues: write
+      contents: read
       id-token: write
-    environment: merge-approval
     steps:
-      - name: Generate GitHub App Token
-        id: github-app-token
-        uses: tibdex/github-app-token@v2
-        with:
-          app_id: ${{ secrets.GH_APP_ID }}
-          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -382,6 +374,65 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  merge-approval-caylent:
+    name: Merge Approval (Caylent)
+    runs-on: ubuntu-24.04
+    needs: [validate-module, run-tests-caylent]
+    if: success() && needs.validate-module.outputs.internal == 'true'
+    permissions:
+      contents: write
+      issues: write
+      id-token: write
+    environment: merge-approval
+    steps:
+      - name: Generate GitHub App Token
+        id: github-app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - name: Send approval notification to Slack
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "<!here> :mag: Terraform Module PR Ready for Review - ${{ inputs.module_path }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!here> *Terraform Module PR Review Needed*"
+                  }
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":mag: Module Ready for Review - ${{ inputs.module_path }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR #${{ github.event.pull_request.number }}*: ${{ github.event.pull_request.title }}\nAll validation checks have passed! This Terraform module is ready for review.\n<${{ github.event.pull_request.html_url }}|View Pull Request>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.validate-module.outputs.username }} (${{ needs.validate-module.outputs.type }} contributor)\n*Code Owners:* ${{ needs.validate-module.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
           
       - name: Merge Approval
         if: success()
@@ -398,6 +449,7 @@ jobs:
             Please approve this Terraform module PR for merge.
             
             **Code owners:** ${{ needs.validate-module.outputs.code-owners }}
+
       - name: Squash merge PR
         if: success()
         uses: actions/github-script@v7
@@ -425,17 +477,9 @@ jobs:
     if: ${{ needs.validate-module.outputs.internal == 'false' }}
     runs-on: ubuntu-24.04
     permissions:
-      contents: write
-      issues: write
+      contents: read
       id-token: write
-    environment: external-contributor-test-approval
     steps:
-      - name: Generate GitHub App Token
-        id: github-app-token
-        uses: tibdex/github-app-token@v2
-        with:
-          app_id: ${{ secrets.GH_APP_ID }}
-          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -520,6 +564,65 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  merge-approval-external:
+    name: Merge Approval (External)
+    runs-on: ubuntu-24.04
+    needs: [validate-module, run-tests-external]
+    if: success() && needs.validate-module.outputs.internal == 'false'
+    permissions:
+      contents: write
+      issues: write
+      id-token: write
+    environment: external-contributor-test-approval
+    steps:
+      - name: Generate GitHub App Token
+        id: github-app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - name: Send approval notification to Slack
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "<!here> :mag: External Contributor Terraform Module PR Ready for Review - ${{ inputs.module_path }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!here> *External Contributor Terraform Module PR Review Needed*"
+                  }
+                },
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":mag: External Module Ready for Review - ${{ inputs.module_path }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PR #${{ github.event.pull_request.number }}*: ${{ github.event.pull_request.title }}\nAll validation checks have passed! This external contributor's Terraform module is ready for review.\n<${{ github.event.pull_request.html_url }}|View Pull Request>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Module:* ${{ inputs.module_path }}\n*Author:* ${{ needs.validate-module.outputs.username }} (${{ needs.validate-module.outputs.type }} contributor)\n*Code Owners:* ${{ needs.validate-module.outputs.code-owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
           
       - name: Merge Approval
         if: success()
@@ -528,14 +631,15 @@ jobs:
           secret: ${{ steps.github-app-token.outputs.token }}
           approvers: ${{ needs.validate-module.outputs.code-owners }}
           minimum-approvals: 1
-          issue-title: "Terraform Module Merge Approval Required"
+          issue-title: "External Contributor Terraform Module Merge Approval Required"
           issue-body: |
             **Module:** ${{ inputs.module_path }}
             **Contributor:** ${{ needs.validate-module.outputs.type }} contributor (@${{ needs.validate-module.outputs.username }})
             
-            Please approve this Terraform module PR for merge.
+            Please approve this external contributor's Terraform module PR for merge.
             
             **Code owners:** ${{ needs.validate-module.outputs.code-owners }}
+
       - name: Squash merge PR
         if: success()
         uses: actions/github-script@v7
@@ -560,8 +664,8 @@ jobs:
   post-merge-validation:
     name: Post-Merge Terraform Validation
     runs-on: ubuntu-24.04
-    needs: [validate-module, run-tests-caylent, run-tests-external]
-    if: needs.run-tests-caylent.result == 'success' || needs.run-tests-external.result == 'success'
+    needs: [validate-module, run-tests-caylent, run-tests-external, merge-approval-caylent, merge-approval-external]
+    if: needs.merge-approval-caylent.result == 'success' || needs.merge-approval-external.result == 'success'
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4
