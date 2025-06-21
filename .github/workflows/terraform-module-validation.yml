@@ -18,8 +18,8 @@ on:
         required: true
 
 jobs:
-  contributor-analysis:
-    name: Contributor Analysis & Workflow Routing
+  terraform-and-contributor-analysis:
+    name: Terraform & Contributor Analysis & Workflow Routing
     # This job determines contributor type (internal vs external) and identifies code owners
     # to route the workflow to appropriate approval paths and populate notification context
     runs-on: ubuntu-24.04
