@@ -8,7 +8,7 @@ jobs:
     name: Pre-Merge CodeQL Analysis
     runs-on: ubuntu-24.04
     permissions:
-      contents: write
+      contents: read
       id-token: write
       security-events: write
       actions: read

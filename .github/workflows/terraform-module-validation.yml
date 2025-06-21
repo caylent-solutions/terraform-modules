@@ -15,7 +15,7 @@ jobs:
     name: Pre-Merge CodeQL Analysis
     runs-on: ubuntu-24.04
     permissions:
-      contents: write
+      contents: read
       id-token: write
       security-events: write
       actions: read
@@ -45,7 +45,7 @@ jobs:
     name: Validate Terraform Module
     runs-on: ubuntu-24.04
     permissions:
-      contents: write
+      contents: read
       id-token: write
     outputs:
       code-owners: ${{ steps.codeowners.outputs.owners }}
@@ -279,6 +279,8 @@ jobs:
     needs: [validate-module]
     if: ${{ needs.validate-module.outputs.internal == 'true' }}
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     environment: merge-approval
     steps:
       - name: Checkout code
@@ -406,6 +408,8 @@ jobs:
     needs: [validate-module]
     if: ${{ needs.validate-module.outputs.internal == 'false' }}
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     environment: external-contributor-test-approval
     steps:
       - name: Checkout code
