@@ -852,7 +852,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'main-validation.yml',
-              ref: 'final-pr-validation-workflow-for-status-checks-requirement', // ✅ TEMP FIX
+              ref: context.payload.pull_request.base.ref,
               inputs: {
                 change_type: '${{ steps.determine-outputs.outputs.change_type }}',
                 contributor_type: '${{ steps.determine-outputs.outputs.contributor_type }}',
