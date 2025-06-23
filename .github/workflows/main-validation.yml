@@ -757,6 +757,38 @@ jobs:
             echo "❌ Post-merge revalidation will not run - no merge approvals succeeded"
           fi
 
+  # Debug output inspection for post-merge routing
+  debug-post-merge-routing:
+    name: Debug Post-Merge Routing
+    runs-on: ubuntu-24.04
+    needs: 
+      - merge-approval-routing
+      - merge-approval-routing-non-terraform
+      - merge-approval-routing-terraform
+    if: always()
+    steps:
+      - name: Inspect routing outputs
+        run: |
+          echo "🔍 Post-Merge Routing Debug Information"
+          echo "========================================="
+          echo ""
+          echo "📊 Job Results:"
+          echo "  merge-approval-routing: ${{ needs.merge-approval-routing.result }}"
+          echo "  merge-approval-routing-non-terraform: ${{ needs.merge-approval-routing-non-terraform.result }}"
+          echo "  merge-approval-routing-terraform: ${{ needs.merge-approval-routing-terraform.result }}"
+          echo ""
+          echo "📤 Non-Terraform Routing Outputs:"
+          echo "  should_run_post_merge: '${{ needs.merge-approval-routing-non-terraform.outputs.should_run_post_merge }}'"
+          echo "  (type: $(echo '${{ needs.merge-approval-routing-non-terraform.outputs.should_run_post_merge }}' | wc -c) chars)"
+          echo ""
+          echo "📤 Terraform Routing Outputs:"
+          echo "  should_run_post_merge: '${{ needs.merge-approval-routing-terraform.outputs.should_run_post_merge }}'"
+          echo ""
+          echo "🧮 Condition Evaluation:"
+          echo "  Non-Terraform condition: needs.merge-approval-routing-non-terraform.outputs.should_run_post_merge == 'true'"
+          echo "  Actual value: '${{ needs.merge-approval-routing-non-terraform.outputs.should_run_post_merge }}'"
+          echo "  Comparison result: ${{ needs.merge-approval-routing-non-terraform.outputs.should_run_post_merge == 'true' }}"
+
   # Post-merge validation
   post-merge-revalidation-non-terraform:
     name: Post-Merge Revalidation (Non-Terraform)
