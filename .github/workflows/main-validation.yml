@@ -137,6 +137,9 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
           
       - name: Auto-merge PR (Self-Approval with Admin Bypass)
         if: success()
@@ -371,6 +374,9 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
           
       - name: Auto-merge PR (Self-Approval with Admin Bypass)
         if: success()

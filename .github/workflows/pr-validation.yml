@@ -813,6 +813,17 @@ jobs:
       module_path: ${{ steps.determine-outputs.outputs.module_path }}
       module_type: ${{ steps.determine-outputs.outputs.module_type }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if main-validation.yml was modified
+        uses: dorny/paths-filter@v3
+        id: main_validation_changed
+        with:
+          filters: |
+            main_validation:
+              - '.github/workflows/main-validation.yml'
+
       - name: Generate token from GitHub App
         id: generate_token
         uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
@@ -844,6 +855,7 @@ jobs:
           fi
           
       - name: Trigger main validation workflow
+        if: steps.main_validation_changed.outputs.main_validation != 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
@@ -866,3 +878,12 @@ jobs:
                 pr_html_url: '${{ github.event.pull_request.html_url }}'
               }
             });
+
+      - name: Notify about skipped dispatch
+        if: steps.main_validation_changed.outputs.main_validation == 'true'
+        run: |
+          echo "🚫 Skipping dispatch of main-validation.yml because it was modified in this PR."
+          echo "✅ To finish validation:"
+          echo "1. Merge this PR into \`main\`."
+          echo "2. Create a new PR that includes actual code changes."
+          echo "3. The PR validation workflow will now be able to trigger \`main-validation.yml\` as expected."
