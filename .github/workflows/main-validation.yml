@@ -23,14 +23,6 @@ on:
         description: 'Code owners for the changes'
         required: true
         type: string
-      module_path:
-        description: 'Path to the Terraform module (if applicable)'
-        required: false
-        type: string
-      module_type:
-        description: 'Type of Terraform module (if applicable)'
-        required: false
-        type: string
       pr_number:
         description: 'Pull request number'
         required: true
@@ -43,6 +35,11 @@ on:
         description: 'Pull request HTML URL'
         required: true
         type: string
+      module_config:
+        description: 'Module path and type (JSON: {"path":"", "type":""})'
+        required: false
+        type: string
+        default: '{"path":"", "type":""}'
       dryrun:
         description: 'Run as dry run (no real merge or release)'
         required: false
@@ -59,8 +56,8 @@ jobs:
       contributor_username: ${{ github.event.inputs.contributor_username }}
       can_self_approve: ${{ github.event.inputs.can_self_approve }}
       code_owners: ${{ github.event.inputs.code_owners }}
-      module_path: ${{ github.event.inputs.module_path }}
-      module_type: ${{ github.event.inputs.module_type }}
+      module_path: ${{ steps.parse-module-config.outputs.module_path }}
+      module_type: ${{ steps.parse-module-config.outputs.module_type }}
       pr_number: ${{ github.event.inputs.pr_number }}
       pr_title: ${{ github.event.inputs.pr_title }}
       pr_html_url: ${{ github.event.inputs.pr_html_url }}
@@ -72,6 +69,22 @@ jobs:
       is_external_contributor: ${{ steps.set-routing-flags.outputs.is_external_contributor }}
       can_self_approve_internal: ${{ steps.set-routing-flags.outputs.can_self_approve_internal }}
     steps:
+      - name: Parse module config
+        id: parse-module-config
+        run: |
+          module_config='${{ github.event.inputs.module_config }}'
+          echo "Raw module_config: $module_config"
+          
+          # Parse JSON to extract path and type
+          module_path=$(echo "$module_config" | jq -r '.path // ""')
+          module_type=$(echo "$module_config" | jq -r '.type // ""')
+          
+          echo "module_path=$module_path" >> $GITHUB_OUTPUT
+          echo "module_type=$module_type" >> $GITHUB_OUTPUT
+          
+          echo "Parsed module_path: $module_path"
+          echo "Parsed module_type: $module_type"
+
       - name: Set internal flag
         id: set-internal
         run: |
@@ -124,8 +137,8 @@ jobs:
           echo "  PR Title: ${{ github.event.inputs.pr_title }}"
           echo "  Dry Run Mode: ${{ github.event.inputs.dryrun }}"
           if [[ "${{ github.event.inputs.change_type }}" == "terraform" ]]; then
-            echo "  Module Path: ${{ github.event.inputs.module_path }}"
-            echo "  Module Type: ${{ github.event.inputs.module_type }}"
+            echo "  Module Path: ${{ steps.parse-module-config.outputs.module_path }}"
+            echo "  Module Type: ${{ steps.parse-module-config.outputs.module_type }}"
           fi
           echo ""
           echo "🎯 Routing Decisions:"
@@ -453,7 +466,7 @@ jobs:
         with:
           payload: |
             {
-              "text": ":white_check_mark: Auto-Approved Terraform Module Merge - ${{ github.repository }}/${{ github.event.inputs.module_path }}",
+              "text": ":white_check_mark: Auto-Approved Terraform Module Merge - ${{ github.repository }}/${{ needs.merge-approval-routing.outputs.module_path }}",
               "blocks": [
                 {
                   "type": "section",
@@ -480,7 +493,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ github.event.inputs.module_path }}\n*Author:* ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }} contributor with self-approval privileges)\n*Code Owners:* ${{ github.event.inputs.code_owners }}\n*Dry Run Mode:* ${{ needs.merge-approval-routing.outputs.dryrun }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ needs.merge-approval-routing.outputs.module_path }}\n*Author:* ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }} contributor with self-approval privileges)\n*Code Owners:* ${{ github.event.inputs.code_owners }}\n*Dry Run Mode:* ${{ needs.merge-approval-routing.outputs.dryrun }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow>"
                   }
                 }
               ]
@@ -500,13 +513,13 @@ jobs:
           echo "🔓 Auto-merging PR #${{ github.event.inputs.pr_number }} by self-approval user with admin bypass"
           echo "PR Title: ${{ github.event.inputs.pr_title }}"
           echo "Author: ${{ github.event.inputs.contributor_username }}"
-          echo "Module: ${{ github.event.inputs.module_path }}"
+          echo "Module: ${{ needs.merge-approval-routing.outputs.module_path }}"
           
           gh pr merge ${{ github.event.inputs.pr_number }} \
             --admin \
             --squash \
             --subject "${{ github.event.inputs.pr_title }} (#${{ github.event.inputs.pr_number }})" \
-            --body "Self-approved squash merge by authorized user with admin privileges - Module: ${{ github.event.inputs.module_path }}"
+            --body "Self-approved squash merge by authorized user with admin privileges - Module: ${{ needs.merge-approval-routing.outputs.module_path }}"
 
       - name: Skip merge due to dry run mode
         if: success() && needs.merge-approval-routing.outputs.dryrun == 'true'
@@ -515,7 +528,7 @@ jobs:
           echo "Terraform module PR #${{ github.event.inputs.pr_number }} would have been auto-merged by self-approval user with admin bypass"
           echo "PR Title: ${{ github.event.inputs.pr_title }}"
           echo "Author: ${{ github.event.inputs.contributor_username }}"
-          echo "Module: ${{ github.event.inputs.module_path }}"
+          echo "Module: ${{ needs.merge-approval-routing.outputs.module_path }}"
 
   merge-approval-terraform-internal:
     name: Merge Approval (Terraform Internal)
@@ -540,7 +553,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "<!here> :mag: Terraform Module PR Ready for Review - ${{ github.repository }}/${{ github.event.inputs.module_path }}",
+              "text": "<!here> :mag: Terraform Module PR Ready for Review - ${{ github.repository }}/${{ needs.merge-approval-routing.outputs.module_path }}",
               "blocks": [
                 {
                   "type": "section",
@@ -567,7 +580,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ github.event.inputs.module_path }}\n*Author:* ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }} contributor)\n*Code Owners:* ${{ github.event.inputs.code_owners }}\n*Dry Run Mode:* ${{ needs.merge-approval-routing.outputs.dryrun }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ needs.merge-approval-routing.outputs.module_path }}\n*Author:* ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }} contributor)\n*Code Owners:* ${{ github.event.inputs.code_owners }}\n*Dry Run Mode:* ${{ needs.merge-approval-routing.outputs.dryrun }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
                   }
                 }
               ]
@@ -604,7 +617,7 @@ jobs:
           echo "Terraform module PR #${{ github.event.inputs.pr_number }} would have been squash merged"
           echo "PR Title: ${{ github.event.inputs.pr_title }}"
           echo "Author: ${{ github.event.inputs.contributor_username }}"
-          echo "Module: ${{ github.event.inputs.module_path }}"
+          echo "Module: ${{ needs.merge-approval-routing.outputs.module_path }}"
 
   merge-approval-terraform-external:
     name: Merge Approval (Terraform External)
@@ -629,7 +642,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "<!here> :mag: External Contributor Terraform Module PR Ready for Review - ${{ github.repository }}/${{ github.event.inputs.module_path }}",
+              "text": "<!here> :mag: External Contributor Terraform Module PR Ready for Review - ${{ github.repository }}/${{ needs.merge-approval-routing.outputs.module_path }}",
               "blocks": [
                 {
                   "type": "section",
@@ -656,7 +669,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ github.event.inputs.module_path }}\n*Author:* ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }} contributor)\n*Code Owners:* ${{ github.event.inputs.code_owners }}\n*Dry Run Mode:* ${{ needs.merge-approval-routing.outputs.dryrun }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ needs.merge-approval-routing.outputs.module_path }}\n*Author:* ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }} contributor)\n*Code Owners:* ${{ github.event.inputs.code_owners }}\n*Dry Run Mode:* ${{ needs.merge-approval-routing.outputs.dryrun }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Approval>"
                   }
                 }
               ]
@@ -693,7 +706,7 @@ jobs:
           echo "External contributor Terraform module PR #${{ github.event.inputs.pr_number }} would have been squash merged"
           echo "PR Title: ${{ github.event.inputs.pr_title }}"
           echo "Author: ${{ github.event.inputs.contributor_username }}"
-          echo "Module: ${{ github.event.inputs.module_path }}"
+          echo "Module: ${{ needs.merge-approval-routing.outputs.module_path }}"
 
   # Routing jobs to determine post-merge execution
   merge-approval-routing-non-terraform:
@@ -1009,7 +1022,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "<!here> :white_check_mark: Terraform Module Post-Merge Tests Passed - ${{ github.repository }}/${{ github.event.inputs.module_path }}",
+              "text": "<!here> :white_check_mark: Terraform Module Post-Merge Tests Passed - ${{ github.repository }}/${{ needs.merge-approval-routing.outputs.module_path }}",
               "blocks": [
                 {
                   "type": "section",
@@ -1036,7 +1049,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ github.event.inputs.module_path }}\n*Contributors:* ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }} contributor)\n*Code Owners:* ${{ github.event.inputs.code_owners }}\n*Dry Run Mode:* ${{ needs.merge-approval-routing.outputs.dryrun }}"
+                    "text": "*Repository:* ${{ github.repository }}\n*Module:* ${{ needs.merge-approval-routing.outputs.module_path }}\n*Contributors:* ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }} contributor)\n*Code Owners:* ${{ github.event.inputs.code_owners }}\n*Dry Run Mode:* ${{ needs.merge-approval-routing.outputs.dryrun }}"
                   }
                 }
               ]
@@ -1051,7 +1064,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "<!here> :x: Terraform Module Post-Merge Validation Failed - ${{ github.repository }}/${{ github.event.inputs.module_path }}",
+              "text": "<!here> :x: Terraform Module Post-Merge Validation Failed - ${{ github.repository }}/${{ needs.merge-approval-routing.outputs.module_path }}",
               "blocks": [
                 {
                   "type": "section",
@@ -1076,7 +1089,7 @@ jobs:
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*Module:* `${{ github.event.inputs.module_path }}`"
+                      "text": "*Module:* `${{ needs.merge-approval-routing.outputs.module_path }}`"
                     }
                   ]
                 },
@@ -1085,7 +1098,7 @@ jobs:
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*Type:* `${{ github.event.inputs.module_type }}`"
+                      "text": "*Type:* `${{ needs.merge-approval-routing.outputs.module_type }}`"
                     },
                     {
                       "type": "mrkdwn",
@@ -1172,8 +1185,8 @@ jobs:
             };
             
             if ('${{ github.event.inputs.change_type }}' === 'terraform') {
-              releaseInputs.module_path = '${{ github.event.inputs.module_path }}';
-              releaseInputs.module_type = '${{ github.event.inputs.module_type }}';
+              releaseInputs.module_path = '${{ needs.merge-approval-routing.outputs.module_path }}';
+              releaseInputs.module_type = '${{ needs.merge-approval-routing.outputs.module_type }}';
             }
             
             await github.rest.actions.createWorkflowDispatch({
