@@ -1117,8 +1117,60 @@ jobs:
           
           echo "::endgroup::"
 
-      - name: Check Terraform documentation is up-to-date
+      - name: Check Terraform documentation is up-to-date (with debug on failure)
+        id: tf-docs-check
+        continue-on-error: true
         run: make tf-docs-check MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
+
+      - name: Debug terraform docs check failure
+        if: steps.tf-docs-check.outcome == 'failure'
+        run: |
+          echo "::group::🔍 Terraform Docs Check Failed - Debug Information"
+          echo "The tf-docs-check step failed. Let's debug..."
+          
+          cd "${{ needs.merge-approval-routing.outputs.module_path }}"
+          
+          echo "=== Current TERRAFORM-DOCS.md content and checksum ==="
+          if [ -f "TERRAFORM-DOCS.md" ]; then
+            echo "File exists:"
+            wc -l TERRAFORM-DOCS.md
+            md5sum TERRAFORM-DOCS.md
+            echo "Expected local MD5: 3adf595f8a040a708930b29f150b208b"
+          else
+            echo "TERRAFORM-DOCS.md does not exist!"
+          fi
+          
+          echo "=== Generate what terraform-docs would produce ==="
+          terraform-docs markdown . > TERRAFORM-DOCS.md.expected
+          echo "Generated file:"
+          wc -l TERRAFORM-DOCS.md.expected
+          md5sum TERRAFORM-DOCS.md.expected
+          
+          echo "=== Compare existing vs expected ==="
+          if [ -f "TERRAFORM-DOCS.md" ]; then
+            echo "Differences between existing and expected:"
+            diff TERRAFORM-DOCS.md TERRAFORM-DOCS.md.expected || echo "Files differ (this is expected if check failed)"
+            
+            echo "=== Show first 20 lines of each file ==="
+            echo "--- Existing TERRAFORM-DOCS.md (first 20 lines) ---"
+            head -20 TERRAFORM-DOCS.md || echo "Cannot read existing file"
+            echo "--- Expected TERRAFORM-DOCS.md (first 20 lines) ---"
+            head -20 TERRAFORM-DOCS.md.expected || echo "Cannot read expected file"
+          fi
+          
+          echo "=== Tool versions and paths ==="
+          which terraform-docs || echo "terraform-docs not in PATH"
+          terraform-docs --version || echo "terraform-docs version failed"
+          which terraform || echo "terraform not in PATH"
+          terraform --version || echo "terraform version failed"
+          
+          echo "::endgroup::"
+
+      - name: Fail if terraform docs check failed
+        if: steps.tf-docs-check.outcome == 'failure'
+        run: |
+          echo "::error::Terraform documentation check failed. See debug output above."
+          exit 1
 
       - name: Run security checks
         run: make tf-security MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
