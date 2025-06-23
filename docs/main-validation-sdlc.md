@@ -60,6 +60,29 @@ A PR touching `main-validation.yml` must satisfy:
 
 **All changes must be tested in dry run mode before real deployment.**
 
+#### Automated Testing Script
+
+The repository includes an automated testing script for comprehensive dry run testing:
+
+```bash
+# Test all 6 merge approval variations automatically
+make test-main-validation-workflow
+```
+
+This script:
+- ✅ Reads all configuration from `monorepo-config.json` (no hardcoded values)
+- ✅ Triggers all 6 merge approval job variations
+- ✅ Uses current git branch for testing
+- ✅ Requires manual approval in GitHub UI
+- ✅ Provides detailed logging and next steps
+- ✅ Runs in dry run mode by default
+
+See [Main Validation Script Documentation](scripts/main-validation.md) for complete details.
+
+#### Manual Testing (Alternative)
+
+If automated script is unavailable, manual testing is still supported:
+
 #### Dry Run Capabilities
 - ✅ Full simulation of PR merge logic
 - ✅ Complete routing decision testing
@@ -69,7 +92,7 @@ A PR touching `main-validation.yml` must satisfy:
 - 🚫 No actual PR merges occur
 - 🚫 No release workflows triggered
 
-#### Dry Run Trigger Template
+#### Manual Dry Run Trigger Template
 ```yaml
 workflow_dispatch:
   inputs:
@@ -86,8 +109,16 @@ workflow_dispatch:
     dryrun: true                               # KEY: Enable dry run mode
 ```
 
-#### Dry Run Test Scenarios
-Test **all** of these scenarios in dry run mode:
+#### Comprehensive Test Coverage
+
+**Required**: Test all 6 scenarios using the automated script:
+
+```bash
+# Automated testing (recommended)
+make test-main-validation-workflow
+```
+
+The script automatically tests all scenarios:
 
 1. **Non-Terraform Changes**:
    - Internal contributor (self-approve enabled)
@@ -98,6 +129,27 @@ Test **all** of these scenarios in dry run mode:
    - Internal contributor (self-approve enabled)
    - Internal contributor (self-approve disabled)
    - External contributor
+
+#### Manual Testing Process (if needed)
+
+For each scenario:
+1. Navigate to GitHub Actions → Main Validation
+2. Click "Run workflow"
+3. Fill in the inputs using the template above
+4. **Ensure `dryrun: true`**
+5. Monitor execution in GitHub Actions
+6. Verify correct job selection and routing
+7. Check Slack notifications include dry run indicators
+8. Confirm no actual merges/releases occur
+
+#### Test Result Validation
+
+- ✅ Each scenario triggers the correct merge approval job
+- ✅ Routing logic selects appropriate environment (`merge-approval` vs `external-contributor-merge-approval`)
+- ✅ Slack notifications are sent with dry run indicators
+- ✅ Post-merge validation runs in simulation mode
+- ✅ Release approval process is simulated (no actual release)
+- ✅ All environment protection rules are respected
 
 3. **Error Scenarios**:
    - Invalid inputs

@@ -114,6 +114,17 @@ make install-tools
 8. Test all non-Terraform code: `make test-all-non-tf-module-code`
 9. Submit a PR
 
+### Workflow Development and Testing
+
+For developers working on the main validation workflow (`.github/workflows/main-validation.yml`):
+
+```bash
+# Test all 6 merge approval job variations in dry run mode
+make test-main-validation-workflow
+```
+
+This comprehensive test triggers all possible merge approval scenarios to validate workflow changes before deployment. See [Main Validation Script Documentation](docs/scripts/main-validation.md) for details.
+
 ### Repository Health Checks
 
 For repository maintainers, a comprehensive test suite is available to validate all Terraform modules:
@@ -215,6 +226,7 @@ This repository implements a comprehensive automated CI/CD pipeline that handles
 - [Go Lint](docs/scripts/go-lint.md)
 - [Go Unit Test](docs/scripts/go-unit-test.md)
 - [Install Tools](docs/scripts/install-tools.md)
+- [Main Validation](docs/scripts/main-validation.md) - End-to-end workflow testing
 - [Module Type Validator](docs/scripts/module-type-validator.md)
 - [Module Validator](docs/scripts/module-validator.md)
 - [Rego Unit Test](docs/scripts/rego-unit-test.md)

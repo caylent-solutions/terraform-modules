@@ -5,7 +5,6 @@ pre-commit 4.2.0
 python 3.12.9
 terraform 1.12.1
 terraform-docs 0.20.0
-terragrunt 0.80.3
 tflint 0.58.0
 tfsec 1.28.14
 opa 1.5.1

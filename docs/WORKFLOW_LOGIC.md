@@ -14,6 +14,16 @@ All workflows support dry run mode (`dryrun: true`) which:
 - 🚫 Skips actual PR merges and release triggers
 - 🚫 Prevents any destructive actions
 
+### 🔧 Workflow Testing
+For testing the main validation workflow itself, an automated testing script is available:
+
+```bash
+# Test all 6 merge approval job variations
+make test-main-validation-workflow
+```
+
+This triggers all possible scenarios (internal/external contributors, terraform/non-terraform changes, self-approval enabled/disabled) in dry run mode for comprehensive workflow validation. See [Main Validation Script Documentation](scripts/main-validation.md) and [Main Validation SDLC Guide](main-validation-sdlc.md) for details.
+
 ---
 
 ## 1. PR Validation Entry Point (`pr-validation.yml`)
@@ -148,10 +158,32 @@ All workflows support dry run mode (`dryrun: true`) which:
 - **Self-Approval Logic**: Internal contributors can self-approve under certain conditions
 - **Release Orchestration**: Triggers downstream release workflows after successful merges
 
+### Testing the Workflow
+This workflow can be comprehensively tested using the automated testing script:
+
+```bash
+# Test all 6 merge approval job variations
+make test-main-validation-workflow
+```
+
+The script triggers all possible scenarios:
+- **6 variations**: All combinations of contributor type (Internal/External), change type (terraform/non-terraform), and self-approval capability (true/false)
+- **Dry run mode**: Safe testing without actual merges or releases
+- **Configuration-driven**: All parameters sourced from `monorepo-config.json`
+- **Manual approval simulation**: Tests GitHub environment protection rules
+
+See [Main Validation Script Documentation](scripts/main-validation.md) for complete details.
+
 ### Flow Overview:
 1. **Merge Approval Routing**: Centralizes all input processing and routing decisions
 2. **Debug Output**: Comprehensive logging for troubleshooting and auditing
-3. **Parallel Merge Jobs**: Multiple approval paths based on change type and contributor
+3. **Parallel Merge Jobs**: Multiple approval paths based on change type and contributor:
+   - `merge-self-approval-non-terraform-internal`
+   - `merge-approval-non-terraform-internal`
+   - `merge-approval-non-terraform-external`
+   - `merge-self-approval-terraform-internal`
+   - `merge-approval-terraform-internal`
+   - `merge-approval-terraform-external`
 4. **Post-Merge Validation**: Ensures merged code still passes all tests
 5. **QA Certification**: Final approval gate before release
 6. **Release Triggering**: Orchestrates downstream release processes

@@ -93,3 +93,49 @@ Configuration for test coverage reporting.
   }
 ]
 ```
+
+### workflow_tests
+
+Configuration for testing GitHub Actions workflows, specifically the main validation workflow.
+
+```json
+"workflow_tests": {
+  "test_module": "skeletons/generic-skeleton",
+  "test_module_type": "skeleton",
+  "repository": "caylent-solutions/terraform-modules",
+  "default_inputs": {
+    "code_owners": "matt-dresden-caylent",
+    "dryrun": "true"
+  },
+  "variations": [
+    {
+      "name": "Internal-NonTerraform-SelfApproval",
+      "change_type": "non-terraform",
+      "contributor_type": "Internal",
+      "can_self_approve": "true",
+      "description": "Internal contributor making non-terraform changes with self-approval permissions"
+    }
+  ]
+}
+```
+
+#### workflow_tests Fields
+
+- **test_module**: Path to the test module used for workflow testing
+- **test_module_type**: Type of the test module (must exist in `module_types`)
+- **repository**: GitHub repository in "owner/repo" format
+- **default_inputs**: Default workflow inputs applied to all test variations
+- **variations**: Array of test scenarios to execute
+
+#### variation Fields
+
+Each variation in the `variations` array must include:
+
+- **name**: Unique identifier for the test variation
+- **change_type**: Type of change being tested ("terraform" or "non-terraform")
+- **contributor_type**: Type of contributor ("Internal" or "External")
+- **can_self_approve**: Whether the contributor can self-approve ("true" or "false")
+- **description**: Human-readable description of the test scenario
+- **inputs** (optional): Additional workflow inputs specific to this variation
+
+This configuration is used by the [Main Validation Script](scripts/main-validation.md) to test all merge approval job variations in the main validation workflow.

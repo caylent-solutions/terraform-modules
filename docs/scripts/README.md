@@ -11,6 +11,7 @@ This directory contains documentation for the various scripts used in the Terraf
 | [Go Unit Test](go-unit-test.md) | Runs Go unit tests and collects coverage metrics for Go code in the monorepo |
 | [Install Tools](install-tools.md) | Installs and manages development tools using ASDF version manager |
 | [Go Lint](go-lint.md) | Performs code quality checks on Go code using gofmt and go vet |
+| [Main Validation](main-validation.md) | Triggers all 6 merge approval job variations in the main-validation.yml workflow for comprehensive end-to-end testing |
 | [Module Type Validator](module-type-validator.md) | Detects the type of a Terraform module based on its path |
 | [Module Validator](module-validator.md) | Validates Terraform modules against type-specific policies |
 | [PR OPA Policy Test](pr-opa-policy-test.md) | Evaluates pull requests against Open Policy Agent (OPA) policies |
@@ -36,6 +37,9 @@ make rego-unit-test-coverage
 
 # Validate a module
 make module-validate MODULE_PATH=providers/aws/primitives/s3-bucket MODULE_TYPE=primitive
+
+# Test main validation workflow (all 6 merge approval variations)
+make test-main-validation-workflow
 ```
 
 See each script's documentation for detailed usage instructions and examples.

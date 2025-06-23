@@ -814,7 +814,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           # Install only the tools needed for PR validation: golang, jq, opa
-          for tool in golang jq opa; do
+          for tool in golang jq opa terraform-docs tflint tfsec; do
             if grep -q "^$tool " .tool-versions; then
               asdf plugin add $tool || true
               VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')

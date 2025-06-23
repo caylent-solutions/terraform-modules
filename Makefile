@@ -1,4 +1,4 @@
-.PHONY: build-terraform-file-collector configure detect-module-changes github-actions-security go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate rego-format rego-integration-test rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies test-all-non-tf-module-code test-all-terraform-modules tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
+.PHONY: build-main-validation build-terraform-file-collector configure detect-module-changes github-actions-security go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate rego-format rego-integration-test rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies test-all-non-tf-module-code test-all-terraform-modules test-main-validation-workflow tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
 
 # Build and install terraform-file-collector binary
 build-terraform-file-collector:
@@ -7,6 +7,13 @@ build-terraform-file-collector:
 	@go build -o ./bin/terraform-file-collector ./scripts/terraform-file-collector/main.go
 	@chmod +x ./bin/terraform-file-collector
 	@export PATH="$$PWD/bin:$$PATH"
+
+# Build main-validation binary
+build-main-validation:
+	@echo "Building main-validation binary..."
+	@mkdir -p ./bin
+	@go build -o ./bin/main-validation ./scripts/main-validation/main.go
+	@chmod +x ./bin/main-validation
 
 # Configure environment with required tools
 configure: go-install build-terraform-file-collector
@@ -131,6 +138,19 @@ test-all-non-tf-module-code:
 	@echo "Running Rego integration tests..."
 	@make rego-integration-test
 	@echo "✅ All non-Terraform module code tests and linting passed"
+
+# Test all 6 merge approval job variations in main-validation.yml workflow
+# This will trigger GitHub Actions workflows and require manual approval in the UI
+test-main-validation-workflow: build-main-validation ## Trigger all 6 merge approval variations for end-to-end testing
+	@echo "🚀 Testing all 6 merge approval job variations..."
+	@echo "Running main-validation workflow tester..."
+	@./bin/main-validation
+	@echo "✅ Workflow testing complete"
+	@echo ""
+	@echo "📋 Next steps:"
+	@echo "1. Go to GitHub Actions to approve the triggered workflows"
+	@echo "2. Each variation will require manual approval in the UI"
+	@echo "3. All workflows are in dry run mode - safe to approve"
 
 # Run integration tests for OPA policies against compliant and non-compliant modules
 rego-integration-test:
