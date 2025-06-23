@@ -866,6 +866,21 @@ jobs:
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
           script: |
+            // Build module configuration JSON for terraform changes
+            const changeType = '${{ steps.determine-outputs.outputs.change_type }}';
+            const modulePath = '${{ steps.determine-outputs.outputs.module_path }}';
+            const moduleType = '${{ steps.determine-outputs.outputs.module_type }}';
+            
+            let moduleConfig = '{"path":"","type":""}';
+            if (changeType === 'terraform' && modulePath && moduleType) {
+              moduleConfig = JSON.stringify({
+                path: modulePath,
+                type: moduleType
+              });
+            }
+            
+            console.log(`Triggering main validation with module_config: ${moduleConfig}`);
+            
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -877,11 +892,11 @@ jobs:
                 contributor_username: '${{ steps.determine-outputs.outputs.contributor_username }}',
                 can_self_approve: '${{ steps.determine-outputs.outputs.can_self_approve }}',
                 code_owners: '${{ steps.determine-outputs.outputs.code_owners }}',
-                module_path: '${{ steps.determine-outputs.outputs.module_path }}',
-                module_type: '${{ steps.determine-outputs.outputs.module_type }}',
                 pr_number: '${{ github.event.pull_request.number }}',
                 pr_title: '${{ github.event.pull_request.title }}',
-                pr_html_url: '${{ github.event.pull_request.html_url }}'
+                pr_html_url: '${{ github.event.pull_request.html_url }}',
+                module_config: moduleConfig,
+                dryrun: 'false'
               }
             });
 
