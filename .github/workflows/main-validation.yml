@@ -56,35 +56,114 @@ jobs:
       code_owners: ${{ github.event.inputs.code_owners }}
       module_path: ${{ github.event.inputs.module_path }}
       module_type: ${{ github.event.inputs.module_type }}
+      pr_number: ${{ github.event.inputs.pr_number }}
+      pr_title: ${{ github.event.inputs.pr_title }}
+      pr_html_url: ${{ github.event.inputs.pr_html_url }}
       internal: ${{ steps.set-internal.outputs.internal }}
+      is_non_terraform: ${{ steps.set-routing-flags.outputs.is_non_terraform }}
+      is_terraform: ${{ steps.set-routing-flags.outputs.is_terraform }}
+      is_internal_contributor: ${{ steps.set-routing-flags.outputs.is_internal_contributor }}
+      is_external_contributor: ${{ steps.set-routing-flags.outputs.is_external_contributor }}
+      can_self_approve_internal: ${{ steps.set-routing-flags.outputs.can_self_approve_internal }}
     steps:
       - name: Set internal flag
         id: set-internal
         run: |
           if [[ "${{ github.event.inputs.contributor_type }}" == "Internal" ]]; then
             echo "internal=true" >> $GITHUB_OUTPUT
+            echo "✅ Contributor is Internal"
           else
             echo "internal=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Contributor is External"
+          fi
+
+      - name: Set routing decision flags
+        id: set-routing-flags
+        run: |
+          # Change type flags
+          if [[ "${{ github.event.inputs.change_type }}" == "non-terraform" ]]; then
+            echo "is_non_terraform=true" >> $GITHUB_OUTPUT
+            echo "is_terraform=false" >> $GITHUB_OUTPUT
+          else
+            echo "is_non_terraform=false" >> $GITHUB_OUTPUT
+            echo "is_terraform=true" >> $GITHUB_OUTPUT
+          fi
+          
+          # Contributor type flags
+          if [[ "${{ github.event.inputs.contributor_type }}" == "Internal" ]]; then
+            echo "is_internal_contributor=true" >> $GITHUB_OUTPUT
+            echo "is_external_contributor=false" >> $GITHUB_OUTPUT
+          else
+            echo "is_internal_contributor=false" >> $GITHUB_OUTPUT
+            echo "is_external_contributor=true" >> $GITHUB_OUTPUT
+          fi
+          
+          # Self-approval capability for internal contributors
+          if [[ "${{ github.event.inputs.contributor_type }}" == "Internal" && "${{ github.event.inputs.can_self_approve }}" == "true" ]]; then
+            echo "can_self_approve_internal=true" >> $GITHUB_OUTPUT
+          else
+            echo "can_self_approve_internal=false" >> $GITHUB_OUTPUT
           fi
           
       - name: Display routing information
         run: |
-          echo "🔀 Merge Approval Routing"
-          echo "Change Type: ${{ github.event.inputs.change_type }}"
-          echo "Contributor: ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }})"
-          echo "Can Self-Approve: ${{ github.event.inputs.can_self_approve }}"
-          echo "Code Owners: ${{ github.event.inputs.code_owners }}"
+          echo "🔀 Merge Approval Routing Configuration"
+          echo "==============================================="
+          echo "📋 Input Parameters:"
+          echo "  Change Type: ${{ github.event.inputs.change_type }}"
+          echo "  Contributor: ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }})"
+          echo "  Can Self-Approve: ${{ github.event.inputs.can_self_approve }}"
+          echo "  Code Owners: ${{ github.event.inputs.code_owners }}"
+          echo "  PR Number: ${{ github.event.inputs.pr_number }}"
+          echo "  PR Title: ${{ github.event.inputs.pr_title }}"
           if [[ "${{ github.event.inputs.change_type }}" == "terraform" ]]; then
-            echo "Module Path: ${{ github.event.inputs.module_path }}"
-            echo "Module Type: ${{ github.event.inputs.module_type }}"
+            echo "  Module Path: ${{ github.event.inputs.module_path }}"
+            echo "  Module Type: ${{ github.event.inputs.module_type }}"
           fi
+          echo ""
+          echo "🎯 Routing Decisions:"
+          echo "  Internal Contributor: ${{ steps.set-internal.outputs.internal }}"
+          echo "  Is Non-Terraform: ${{ steps.set-routing-flags.outputs.is_non_terraform }}"
+          echo "  Is Terraform: ${{ steps.set-routing-flags.outputs.is_terraform }}"
+          echo "  Can Self-Approve (Internal): ${{ steps.set-routing-flags.outputs.can_self_approve_internal }}"
+
+  debug-routing-output:
+    name: Debug Routing Output
+    runs-on: ubuntu-24.04
+    needs: [merge-approval-routing]
+    steps:
+      - name: Validate routing outputs for CI audit and debugging
+        run: |
+          echo "🔍 Routing Output Validation"
+          echo "===================================="
+          echo "📤 All Routing Outputs:"
+          echo "  change_type=${{ needs.merge-approval-routing.outputs.change_type }}"
+          echo "  contributor_type=${{ needs.merge-approval-routing.outputs.contributor_type }}"
+          echo "  contributor_username=${{ needs.merge-approval-routing.outputs.contributor_username }}"
+          echo "  can_self_approve=${{ needs.merge-approval-routing.outputs.can_self_approve }}"
+          echo "  code_owners=${{ needs.merge-approval-routing.outputs.code_owners }}"
+          echo "  module_path=${{ needs.merge-approval-routing.outputs.module_path }}"
+          echo "  module_type=${{ needs.merge-approval-routing.outputs.module_type }}"
+          echo "  pr_number=${{ needs.merge-approval-routing.outputs.pr_number }}"
+          echo "  pr_title=${{ needs.merge-approval-routing.outputs.pr_title }}"
+          echo "  pr_html_url=${{ needs.merge-approval-routing.outputs.pr_html_url }}"
+          echo ""
+          echo "🎯 Computed Routing Flags:"
+          echo "  internal=${{ needs.merge-approval-routing.outputs.internal }}"
+          echo "  is_non_terraform=${{ needs.merge-approval-routing.outputs.is_non_terraform }}"
+          echo "  is_terraform=${{ needs.merge-approval-routing.outputs.is_terraform }}"
+          echo "  is_internal_contributor=${{ needs.merge-approval-routing.outputs.is_internal_contributor }}"
+          echo "  is_external_contributor=${{ needs.merge-approval-routing.outputs.is_external_contributor }}"
+          echo "  can_self_approve_internal=${{ needs.merge-approval-routing.outputs.can_self_approve_internal }}"
+          echo ""
+          echo "✅ Routing validation complete - all outputs accessible"
 
   # Non-Terraform merge approval jobs
   merge-self-approval-non-terraform-internal:
     name: Self-Approval Merge (Non-Terraform Internal)
     runs-on: ubuntu-24.04
-    needs: [merge-approval-routing]
-    if: github.event.inputs.change_type == 'non-terraform' && github.event.inputs.contributor_type == 'Internal' && github.event.inputs.can_self_approve == 'true'
+    needs: [merge-approval-routing, debug-routing-output]
+    if: needs.merge-approval-routing.outputs.is_non_terraform == 'true' && needs.merge-approval-routing.outputs.can_self_approve_internal == 'true'
     permissions:
       contents: write
       id-token: write
@@ -122,14 +201,14 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*PR #${{ github.event.inputs.pr_number }}*: ${{ github.event.inputs.pr_title }}\nAll validation checks passed! PR auto-merged by authorized user.\n<${{ github.event.inputs.pr_html_url }}|View Pull Request>"
+                    "text": "*PR #${{ needs.merge-approval-routing.outputs.pr_number }}*: ${{ needs.merge-approval-routing.outputs.pr_title }}\nAll validation checks passed! PR auto-merged by authorized user.\n<${{ needs.merge-approval-routing.outputs.pr_html_url }}|View Pull Request>"
                   }
                 },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Repository:* ${{ github.repository }}\n*Author:* ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }} contributor with self-approval privileges)\n*Code Owners:* ${{ github.event.inputs.code_owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow>"
+                    "text": "*Repository:* ${{ github.repository }}\n*Author:* ${{ needs.merge-approval-routing.outputs.contributor_username }} (${{ needs.merge-approval-routing.outputs.contributor_type }} contributor with self-approval privileges)\n*Code Owners:* ${{ needs.merge-approval-routing.outputs.code_owners }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow>"
                   }
                 }
               ]
@@ -146,21 +225,21 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.github-app-token.outputs.token }}
         run: |
-          echo "🔓 Auto-merging PR #${{ github.event.inputs.pr_number }} by self-approval user with admin bypass"
-          echo "PR Title: ${{ github.event.inputs.pr_title }}"
-          echo "Author: ${{ github.event.inputs.contributor_username }}"
+          echo "🔓 Auto-merging PR #${{ needs.merge-approval-routing.outputs.pr_number }} by self-approval user with admin bypass"
+          echo "PR Title: ${{ needs.merge-approval-routing.outputs.pr_title }}"
+          echo "Author: ${{ needs.merge-approval-routing.outputs.contributor_username }}"
           
-          gh pr merge ${{ github.event.inputs.pr_number }} \
+          gh pr merge ${{ needs.merge-approval-routing.outputs.pr_number }} \
             --admin \
             --squash \
-            --subject "${{ github.event.inputs.pr_title }} (#${{ github.event.inputs.pr_number }})" \
+            --subject "${{ needs.merge-approval-routing.outputs.pr_title }} (#${{ needs.merge-approval-routing.outputs.pr_number }})" \
             --body "Self-approved squash merge by authorized user with admin privileges"
 
   merge-approval-non-terraform-internal:
     name: Merge Approval (Non-Terraform Internal)
     runs-on: ubuntu-24.04
-    needs: [merge-approval-routing]
-    if: github.event.inputs.change_type == 'non-terraform' && github.event.inputs.contributor_type == 'Internal' && github.event.inputs.can_self_approve == 'false'
+    needs: [merge-approval-routing, debug-routing-output]
+    if: needs.merge-approval-routing.outputs.is_non_terraform == 'true' && needs.merge-approval-routing.outputs.is_internal_contributor == 'true' && needs.merge-approval-routing.outputs.can_self_approve == 'false'
     permissions:
       contents: write
       id-token: write
@@ -239,8 +318,8 @@ jobs:
   merge-approval-non-terraform-external:
     name: Merge Approval (Non-Terraform External)
     runs-on: ubuntu-24.04
-    needs: [merge-approval-routing]
-    if: github.event.inputs.change_type == 'non-terraform' && github.event.inputs.contributor_type == 'External'
+    needs: [merge-approval-routing, debug-routing-output]
+    if: needs.merge-approval-routing.outputs.is_non_terraform == 'true' && needs.merge-approval-routing.outputs.is_external_contributor == 'true'
     permissions:
       contents: write
       id-token: write
@@ -320,8 +399,8 @@ jobs:
   merge-self-approval-terraform-internal:
     name: Self-Approval Merge (Terraform Internal)
     runs-on: ubuntu-24.04
-    needs: [merge-approval-routing]
-    if: github.event.inputs.change_type == 'terraform' && github.event.inputs.contributor_type == 'Internal' && github.event.inputs.can_self_approve == 'true'
+    needs: [merge-approval-routing, debug-routing-output]
+    if: needs.merge-approval-routing.outputs.is_terraform == 'true' && needs.merge-approval-routing.outputs.can_self_approve_internal == 'true'
     permissions:
       contents: write
       id-token: write
@@ -397,8 +476,8 @@ jobs:
   merge-approval-terraform-internal:
     name: Merge Approval (Terraform Internal)
     runs-on: ubuntu-24.04
-    needs: [merge-approval-routing]
-    if: github.event.inputs.change_type == 'terraform' && github.event.inputs.contributor_type == 'Internal' && github.event.inputs.can_self_approve == 'false'
+    needs: [merge-approval-routing, debug-routing-output]
+    if: needs.merge-approval-routing.outputs.is_terraform == 'true' && needs.merge-approval-routing.outputs.is_internal_contributor == 'true' && needs.merge-approval-routing.outputs.can_self_approve == 'false'
     permissions:
       contents: write
       id-token: write
@@ -477,8 +556,8 @@ jobs:
   merge-approval-terraform-external:
     name: Merge Approval (Terraform External)
     runs-on: ubuntu-24.04
-    needs: [merge-approval-routing]
-    if: github.event.inputs.change_type == 'terraform' && github.event.inputs.contributor_type == 'External'
+    needs: [merge-approval-routing, debug-routing-output]
+    if: needs.merge-approval-routing.outputs.is_terraform == 'true' && needs.merge-approval-routing.outputs.is_external_contributor == 'true'
     permissions:
       contents: write
       id-token: write
@@ -554,25 +633,72 @@ jobs:
               commit_message: pr.body || 'Squash merge'
             });
 
+  # Routing jobs to determine post-merge execution
+  merge-approval-routing-non-terraform:
+    name: Merge Approval Routing (Non-Terraform)
+    runs-on: ubuntu-24.04
+    needs:
+      - merge-self-approval-non-terraform-internal
+      - merge-approval-non-terraform-internal
+      - merge-approval-non-terraform-external
+    if: always() && github.event.inputs.change_type == 'non-terraform'
+    outputs:
+      should_run_post_merge: ${{ steps.set.outputs.should_run_post_merge }}
+    steps:
+      - name: Determine if post-merge revalidation should run
+        id: set
+        run: |
+          echo "should_run_post_merge=false" >> "$GITHUB_OUTPUT"
+          if [[ "${{ needs.merge-self-approval-non-terraform-internal.result }}" == "success" ]] ||
+             [[ "${{ needs.merge-approval-non-terraform-internal.result }}" == "success" ]] ||
+             [[ "${{ needs.merge-approval-non-terraform-external.result }}" == "success" ]]; then
+            echo "should_run_post_merge=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Post-merge revalidation will run - at least one merge approval succeeded"
+          else
+            echo "❌ Post-merge revalidation will not run - no merge approvals succeeded"
+          fi
+
+  merge-approval-routing-terraform:
+    name: Merge Approval Routing (Terraform)
+    runs-on: ubuntu-24.04
+    needs:
+      - merge-self-approval-terraform-internal
+      - merge-approval-terraform-internal
+      - merge-approval-terraform-external
+    if: always() && github.event.inputs.change_type == 'terraform'
+    outputs:
+      should_run_post_merge: ${{ steps.set.outputs.should_run_post_merge }}
+    steps:
+      - name: Determine if post-merge revalidation should run
+        id: set
+        run: |
+          echo "should_run_post_merge=false" >> "$GITHUB_OUTPUT"
+          if [[ "${{ needs.merge-self-approval-terraform-internal.result }}" == "success" ]] ||
+             [[ "${{ needs.merge-approval-terraform-internal.result }}" == "success" ]] ||
+             [[ "${{ needs.merge-approval-terraform-external.result }}" == "success" ]]; then
+            echo "should_run_post_merge=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Post-merge revalidation will run - at least one merge approval succeeded"
+          else
+            echo "❌ Post-merge revalidation will not run - no merge approvals succeeded"
+          fi
+
   # Post-merge validation
   post-merge-revalidation-non-terraform:
     name: Post-Merge Revalidation (Non-Terraform)
     runs-on: ubuntu-24.04
-    needs: [merge-approval-routing, merge-self-approval-non-terraform-internal, merge-approval-non-terraform-internal, merge-approval-non-terraform-external]
-    if: github.event.inputs.change_type == 'non-terraform' && (needs.merge-self-approval-non-terraform-internal.result == 'success' || needs.merge-approval-non-terraform-internal.result == 'success' || needs.merge-approval-non-terraform-external.result == 'success')
+    needs: 
+      - merge-approval-routing-non-terraform
+    if: needs.merge-approval-routing-non-terraform.outputs.should_run_post_merge == 'true'
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Install system dependencies for Python build
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev curl \
-            libncursesw5-dev xz-utils tk-dev libxml2-dev \
-            libxmlsec1-dev libffi-dev liblzma-dev bc
+          sudo apt-get install -y curl bc
 
       - name: Install ASDF
         run: |
@@ -581,11 +707,17 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools
+      - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
-          asdf install
+          # Install only the tools needed for PR validation: golang, jq, opa
+          for tool in golang jq opa; do
+            if grep -q "^$tool " .tool-versions; then
+              asdf plugin add $tool || true
+              VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
+              asdf install $tool $VERSION
+            fi
+          done
           asdf reshim
 
       - name: Configure environment
@@ -739,21 +871,20 @@ jobs:
   post-merge-revalidation-terraform:
     name: Post-Merge Revalidation (Terraform)
     runs-on: ubuntu-24.04
-    needs: [merge-approval-routing, merge-self-approval-terraform-internal, merge-approval-terraform-internal, merge-approval-terraform-external]
-    if: github.event.inputs.change_type == 'terraform' && (needs.merge-self-approval-terraform-internal.result == 'success' || needs.merge-approval-terraform-internal.result == 'success' || needs.merge-approval-terraform-external.result == 'success')
+    needs: 
+      - merge-approval-routing
+      - merge-approval-routing-terraform
+    if: needs.merge-approval-routing-terraform.outputs.should_run_post_merge == 'true'
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Install system dependencies for Python build
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev curl \
-            libncursesw5-dev xz-utils tk-dev libxml2-dev \
-            libxmlsec1-dev libffi-dev liblzma-dev bc
+          sudo apt-get install -y curl bc
 
       - name: Install ASDF
         run: |
@@ -762,46 +893,52 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools
+      - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
-          asdf install
+          # Install only the tools needed for PR validation: golang, jq, opa
+          for tool in golang jq opa; do
+            if grep -q "^$tool " .tool-versions; then
+              asdf plugin add $tool || true
+              VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
+              asdf install $tool $VERSION
+            fi
+          done
           asdf reshim
           
       - name: Configure environment
         run: make configure
 
       - name: Run module validation
-        run: make module-validate MODULE_PATH=${{ github.event.inputs.module_path }} MODULE_TYPE=${{ github.event.inputs.module_type }}
+        run: make module-validate MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }} MODULE_TYPE=${{ needs.merge-approval-routing.outputs.module_type }}
 
       - name: Run Terraform linting
-        run: make tf-lint MODULE_PATH=${{ github.event.inputs.module_path }}
+        run: make tf-lint MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Run Terraform formatting check
-        run: make tf-format MODULE_PATH=${{ github.event.inputs.module_path }}
+        run: make tf-format MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Check Terraform documentation is up-to-date
-        run: make tf-docs-check MODULE_PATH=${{ github.event.inputs.module_path }}
+        run: make tf-docs-check MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Run security checks
-        run: make tf-security MODULE_PATH=${{ github.event.inputs.module_path }}
+        run: make tf-security MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Run Terraform plan
-        run: make tf-plan MODULE_PATH=${{ github.event.inputs.module_path }}
+        run: make tf-plan MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Run Go linting on module tests
         run: |
-          cd ${{ github.event.inputs.module_path }}
+          cd ${{ needs.merge-approval-routing.outputs.module_path }}
           make go-lint
 
       - name: Run Go formatting check on module tests
         run: |
-          cd ${{ github.event.inputs.module_path }}
+          cd ${{ needs.merge-approval-routing.outputs.module_path }}
           make go-format
 
       - name: Run module tests
-        run: make tf-test MODULE_PATH=${{ github.event.inputs.module_path }}
+        run: make tf-test MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
         
       - name: Send post-merge validation success to Slack
         if: success()
