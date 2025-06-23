@@ -1018,7 +1018,11 @@ jobs:
         run: make module-validate MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }} MODULE_TYPE=${{ needs.merge-approval-routing.outputs.module_type }}
 
       - name: Clean Terraform state before linting
-        run: make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
+        run: |
+          echo "Current working directory: $(pwd)"
+          echo "Checking if tf-clean target exists in Makefile:"
+          grep -n "tf-clean:" Makefile || echo "tf-clean target not found in Makefile"
+          make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Run Terraform linting
         run: make tf-lint MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
@@ -1030,7 +1034,12 @@ jobs:
         run: make tf-format MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Clean Terraform state before documentation check
-        run: make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
+        run: |
+          echo "Debug: Current directory for docs clean: $(pwd)"
+          echo "Debug: Makefile exists: $(ls -la Makefile 2>/dev/null || echo 'Makefile not found')"
+          echo "Debug: tf-clean target check:"
+          grep -A 5 "tf-clean:" Makefile || echo "tf-clean target not found"
+          make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Check Terraform documentation is up-to-date (with debug)
         id: tf-docs-check
