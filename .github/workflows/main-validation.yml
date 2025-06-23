@@ -796,14 +796,15 @@ jobs:
       - name: Checkout branch (main for production, current branch for dry run)
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.head_ref || github.ref_name || 'main' }}
+          ref: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref || 'main' }}
 
       - name: Debug branch selection
         run: |
           echo "Dry run mode: ${{ needs.merge-approval-routing.outputs.dryrun }}"
+          echo "GitHub ref: ${{ github.ref }}"
           echo "GitHub ref name: ${{ github.ref_name }}"
           echo "GitHub head ref: ${{ github.head_ref }}"
-          echo "Selected branch: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.head_ref || github.ref_name || 'main' }}"
+          echo "Selected branch: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref || 'main' }}"
           echo "Current branch:"
           git branch --show-current
           echo "Current commit:"
@@ -994,14 +995,15 @@ jobs:
       - name: Checkout branch (main for production, current branch for dry run)
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.head_ref || github.ref_name || 'main' }}
+          ref: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref || 'main' }}
 
       - name: Debug branch selection
         run: |
           echo "Dry run mode: ${{ needs.merge-approval-routing.outputs.dryrun }}"
+          echo "GitHub ref: ${{ github.ref }}"
           echo "GitHub ref name: ${{ github.ref_name }}"
           echo "GitHub head ref: ${{ github.head_ref }}"
-          echo "Selected branch: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.head_ref || github.ref_name || 'main' }}"
+          echo "Selected branch: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref || 'main' }}"
           echo "Current branch:"
           git branch --show-current
           echo "Current commit:"
