@@ -839,6 +839,9 @@ jobs:
       - name: Configure environment
         run: make configure
 
+      - name: Install Go dependencies
+        run: make go-install
+
       - name: Run Go linting
         run: make go-lint
 
@@ -1121,6 +1124,11 @@ jobs:
 
       - name: Run Terraform plan
         run: make tf-plan MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
+
+      - name: Install Go dependencies for module tests
+        run: |
+          cd ${{ needs.merge-approval-routing.outputs.module_path }}
+          make install
 
       - name: Run Go linting on module tests
         run: |
