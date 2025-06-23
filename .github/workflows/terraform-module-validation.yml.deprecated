@@ -1,3 +1,10 @@
+# DEPRECATED: This workflow has been refactored and split into:
+# - pr-validation.yml (for PR validation and testing)
+# - main-validation.yml (for merge approval, post-merge validation, and release)
+# 
+# This file is kept for reference only and should not be used.
+# Date deprecated: June 23, 2025
+
 name: Terraform Module Validation
 
 on:

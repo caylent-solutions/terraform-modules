@@ -199,60 +199,652 @@ jobs:
           # Exit with the script's exit code
           exit $EXIT_CODE
 
-  terraform-module-validation:
-    name: Terraform Module Validation
-    if: needs.validate.result == 'success' && needs.validate.outputs.is_module == 'true'
+  # Non-Terraform validation path
+  non-terraform-contributor-analysis:
+    name: Non-Terraform Validation / Contributor Analysis & Workflow Routing
     needs: validate
-    permissions:
-      actions: read
-      security-events: write
-      contents: write
-      id-token: write
-      pull-requests: write
-    uses: ./.github/workflows/terraform-module-validation.yml
-    with:
-      module_path: ${{ needs.validate.outputs.module_path }}
-      module_type: ${{ needs.validate.outputs.module_type }}
-    secrets:
-      GH_APP_ID: ${{ secrets.GH_APP_ID }}
-      GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-  non-terraform-validation:
-    name: Non-Terraform Validation
     if: needs.validate.result == 'success' && needs.validate.outputs.is_module != 'true'
-    needs: validate
+    runs-on: ubuntu-24.04
     permissions:
-      actions: read
-      security-events: write
-      contents: write
+      contents: read
+      id-token: write
+    outputs:
+      code_owners: ${{ steps.codeowners.outputs.owners }}
+      contributor_type: ${{ steps.check-contributor.outputs.type }}
+      contributor_username: ${{ steps.check-contributor.outputs.username }}
+      internal: ${{ steps.check-contributor.outputs.internal }}
+      can_self_approve: ${{ steps.check-contributor.outputs.can-self-approve }}
+    steps:
+      - name: Generate token from GitHub App
+        id: generate_token
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Analyze contributor type (Internal vs External)
+        id: check-contributor
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            try {
+              const username = context.payload.pull_request.user.login;
+              
+              const selfApprovalUsersVar = '${{ vars.SELF_APPROVAL_USERS }}';
+              const selfApprovalUsers = selfApprovalUsersVar ? selfApprovalUsersVar.split(',').map(u => u.trim()) : [];
+              const canSelfApprove = selfApprovalUsers.includes(username);
+              
+              const { data: membership } = await github.rest.orgs.getMembershipForUser({
+                org: 'caylent-solutions',
+                username: username
+              });
+              
+              const isInternal = membership && membership.state === 'active';
+              const contributorType = isInternal ? 'Internal' : 'External';
+              
+              const emoji = isInternal ? '🏢' : '🌍';
+              const approvalEmoji = canSelfApprove ? '🔓' : '🔒';
+              const color = isInternal ? '\u001b[32m' : '\u001b[34m';
+              const reset = '\u001b[0m';
+              
+              console.log(`${color}${emoji} Contributor Detection Results:${reset}`);
+              console.log(`${color}  👤 Username: ${username}${reset}`);
+              console.log(`${color}  🏷️  Type: ${contributorType}${reset}`);
+              console.log(`${color}  🔒 Internal: ${isInternal}${reset}`);
+              console.log(`${color}  ${approvalEmoji} Self-Approve: ${canSelfApprove}${reset}`);
+              console.log(`${color}  📋 Self-Approval Users: ${selfApprovalUsers.join(', ') || 'None configured'}${reset}`);
+              
+              core.setOutput('type', contributorType);
+              core.setOutput('username', username);
+              core.setOutput('internal', isInternal.toString());
+              core.setOutput('can-self-approve', canSelfApprove.toString());
+            } catch (error) {
+              console.log('❌ Error checking contributor:', error);
+              core.setFailed('Failed to determine contributor type and membership information - strict validation requires successful organization membership check');
+            }
+
+      - name: Identify code owners for changed files
+        id: codeowners
+        run: |
+          set +e
+          
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...origin/${{ github.head_ref }})
+          echo "Changed files: $CHANGED_FILES"
+
+          SPECIFIC_OWNERS=""
+          if [ -f ".github/CODEOWNERS" ]; then
+            for FILE in $CHANGED_FILES; do
+              FILE_EXT="${FILE##*.}"
+              if [ "$FILE_EXT" != "$FILE" ]; then
+                PATTERN_MATCH=$(grep -E "^\*\.$FILE_EXT" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$PATTERN_MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $PATTERN_MATCH"
+                  continue
+                fi
+              fi
+              
+              TEMP_FILE="$FILE"
+              while [[ "$TEMP_FILE" == */* ]]; do
+                DIR=$(dirname "$TEMP_FILE")
+                DIR_MATCH=$(grep -E "^$DIR/" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$DIR_MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $DIR_MATCH"
+                  break
+                fi
+                PATTERN_MATCH=$(grep -E "^/$DIR/" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$PATTERN_MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $PATTERN_MATCH"
+                  break
+                fi
+                TEMP_FILE="$DIR"
+              done
+            done
+          fi
+
+          UNIQUE_OWNERS=$(echo "$SPECIFIC_OWNERS" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ' | xargs)
+          if [ -z "$UNIQUE_OWNERS" ]; then
+            echo "❌ ERROR: No specific code owners found for the changed files"
+            echo "Changed files must match specific patterns in CODEOWNERS, not just the default '*' pattern"
+            echo "Please ensure CODEOWNERS file has explicit patterns covering all changed files"
+            exit 1
+          fi
+          echo "Final owners: $UNIQUE_OWNERS"
+          echo "owners=$UNIQUE_OWNERS" >> $GITHUB_OUTPUT
+
+  run-non-terraform-tests-internal:
+    name: Run Non-Terraform Tests (Internal)
+    needs: [non-terraform-contributor-analysis]
+    if: ${{ needs.non-terraform-contributor-analysis.outputs.internal == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
       id-token: write
       pull-requests: write
-    uses: ./.github/workflows/non-terraform-validation.yml
-    secrets:
-      GH_APP_ID: ${{ secrets.GH_APP_ID }}
-      GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-  validation-complete:
-    name: Validation Complete
-    runs-on: ubuntu-24.04
-    needs: [validate, terraform-module-validation, non-terraform-validation]
-    if: always() && needs.validate.result == 'success'
     steps:
-      - name: Check validation results
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}
+          git checkout -b internal-tests origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff origin/${{ github.head_ref }}
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run Go linting
+        run: make go-lint
+
+      - name: Run Go formatting
+        run: make go-format
+
+      - name: Run Go Unit Tests
+        run: make go-unit-test
+
+      - name: Run Go Test Coverage
+        run: make go-unit-test-coverage
+      
+      - name: Run rego linting
+        run: make rego-lint
+
+      - name: Run rego formatting
+        run: make rego-format
+
+      - name: Run rego Unit Tests
+        run: make rego-unit-test
+
+      - name: Run rego Test Coverage
+        run: make rego-unit-test-coverage
+
+      - name: Check Rego Test Coverage Threshold
+        run: |
+          echo "Running Rego coverage check..."
+          COVERAGE_JSON=$(make rego-unit-test-coverage-json 2>/dev/null)
+          COVERAGE=$(echo "$COVERAGE_JSON" | grep -o '"total": [0-9.]*' | awk '{print $2}')
+          THRESHOLD=95
+          
+          if (( $(echo "$COVERAGE >= $THRESHOLD" | bc -l) )); then
+            echo -e "\033[32mPASS: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
+            exit 0
+          else
+            echo -e "\033[31mFAIL: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
+            exit 1
+          fi
+          
+      - name: Run Rego Integration Tests
+        run: make rego-integration-test
+
+  run-non-terraform-tests-external:
+    name: Run Non-Terraform Tests (External)
+    needs: [non-terraform-contributor-analysis]
+    if: ${{ needs.non-terraform-contributor-analysis.outputs.internal == 'false' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    environment: external-contributor-test-approval
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}
+          git checkout -b external-tests origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff origin/${{ github.head_ref }}
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run Go linting
+        run: make go-lint
+
+      - name: Run Go formatting
+        run: make go-format
+
+      - name: Run Go Unit Tests
+        run: make go-unit-test
+
+      - name: Run Go Test Coverage
+        run: make go-unit-test-coverage
+      
+      - name: Run rego linting
+        run: make rego-lint
+
+      - name: Run rego formatting
+        run: make rego-format
+
+      - name: Run rego Unit Tests
+        run: make rego-unit-test
+
+      - name: Run rego Test Coverage
+        run: make rego-unit-test-coverage
+
+      - name: Check Rego Test Coverage Threshold
+        run: |
+          echo "Running Rego coverage check..."
+          COVERAGE_JSON=$(make rego-unit-test-coverage-json 2>/dev/null)
+          COVERAGE=$(echo "$COVERAGE_JSON" | grep -o '"total": [0-9.]*' | awk '{print $2}')
+          THRESHOLD=95
+          
+          if (( $(echo "$COVERAGE >= $THRESHOLD" | bc -l) )); then
+            echo -e "\033[32mPASS: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
+            exit 0
+          else
+            echo -e "\033[31mFAIL: Coverage is $COVERAGE% (threshold: $THRESHOLD%)\033[0m"
+            exit 1
+          fi
+          
+      - name: Run Rego Integration Tests
+        run: make rego-integration-test
+
+  # Terraform validation path
+  terraform-contributor-analysis:
+    name: Terraform Validation / Contributor Analysis & Workflow Routing
+    needs: validate
+    if: needs.validate.result == 'success' && needs.validate.outputs.is_module == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      code_owners: ${{ steps.codeowners.outputs.owners }}
+      contributor_type: ${{ steps.check-contributor.outputs.type }}
+      contributor_username: ${{ steps.check-contributor.outputs.username }}
+      internal: ${{ steps.check-contributor.outputs.internal }}
+      can_self_approve: ${{ steps.check-contributor.outputs.can-self-approve }}
+    steps:
+      - name: Generate token from GitHub App
+        id: generate_token
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}
+          git checkout -b module-validation origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff origin/${{ github.head_ref }}
+          
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run module validation
+        run: make module-validate MODULE_PATH=${{ needs.validate.outputs.module_path }} MODULE_TYPE=${{ needs.validate.outputs.module_type }}
+
+      - name: Run Terraform linting
+        run: make tf-lint MODULE_PATH=${{ needs.validate.outputs.module_path }}
+
+      - name: Run Terraform formatting check
+        run: make tf-format MODULE_PATH=${{ needs.validate.outputs.module_path }}
+
+      - name: Check Terraform documentation is up-to-date
+        run: make tf-docs-check MODULE_PATH=${{ needs.validate.outputs.module_path }}
+
+      - name: Run security checks
+        run: make tf-security MODULE_PATH=${{ needs.validate.outputs.module_path }}
+
+      - name: Run Terraform plan
+        run: make tf-plan MODULE_PATH=${{ needs.validate.outputs.module_path }}
+
+      - name: Run Go linting on module tests
+        run: |
+          cd ${{ needs.validate.outputs.module_path }}
+          make go-lint
+
+      - name: Run Go formatting check on module tests
+        run: |
+          cd ${{ needs.validate.outputs.module_path }}
+          make go-format
+
+      - name: Analyze contributor type (Internal vs External)
+        id: check-contributor
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            try {
+              const username = context.payload.pull_request.user.login;
+              
+              const selfApprovalUsersVar = '${{ vars.SELF_APPROVAL_USERS }}';
+              const selfApprovalUsers = selfApprovalUsersVar ? selfApprovalUsersVar.split(',').map(u => u.trim()) : [];
+              const canSelfApprove = selfApprovalUsers.includes(username);
+              
+              const { data: membership } = await github.rest.orgs.getMembershipForUser({
+                org: 'caylent-solutions',
+                username: username
+              });
+              
+              const isInternal = membership && membership.state === 'active';
+              const contributorType = isInternal ? 'Internal' : 'External';
+              
+              const emoji = isInternal ? '🏢' : '🌍';
+              const approvalEmoji = canSelfApprove ? '🔓' : '🔒';
+              const color = isInternal ? '\u001b[32m' : '\u001b[34m';
+              const reset = '\u001b[0m';
+              
+              console.log(`${color}${emoji} Contributor Detection Results:${reset}`);
+              console.log(`${color}  👤 Username: ${username}${reset}`);
+              console.log(`${color}  🏷️  Type: ${contributorType}${reset}`);
+              console.log(`${color}  🔒 Internal: ${isInternal}${reset}`);
+              console.log(`${color}  ${approvalEmoji} Self-Approve: ${canSelfApprove}${reset}`);
+              console.log(`${color}  📋 Self-Approval Users: ${selfApprovalUsers.join(', ') || 'None configured'}${reset}`);
+              
+              core.setOutput('type', contributorType);
+              core.setOutput('username', username);
+              core.setOutput('internal', isInternal.toString());
+              core.setOutput('can-self-approve', canSelfApprove.toString());
+            } catch (error) {
+              console.log('❌ Error checking contributor:', error);
+              core.setFailed('Failed to determine contributor type and membership information - strict validation requires successful organization membership check');
+            }
+          
+      - name: Identify code owners for changed files
+        id: codeowners
+        if: always()
+        run: |
+          set +e
+          
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...origin/${{ github.head_ref }})
+          echo "Changed files: $CHANGED_FILES"
+
+          SPECIFIC_OWNERS=""
+          if [ -f ".github/CODEOWNERS" ]; then
+            for FILE in $CHANGED_FILES; do
+              FILE_EXT="${FILE##*.}"
+              if [ "$FILE_EXT" != "$FILE" ]; then
+                PATTERN_MATCH=$(grep -E "^\*\.$FILE_EXT" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$PATTERN_MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $PATTERN_MATCH"
+                  continue
+                fi
+              fi
+              
+              TEMP_FILE="$FILE"
+              while [[ "$TEMP_FILE" == */* ]]; do
+                DIR=$(dirname "$TEMP_FILE")
+                DIR_MATCH=$(grep -E "^$DIR/" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$DIR_MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $DIR_MATCH"
+                  break
+                fi
+                PATTERN_MATCH=$(grep -E "^/$DIR/" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                if [ -n "$PATTERN_MATCH" ]; then
+                  SPECIFIC_OWNERS="$SPECIFIC_OWNERS $PATTERN_MATCH"
+                  break
+                fi
+                TEMP_FILE="$DIR"
+              done
+            done
+          fi
+
+          UNIQUE_OWNERS=$(echo "$SPECIFIC_OWNERS" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ' | xargs)
+          if [ -z "$UNIQUE_OWNERS" ]; then
+            echo "❌ ERROR: No specific code owners found for the changed files"
+            echo "Changed files must match specific patterns in CODEOWNERS, not just the default '*' pattern"
+            echo "Please ensure CODEOWNERS file has explicit patterns covering all changed files"
+            exit 1
+          fi
+          echo "Final owners: $UNIQUE_OWNERS"
+          echo "owners=$UNIQUE_OWNERS" >> $GITHUB_OUTPUT
+
+  run-terraform-tests-internal:
+    name: Run Terraform Tests (Internal)
+    needs: [validate, terraform-contributor-analysis]
+    if: ${{ needs.terraform-contributor-analysis.outputs.internal == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}
+          git checkout -b caylent-tests origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff origin/${{ github.head_ref }}
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run module tests with configuration
+        run: |
+          echo "Running tests with module-specific configuration"
+          make tf-test MODULE_PATH=${{ needs.validate.outputs.module_path }}
+
+  run-terraform-tests-external:
+    name: Run Terraform Tests (External)
+    needs: [validate, terraform-contributor-analysis]
+    if: ${{ needs.terraform-contributor-analysis.outputs.internal == 'false' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    environment: external-contributor-test-approval
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Simulate merge
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin ${{ github.base_ref }}
+          git fetch origin ${{ github.head_ref }}
+          git checkout -b external-tests origin/${{ github.base_ref }}
+          git merge --no-commit --no-ff origin/${{ github.head_ref }}
+
+      - name: Install system dependencies for Python build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev \
+            libxmlsec1-dev libffi-dev liblzma-dev bc
+                    
+      - name: Install ASDF
+        run: |
+          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
+          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
+          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
+          source $HOME/.asdf/asdf.sh
+
+      - name: Install ASDF plugins and tools
+        run: |
+          cd $GITHUB_WORKSPACE
+          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
+          asdf install
+          asdf reshim
+          
+      - name: Configure environment
+        run: make configure
+
+      - name: Run module tests with configuration
+        run: |
+          echo "Running tests with module-specific configuration"
+          make tf-test MODULE_PATH=${{ needs.validate.outputs.module_path }}
+
+  # Final job that triggers main validation workflow
+  pr-validation-complete:
+    name: PR Validation Complete
+    runs-on: ubuntu-24.04
+    needs: [
+      validate, 
+      non-terraform-contributor-analysis,
+      run-non-terraform-tests-internal, 
+      run-non-terraform-tests-external,
+      terraform-contributor-analysis,
+      run-terraform-tests-internal,
+      run-terraform-tests-external
+    ]
+    if: always() && needs.validate.result == 'success' && ((needs.validate.outputs.is_module != 'true' && needs.non-terraform-contributor-analysis.result == 'success' && (needs.run-non-terraform-tests-internal.result == 'success' || needs.run-non-terraform-tests-external.result == 'success')) || (needs.validate.outputs.is_module == 'true' && needs.terraform-contributor-analysis.result == 'success' && (needs.run-terraform-tests-internal.result == 'success' || needs.run-terraform-tests-external.result == 'success')))
+    outputs:
+      change_type: ${{ steps.determine-outputs.outputs.change_type }}
+      contributor_type: ${{ steps.determine-outputs.outputs.contributor_type }}
+      contributor_username: ${{ steps.determine-outputs.outputs.contributor_username }}
+      can_self_approve: ${{ steps.determine-outputs.outputs.can_self_approve }}
+      code_owners: ${{ steps.determine-outputs.outputs.code_owners }}
+      module_path: ${{ steps.determine-outputs.outputs.module_path }}
+      module_type: ${{ steps.determine-outputs.outputs.module_type }}
+    steps:
+      - name: Determine outputs
+        id: determine-outputs
         run: |
           if [[ "${{ needs.validate.outputs.is_module }}" == "true" ]]; then
-            if [[ "${{ needs.terraform-module-validation.result }}" != "success" ]]; then
-              echo "❌ Terraform module validation failed"
-              exit 1
-            fi
-            echo "✅ Terraform module validation passed"
+            echo "change_type=terraform" >> $GITHUB_OUTPUT
+            echo "contributor_type=${{ needs.terraform-contributor-analysis.outputs.contributor_type }}" >> $GITHUB_OUTPUT
+            echo "contributor_username=${{ needs.terraform-contributor-analysis.outputs.contributor_username }}" >> $GITHUB_OUTPUT
+            echo "can_self_approve=${{ needs.terraform-contributor-analysis.outputs.can_self_approve }}" >> $GITHUB_OUTPUT
+            echo "code_owners=${{ needs.terraform-contributor-analysis.outputs.code_owners }}" >> $GITHUB_OUTPUT
+            echo "module_path=${{ needs.validate.outputs.module_path }}" >> $GITHUB_OUTPUT
+            echo "module_type=${{ needs.validate.outputs.module_type }}" >> $GITHUB_OUTPUT
+            echo "✅ Terraform module validation completed"
           else
-            if [[ "${{ needs.non-terraform-validation.result }}" != "success" ]]; then
-              echo "❌ Non-terraform validation failed"
-              exit 1
-            fi
-            echo "✅ Non-terraform validation passed"
+            echo "change_type=non-terraform" >> $GITHUB_OUTPUT
+            echo "contributor_type=${{ needs.non-terraform-contributor-analysis.outputs.contributor_type }}" >> $GITHUB_OUTPUT
+            echo "contributor_username=${{ needs.non-terraform-contributor-analysis.outputs.contributor_username }}" >> $GITHUB_OUTPUT
+            echo "can_self_approve=${{ needs.non-terraform-contributor-analysis.outputs.can_self_approve }}" >> $GITHUB_OUTPUT
+            echo "code_owners=${{ needs.non-terraform-contributor-analysis.outputs.code_owners }}" >> $GITHUB_OUTPUT
+            echo "module_path=" >> $GITHUB_OUTPUT
+            echo "module_type=" >> $GITHUB_OUTPUT
+            echo "✅ Non-terraform validation completed"
           fi
-          echo "🎉 All required validations completed successfully"
+          
+      - name: Trigger main validation workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'main-validation.yml',
+              ref: context.ref,
+              inputs: {
+                change_type: '${{ steps.determine-outputs.outputs.change_type }}',
+                contributor_type: '${{ steps.determine-outputs.outputs.contributor_type }}',
+                contributor_username: '${{ steps.determine-outputs.outputs.contributor_username }}',
+                can_self_approve: '${{ steps.determine-outputs.outputs.can_self_approve }}',
+                code_owners: '${{ steps.determine-outputs.outputs.code_owners }}',
+                module_path: '${{ steps.determine-outputs.outputs.module_path }}',
+                module_type: '${{ steps.determine-outputs.outputs.module_type }}',
+                pr_number: '${{ github.event.pull_request.number }}',
+                pr_title: '${{ github.event.pull_request.title }}',
+                pr_html_url: '${{ github.event.pull_request.html_url }}'
+              }
+            });
