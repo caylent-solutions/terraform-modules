@@ -798,6 +798,16 @@ jobs:
         with:
           ref: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref_name || 'main' }}
 
+      - name: Debug branch selection
+        run: |
+          echo "Dry run mode: ${{ needs.merge-approval-routing.outputs.dryrun }}"
+          echo "GitHub ref name: ${{ github.ref_name }}"
+          echo "Selected branch: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref_name || 'main' }}"
+          echo "Current branch:"
+          git branch --show-current
+          echo "Current commit:"
+          git log --oneline -1
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -984,6 +994,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref_name || 'main' }}
+
+      - name: Debug branch selection
+        run: |
+          echo "Dry run mode: ${{ needs.merge-approval-routing.outputs.dryrun }}"
+          echo "GitHub ref name: ${{ github.ref_name }}"
+          echo "Selected branch: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref_name || 'main' }}"
+          echo "Current branch:"
+          git branch --show-current
+          echo "Current commit:"
+          git log --oneline -1
 
       - name: Install system dependencies
         run: |
