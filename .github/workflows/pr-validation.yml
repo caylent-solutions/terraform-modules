@@ -14,6 +14,7 @@ jobs:
       contents: read
       pull-requests: read
       id-token: write
+      workflows: write
     steps:
       - name: Generate token from GitHub App
         id: generate_token
@@ -851,7 +852,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'main-validation.yml',
-              ref: context.ref,
+              ref: context.payload.pull_request.base.ref, // ✅ Use base branch, not context.ref
               inputs: {
                 change_type: '${{ steps.determine-outputs.outputs.change_type }}',
                 contributor_type: '${{ steps.determine-outputs.outputs.contributor_type }}',
@@ -865,3 +866,4 @@ jobs:
                 pr_html_url: '${{ github.event.pull_request.html_url }}'
               }
             });
+
