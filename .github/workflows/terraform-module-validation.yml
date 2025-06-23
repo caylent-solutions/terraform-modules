@@ -382,7 +382,7 @@ jobs:
   merge-approval-caylent:
     name: Merge Approval (Caylent)
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, pr-validation-complete]
+    needs: [terraform-and-contributor-analysis, validation-complete]
     if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'true' && needs.terraform-and-contributor-analysis.outputs.can-self-approve == 'false'
     permissions:
       contents: write
@@ -441,7 +441,7 @@ jobs:
   merge-self-approval-caylent:
     name: Self-Approval Merge (Caylent)
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, pr-validation-complete]
+    needs: [terraform-and-contributor-analysis, validation-complete]
     if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'true' && needs.terraform-and-contributor-analysis.outputs.can-self-approve == 'true'
     permissions:
       contents: write
@@ -623,24 +623,10 @@ jobs:
           echo "Internal tests: ${{ needs.run-tests-caylent.result }}"
           echo "External tests: ${{ needs.run-tests-external.result }}"
 
-  pr-validation-complete:
-    name: PR Validation Complete
-    runs-on: ubuntu-24.04
-    # This job waits for both terraform and non-terraform validation to complete
-    # It provides the single required status check for PR branch protection
-    needs: [validation-complete]  # This will be updated by pr-validation.yml to include both workflows
-    if: always() && needs.validation-complete.result == 'success'
-    steps:
-      - name: Mark PR validation as complete
-        run: |
-          echo "✅ PR Validation Complete - All required checks have passed"
-          echo "This status check indicates that all validation requirements are met"
-          echo "Ready for merge approval process"
-
   merge-approval-external:
     name: Merge Approval (External)
     runs-on: ubuntu-24.04
-    needs: [terraform-and-contributor-analysis, pr-validation-complete]
+    needs: [terraform-and-contributor-analysis, validation-complete]
     if: success() && needs.terraform-and-contributor-analysis.outputs.internal == 'false'
     permissions:
       contents: write

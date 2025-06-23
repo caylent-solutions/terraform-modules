@@ -523,7 +523,7 @@ jobs:
   merge-self-approval-internal:
     name: Self-Approval Merge (Internal)
     runs-on: ubuntu-24.04
-    needs: [contributor-analysis, pr-validation-complete]
+    needs: [contributor-analysis, validation-complete]
     if: success() && needs.contributor-analysis.outputs.internal == 'true' && needs.contributor-analysis.outputs.can-self-approve == 'true'
     permissions:
       contents: write
@@ -598,7 +598,7 @@ jobs:
   merge-approval-internal:
     name: Merge Approval (Internal)
     runs-on: ubuntu-24.04
-    needs: [contributor-analysis, pr-validation-complete]
+    needs: [contributor-analysis, validation-complete]
     if: success() && needs.contributor-analysis.outputs.internal == 'true' && needs.contributor-analysis.outputs.can-self-approve == 'false'
     permissions:
       contents: write
@@ -678,7 +678,7 @@ jobs:
   merge-approval-external:
     name: Merge Approval (External)
     runs-on: ubuntu-24.04
-    needs: [contributor-analysis, pr-validation-complete]
+    needs: [contributor-analysis, validation-complete]
     if: success() && needs.contributor-analysis.outputs.internal == 'false'
     permissions:
       contents: write
@@ -1076,20 +1076,6 @@ jobs:
           echo "✅ All non-terraform validation checks have completed successfully"
           echo "Contributor: ${{ needs.contributor-analysis.outputs.username }} (${{ needs.contributor-analysis.outputs.type }})"
           echo "Tests completed: ${{ (needs.run-tests-internal.result == 'success' && 'Internal') || (needs.run-tests-external.result == 'success' && 'External') }}"
-
-  pr-validation-complete:
-    name: PR Validation Complete
-    runs-on: ubuntu-24.04
-    # This job waits for both terraform and non-terraform validation to complete
-    # It provides the single required status check for PR branch protection
-    needs: [validation-complete]  # This will be updated by pr-validation.yml to include both workflows
-    if: always() && needs.validation-complete.result == 'success'
-    steps:
-      - name: Mark PR validation as complete
-        run: |
-          echo "✅ PR Validation Complete - All required checks have passed"
-          echo "This status check indicates that all validation requirements are met"
-          echo "Ready for merge approval process"
 
   release-complete:
     name: Release Complete
