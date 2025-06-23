@@ -192,7 +192,20 @@ jobs:
       contents: write
       id-token: write
       pull-requests: write
+    environment: merge-approval
     steps:
+      - name: Manual approval required for self-approval users
+        run: |
+          echo "::notice::🔐 Manual Approval Required"
+          echo "::notice::Even self-approval users must manually approve merges through GitHub's environment protection"
+          echo "::notice::This ensures proper audit trail and deliberate approval for all changes"
+          echo ""
+          echo "📋 Approval Details:"
+          echo "  Contributor: ${{ needs.merge-approval-routing.outputs.contributor_username }} (Self-Approval Enabled)"
+          echo "  Change Type: Non-Terraform"
+          echo "  Dry Run Mode: ${{ needs.merge-approval-routing.outputs.dryrun }}"
+          echo "  Environment: merge-approval"
+
       - name: Generate GitHub App Token
         id: github-app-token
         uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
@@ -453,7 +466,21 @@ jobs:
       contents: write
       id-token: write
       pull-requests: write
+    environment: merge-approval
     steps:
+      - name: Manual approval required for self-approval users
+        run: |
+          echo "::notice::🔐 Manual Approval Required"
+          echo "::notice::Even self-approval users must manually approve merges through GitHub's environment protection"
+          echo "::notice::This ensures proper audit trail and deliberate approval for all changes"
+          echo ""
+          echo "📋 Approval Details:"
+          echo "  Contributor: ${{ needs.merge-approval-routing.outputs.contributor_username }} (Self-Approval Enabled)"
+          echo "  Change Type: Terraform Module"
+          echo "  Module: ${{ needs.merge-approval-routing.outputs.module_path }}"
+          echo "  Dry Run Mode: ${{ needs.merge-approval-routing.outputs.dryrun }}"
+          echo "  Environment: merge-approval"
+
       - name: Generate GitHub App Token
         id: github-app-token
         uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
@@ -1202,9 +1229,25 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [merge-approval-routing, qa-validation-complete]
     if: always() && needs.qa-validation-complete.result == 'success' && needs.merge-approval-routing.outputs.dryrun == 'true'
+    environment: qa-certification
     outputs:
       dryrun: ${{ needs.merge-approval-routing.outputs.dryrun }}
     steps:
+      - name: Manual approval required for release (dry run simulation)
+        run: |
+          echo "::notice::🔐 Manual Release Approval Required"
+          echo "::notice::All releases require manual approval through GitHub's environment protection"
+          echo "::notice::This dry run simulates the approval process without triggering actual release"
+          echo ""
+          echo "📋 Release Approval Details:"
+          echo "  Release Type: ${{ needs.merge-approval-routing.outputs.change_type == 'terraform' && 'terraform-module' || 'non-terraform' }}"
+          echo "  Contributor: ${{ needs.merge-approval-routing.outputs.contributor_username }}"
+          echo "  Dry Run Mode: ${{ needs.merge-approval-routing.outputs.dryrun }}"
+          echo "  Environment: qa-certification"
+          if [[ "${{ needs.merge-approval-routing.outputs.change_type }}" == "terraform" ]]; then
+            echo "  Module: ${{ needs.merge-approval-routing.outputs.module_path }}"
+          fi
+
       - name: Skip release trigger due to dry run mode
         run: |
           echo "::group::🚫 Dry Run Mode - Release Trigger Skipped"
