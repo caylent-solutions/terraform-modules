@@ -1157,7 +1157,7 @@ jobs:
     name: Release Approval
     runs-on: ubuntu-24.04
     needs: [merge-approval-routing, qa-validation-complete]
-    if: success() && needs.merge-approval-routing.outputs.dryrun != 'true'
+    if: always() && needs.qa-validation-complete.result == 'success' && needs.merge-approval-routing.outputs.dryrun != 'true'
     outputs:
       dryrun: ${{ needs.merge-approval-routing.outputs.dryrun }}
     permissions:
@@ -1201,7 +1201,7 @@ jobs:
     name: Release Approval (Dry Run)
     runs-on: ubuntu-24.04
     needs: [merge-approval-routing, qa-validation-complete]
-    if: success() && needs.merge-approval-routing.outputs.dryrun == 'true'
+    if: always() && needs.qa-validation-complete.result == 'success' && needs.merge-approval-routing.outputs.dryrun == 'true'
     outputs:
       dryrun: ${{ needs.merge-approval-routing.outputs.dryrun }}
     steps:
