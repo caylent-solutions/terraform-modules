@@ -1017,17 +1017,74 @@ jobs:
       - name: Run module validation
         run: make module-validate MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }} MODULE_TYPE=${{ needs.merge-approval-routing.outputs.module_type }}
 
+      - name: Clean Terraform state before linting
+        run: make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
+
       - name: Run Terraform linting
         run: make tf-lint MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
+
+      - name: Clean Terraform state before formatting check
+        run: make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Run Terraform formatting check
         run: make tf-format MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
-      - name: Check Terraform documentation is up-to-date
+      - name: Clean Terraform state before documentation check
+        run: make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
+
+      - name: Check Terraform documentation is up-to-date (with debug)
+        id: tf-docs-check
+        continue-on-error: true
         run: make tf-docs-check MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
+
+      - name: Debug terraform docs check if it failed
+        if: steps.tf-docs-check.outcome == 'failure'
+        run: |
+          echo "::group::🔍 Terraform Docs Check Failed - Debug Information"
+          cd "${{ needs.merge-approval-routing.outputs.module_path }}"
+          
+          echo "=== Current TERRAFORM-DOCS.md checksum ==="
+          if [ -f "TERRAFORM-DOCS.md" ]; then
+            md5sum TERRAFORM-DOCS.md
+            echo "Expected MD5: 5d2c4263945d80e518f75acddcf8e016"
+          else
+            echo "TERRAFORM-DOCS.md does not exist!"
+          fi
+          
+          echo "=== Generate expected docs ==="
+          terraform-docs markdown . > TERRAFORM-DOCS.md.expected
+          md5sum TERRAFORM-DOCS.md.expected
+          
+          echo "=== Compare files ==="
+          if [ -f "TERRAFORM-DOCS.md" ]; then
+            echo "Diff output:"
+            diff TERRAFORM-DOCS.md TERRAFORM-DOCS.md.expected || echo "Files differ"
+          fi
+          
+          echo "=== Tool versions ==="
+          terraform-docs --version
+          terraform --version
+          
+          echo "=== Branch and commit info ==="
+          git branch -a
+          git log --oneline -5
+          
+          echo "::endgroup::"
+
+      - name: Fail if terraform docs check failed
+        if: steps.tf-docs-check.outcome == 'failure'
+        run: |
+          echo "::error::Terraform documentation check failed. See debug output above."
+          exit 1
+
+      - name: Clean Terraform state before security checks
+        run: make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Run security checks
         run: make tf-security MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
+
+      - name: Clean Terraform state before plan
+        run: make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Run Terraform plan
         run: make tf-plan MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
@@ -1041,6 +1098,9 @@ jobs:
         run: |
           cd ${{ needs.merge-approval-routing.outputs.module_path }}
           make go-format
+
+      - name: Clean Terraform state before module tests
+        run: make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Run module tests
         run: make tf-test MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
