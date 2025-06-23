@@ -200,6 +200,41 @@ When modifying workflow files (`.github/workflows/*.yml`):
 
 4. **Security Review**: External contributors cannot modify workflow files for security reasons
 
+### Workflow Modifications & Dry Run Testing
+
+> **⚠️ Important**: Changes to workflow files require special handling due to their critical nature.
+
+#### For Internal Contributors Modifying Workflows:
+
+1. **Follow SDLC Process**: See [Main Validation SDLC Guide](docs/main-validation-sdlc.md) for complete process
+2. **Test in Dry Run Mode**: ALWAYS test workflow changes in dry run mode first:
+   ```yaml
+   # Use workflow_dispatch with dryrun: true
+   inputs:
+     change_type: "terraform"
+     contributor_type: "Internal"
+     contributor_username: "your-username"
+     pr_number: "test-123"
+     pr_title: "Test workflow changes"
+     dryrun: true  # KEY: Enables safe testing
+   ```
+
+3. **Comprehensive Testing**: Test all scenarios (terraform/non-terraform, internal/external contributors)
+4. **Documentation**: Update inline comments and process documentation
+5. **Code Review**: Require platform engineering team approval
+
+#### Dry Run Mode Features:
+- ✅ **Safe Testing**: Executes all logic without destructive actions
+- ✅ **Full Simulation**: Tests routing, notifications, and release processes
+- ✅ **Slack Testing**: Sends notifications with dry run indicators
+- 🚫 **No Merges**: Skips actual PR merges and releases
+- 🚫 **No Side Effects**: Prevents any unintended changes
+
+#### External Contributors:
+- **Cannot modify** workflow files directly
+- **Must propose changes** through issues first
+- **Require extensive review** for any workflow-related suggestions
+
 ## Getting Help
 
 If you have questions or need help, please:

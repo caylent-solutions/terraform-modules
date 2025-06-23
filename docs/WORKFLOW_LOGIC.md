@@ -1,5 +1,21 @@
 # Terraform Modules Repository - Workflow Logic Flow
 
+> **📋 For workflow maintenance and development**: See [Main Validation SDLC Guide](main-validation-sdlc.md) for the complete Software Development Lifecycle process for maintaining and updating workflow files.
+
+## Overview
+
+This repository uses a sophisticated multi-stage workflow system for validating, testing, and merging changes. The workflows support both **production execution** and **dry run mode** for safe testing of workflow changes.
+
+### 🧪 Dry Run Mode
+All workflows support dry run mode (`dryrun: true`) which:
+- ✅ Executes all validation and testing logic
+- ✅ Sends Slack notifications (with dry run indicators)
+- ✅ Simulates merge and release processes
+- 🚫 Skips actual PR merges and release triggers
+- 🚫 Prevents any destructive actions
+
+---
+
 ## 1. PR Validation Entry Point (`pr-validation.yml`)
 **Trigger**: Pull request to `main` branch
 **Purpose**: Route PRs to appropriate validation workflow and enforce security controls
@@ -119,7 +135,42 @@
 
 ---
 
-## 4. Standalone CodeQL Analysis (`codeql-analysis.yml`)
+## 4. Main Validation Workflow (`main-validation.yml`)
+**Trigger**: Manual workflow dispatch
+**Purpose**: Core validation orchestrator for PR approval routing, merge decisions, and release triggering
+
+> **🔧 Maintenance**: This workflow has its own [SDLC process](main-validation-sdlc.md) for safe updates and testing.
+
+### Key Features:
+- **Dry Run Mode**: Complete workflow simulation without destructive actions
+- **Multi-path Routing**: Handles Terraform and non-Terraform changes differently
+- **Contributor Type Awareness**: Different approval flows for internal/external contributors
+- **Self-Approval Logic**: Internal contributors can self-approve under certain conditions
+- **Release Orchestration**: Triggers downstream release workflows after successful merges
+
+### Flow Overview:
+1. **Merge Approval Routing**: Centralizes all input processing and routing decisions
+2. **Debug Output**: Comprehensive logging for troubleshooting and auditing
+3. **Parallel Merge Jobs**: Multiple approval paths based on change type and contributor
+4. **Post-Merge Validation**: Ensures merged code still passes all tests
+5. **QA Certification**: Final approval gate before release
+6. **Release Triggering**: Orchestrates downstream release processes
+
+### Dry Run Capabilities:
+- Test all routing logic without actual merges
+- Validate Slack notifications with dry run indicators
+- Simulate release processes without triggering actual releases
+- Full end-to-end testing of workflow changes
+
+### Safety Features:
+- All destructive actions check `dryrun != 'true'` condition
+- Comprehensive output propagation through job dependencies
+- Failsafe conditions prevent accidental merges during testing
+- Structured logging with GitHub Actions annotations
+
+---
+
+## 5. Standalone CodeQL Analysis (`codeql-analysis.yml`)
 **Trigger**: Push to main only
 **Purpose**: Scan actual merged code on main branch (complements PR pre-merge scans)
 
@@ -133,7 +184,7 @@
 
 ---
 
-## 5. Release Workflow (`release.yml`)
+## 6. Release Workflow (`release.yml`)
 **Trigger**: Manual dispatch OR triggered by QA certification
 **Purpose**: Create semantic versioned releases
 
@@ -164,7 +215,7 @@
 
 ---
 
-## 6. Weekly Health Check (`weekly-module-health-check.yml`)
+## 7. Weekly Health Check (`weekly-module-health-check.yml`)
 **Trigger**: Cron (Sunday 1AM UTC) OR manual dispatch
 **Purpose**: Validate all modules remain healthy
 

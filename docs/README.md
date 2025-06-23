@@ -9,6 +9,7 @@ This directory contains documentation for the Terraform Modules repository.
 ## Workflow and Process
 
 - [Complete Workflow Logic](WORKFLOW_LOGIC.md) - Detailed flow of all CI/CD workflows
+- [Main Validation SDLC Guide](main-validation-sdlc.md) - SDLC process for workflow maintenance
 - [Contributor Guide](../CONTRIBUTOR_GUIDE.md) - Complete SDLC process for contributors
 - [Contributing Guidelines](../CONTRIBUTING.md) - How to contribute to this repository
 

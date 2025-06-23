@@ -198,6 +198,7 @@ This repository implements a comprehensive automated CI/CD pipeline that handles
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute (internal vs external)
 - [Contributor Guide - SDLC Process](CONTRIBUTOR_GUIDE.md) - Complete development lifecycle
 - [Workflow Logic Documentation](docs/WORKFLOW_LOGIC.md) - Detailed CI/CD flow explanation
+- [Main Validation SDLC Guide](docs/main-validation-sdlc.md) - SDLC process for workflow maintenance
 
 ### Technical Documentation
 - [Terraform Module Structure](docs/terraform-module-structure.md)
