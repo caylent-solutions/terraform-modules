@@ -796,7 +796,7 @@ jobs:
     needs: 
       - merge-approval-routing
       - merge-approval-routing-non-terraform
-    if: needs.merge-approval-routing-non-terraform.outputs.should_run_post_merge == 'true'
+    if: always() && needs.merge-approval-routing-non-terraform.outputs.should_run_post_merge == 'true'
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4
@@ -982,7 +982,7 @@ jobs:
     needs: 
       - merge-approval-routing
       - merge-approval-routing-terraform
-    if: needs.merge-approval-routing-terraform.outputs.should_run_post_merge == 'true'
+    if: always() && needs.merge-approval-routing-terraform.outputs.should_run_post_merge == 'true'
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4
