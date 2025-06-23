@@ -110,13 +110,10 @@ jobs:
           git checkout -b pr-validation origin/${{ github.base_ref }}
           git merge --no-commit --no-ff origin/${{ github.head_ref }}
 
-      - name: Install system dependencies for Python build
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev curl \
-            libncursesw5-dev xz-utils tk-dev libxml2-dev \
-            libxmlsec1-dev libffi-dev liblzma-dev bc
+          sudo apt-get install -y curl bc
 
       - name: Install ASDF
         run: |
@@ -125,11 +122,17 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools
+      - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
-          asdf install
+          # Install only the tools needed for PR validation: golang, jq, opa
+          for tool in golang jq opa; do
+            if grep -q "^$tool " .tool-versions; then
+              asdf plugin add $tool || true
+              VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
+              asdf install $tool $VERSION
+            fi
+          done
           asdf reshim
           
       - name: Install GO Dependencies
@@ -340,13 +343,10 @@ jobs:
           git checkout -b internal-tests origin/${{ github.base_ref }}
           git merge --no-commit --no-ff origin/${{ github.head_ref }}
 
-      - name: Install system dependencies for Python build
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev curl \
-            libncursesw5-dev xz-utils tk-dev libxml2-dev \
-            libxmlsec1-dev libffi-dev liblzma-dev bc
+          sudo apt-get install -y curl bc
 
       - name: Install ASDF
         run: |
@@ -355,11 +355,17 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools
+      - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
-          asdf install
+          # Install only the tools needed for non-terraform tests: golang, opa
+          for tool in golang opa; do
+            if grep -q "^$tool " .tool-versions; then
+              asdf plugin add $tool || true
+              VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
+              asdf install $tool $VERSION
+            fi
+          done
           asdf reshim
           
       - name: Configure environment
@@ -429,13 +435,10 @@ jobs:
           git checkout -b external-tests origin/${{ github.base_ref }}
           git merge --no-commit --no-ff origin/${{ github.head_ref }}
 
-      - name: Install system dependencies for Python build
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev curl \
-            libncursesw5-dev xz-utils tk-dev libxml2-dev \
-            libxmlsec1-dev libffi-dev liblzma-dev bc
+          sudo apt-get install -y curl bc
 
       - name: Install ASDF
         run: |
@@ -444,11 +447,17 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools
+      - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
-          asdf install
+          # Install only the tools needed for non-terraform tests: golang, opa
+          for tool in golang opa; do
+            if grep -q "^$tool " .tool-versions; then
+              asdf plugin add $tool || true
+              VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
+              asdf install $tool $VERSION
+            fi
+          done
           asdf reshim
           
       - name: Configure environment
@@ -697,13 +706,10 @@ jobs:
           git checkout -b caylent-tests origin/${{ github.base_ref }}
           git merge --no-commit --no-ff origin/${{ github.head_ref }}
 
-      - name: Install system dependencies for Python build
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev curl \
-            libncursesw5-dev xz-utils tk-dev libxml2-dev \
-            libxmlsec1-dev libffi-dev liblzma-dev bc
+          sudo apt-get install -y curl
 
       - name: Install ASDF
         run: |
@@ -715,8 +721,11 @@ jobs:
       - name: Install ASDF plugins and tools
         run: |
           cd $GITHUB_WORKSPACE
-          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
-          asdf install
+          # Only install tools needed for Terraform tests
+          for tool in golang terraform terraform-docs terragrunt tflint tfsec jq; do
+            asdf plugin add $tool || true
+          done
+          asdf install golang terraform terraform-docs terragrunt tflint tfsec jq
           asdf reshim
           
       - name: Configure environment
@@ -749,13 +758,10 @@ jobs:
           git checkout -b external-tests origin/${{ github.base_ref }}
           git merge --no-commit --no-ff origin/${{ github.head_ref }}
 
-      - name: Install system dependencies for Python build
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev curl \
-            libncursesw5-dev xz-utils tk-dev libxml2-dev \
-            libxmlsec1-dev libffi-dev liblzma-dev bc
+          sudo apt-get install -y curl
                     
       - name: Install ASDF
         run: |
@@ -767,8 +773,12 @@ jobs:
       - name: Install ASDF plugins and tools
         run: |
           cd $GITHUB_WORKSPACE
-          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
-          asdf install
+          # Only install tools needed for Terraform tests
+          for tool in golang terraform terraform-docs terragrunt tflint tfsec jq; do
+            asdf plugin add $tool || true
+          done
+          asdf install golang terraform terraform-docs terragrunt tflint tfsec jq
+          asdf reshim
           asdf reshim
           
       - name: Configure environment
@@ -802,6 +812,13 @@ jobs:
       module_path: ${{ steps.determine-outputs.outputs.module_path }}
       module_type: ${{ steps.determine-outputs.outputs.module_type }}
     steps:
+      - name: Generate token from GitHub App
+        id: generate_token
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: Determine outputs
         id: determine-outputs
         run: |
@@ -828,7 +845,7 @@ jobs:
       - name: Trigger main validation workflow
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.generate_token.outputs.token }}
           script: |
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
