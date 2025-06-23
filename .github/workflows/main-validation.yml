@@ -798,17 +798,12 @@ jobs:
         with:
           ref: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref || 'main' }}
 
-      - name: Debug branch selection
+      - name: Show validation context
         run: |
-          echo "Dry run mode: ${{ needs.merge-approval-routing.outputs.dryrun }}"
-          echo "GitHub ref: ${{ github.ref }}"
-          echo "GitHub ref name: ${{ github.ref_name }}"
-          echo "GitHub head ref: ${{ github.head_ref }}"
-          echo "Selected branch: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref || 'main' }}"
-          echo "Current branch:"
-          git branch --show-current
-          echo "Current commit:"
-          git log --oneline -1
+          echo "🔍 Non-Terraform Validation Context:"
+          echo "Branch: $(git branch --show-current)"
+          echo "Commit: $(git log --oneline -1)"
+          echo "Directory: $(pwd)"
 
       - name: Install system dependencies
         run: |
@@ -1000,17 +995,12 @@ jobs:
         with:
           ref: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref || 'main' }}
 
-      - name: Debug branch selection
+      - name: Show validation context
         run: |
-          echo "Dry run mode: ${{ needs.merge-approval-routing.outputs.dryrun }}"
-          echo "GitHub ref: ${{ github.ref }}"
-          echo "GitHub ref name: ${{ github.ref_name }}"
-          echo "GitHub head ref: ${{ github.head_ref }}"
-          echo "Selected branch: ${{ needs.merge-approval-routing.outputs.dryrun == 'true' && github.ref || 'main' }}"
-          echo "Current branch:"
-          git branch --show-current
-          echo "Current commit:"
-          git log --oneline -1
+          echo "🔍 Terraform Validation Context:"
+          echo "Branch: $(git branch --show-current)"
+          echo "Commit: $(git log --oneline -1)"
+          echo "Directory: $(pwd)"
 
       - name: Install system dependencies
         run: |
@@ -1061,57 +1051,10 @@ jobs:
         run: make tf-format MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
       - name: Clean Terraform state before documentation check
-        run: |
-          echo "Debug: Current directory for docs clean: $(pwd)"
-          echo "Debug: Makefile exists: $(ls -la Makefile 2>/dev/null || echo 'Makefile not found')"
-          echo "Debug: tf-clean target check:"
-          grep -A 5 "tf-clean:" Makefile || echo "tf-clean target not found"
-          make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
+        run: make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
-      - name: Check Terraform documentation is up-to-date (with debug)
-        id: tf-docs-check
-        continue-on-error: true
+      - name: Check Terraform documentation is up-to-date
         run: make tf-docs-check MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
-
-      - name: Debug terraform docs check if it failed
-        if: steps.tf-docs-check.outcome == 'failure'
-        run: |
-          echo "::group::🔍 Terraform Docs Check Failed - Debug Information"
-          cd "${{ needs.merge-approval-routing.outputs.module_path }}"
-          
-          echo "=== Current TERRAFORM-DOCS.md checksum ==="
-          if [ -f "TERRAFORM-DOCS.md" ]; then
-            md5sum TERRAFORM-DOCS.md
-            echo "Expected MD5: 5d2c4263945d80e518f75acddcf8e016"
-          else
-            echo "TERRAFORM-DOCS.md does not exist!"
-          fi
-          
-          echo "=== Generate expected docs ==="
-          terraform-docs markdown . > TERRAFORM-DOCS.md.expected
-          md5sum TERRAFORM-DOCS.md.expected
-          
-          echo "=== Compare files ==="
-          if [ -f "TERRAFORM-DOCS.md" ]; then
-            echo "Diff output:"
-            diff TERRAFORM-DOCS.md TERRAFORM-DOCS.md.expected || echo "Files differ"
-          fi
-          
-          echo "=== Tool versions ==="
-          terraform-docs --version
-          terraform --version
-          
-          echo "=== Branch and commit info ==="
-          git branch -a
-          git log --oneline -5
-          
-          echo "::endgroup::"
-
-      - name: Fail if terraform docs check failed
-        if: steps.tf-docs-check.outcome == 'failure'
-        run: |
-          echo "::error::Terraform documentation check failed. See debug output above."
-          exit 1
 
       - name: Clean Terraform state before security checks
         run: make tf-clean MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
@@ -1129,6 +1072,15 @@ jobs:
         run: |
           cd ${{ needs.merge-approval-routing.outputs.module_path }}
           make install
+
+      - name: Show module validation context
+        run: |
+          cd ${{ needs.merge-approval-routing.outputs.module_path }}
+          echo "🔍 Module Validation Context:"
+          echo "Branch: $(git branch --show-current)"
+          echo "Commit: $(git log --oneline -1)"
+          echo "Directory: $(pwd)"
+          echo "Module: ${{ needs.merge-approval-routing.outputs.module_path }}"
 
       - name: Run Go linting on module tests
         run: |
