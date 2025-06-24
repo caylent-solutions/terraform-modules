@@ -153,8 +153,8 @@ jobs:
       - name: Get changed files
         id: changed-files
         run: |
-          # Get list of changed files (compare base branch to current merge state)
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          # Get list of changed files (compare base to head branch directly)
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...origin/${{ github.head_ref }} | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "Changed files: $CHANGED_FILES"
           
           # Fail if no changed files detected
