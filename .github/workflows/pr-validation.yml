@@ -126,9 +126,10 @@ jobs:
       - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          # Install only the tools needed for PR validation: golang, jq, opa
-          for tool in golang jq opa; do
+          # Install all tools needed for Terraform validation
+          for tool in golang jq opa terraform terraform-docs tflint tfsec; do
             if grep -q "^$tool " .tool-versions; then
+              echo "Installing $tool..."
               asdf plugin add $tool || true
               VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
               asdf install $tool $VERSION
@@ -366,9 +367,10 @@ jobs:
       - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          # Install only the tools needed for non-terraform tests: golang, opa
-          for tool in golang opa; do
+          # Install all tools needed for Terraform validation
+          for tool in golang jq opa terraform terraform-docs tflint tfsec; do
             if grep -q "^$tool " .tool-versions; then
+              echo "Installing $tool..."
               asdf plugin add $tool || true
               VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
               asdf install $tool $VERSION
@@ -458,9 +460,10 @@ jobs:
       - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          # Install only the tools needed for non-terraform tests: golang, opa
-          for tool in golang opa; do
+          # Install all tools needed for Terraform validation
+          for tool in golang jq opa terraform terraform-docs tflint tfsec; do
             if grep -q "^$tool " .tool-versions; then
+              echo "Installing $tool..."
               asdf plugin add $tool || true
               VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
               asdf install $tool $VERSION
@@ -726,7 +729,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl
+          sudo apt-get install -y curl bc
 
       - name: Install ASDF
         run: |
@@ -735,14 +738,18 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools
+      - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          # Only install tools needed for Terraform tests
-          for tool in golang terraform terraform-docs terragrunt tflint tfsec jq; do
-            asdf plugin add $tool || true
+          # Install all tools needed for Terraform validation
+          for tool in golang jq opa terraform terraform-docs tflint tfsec; do
+            if grep -q "^$tool " .tool-versions; then
+              echo "Installing $tool..."
+              asdf plugin add $tool || true
+              VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
+              asdf install $tool $VERSION
+            fi
           done
-          asdf install golang terraform terraform-docs terragrunt tflint tfsec jq
           asdf reshim
           
       - name: Configure environment
@@ -778,8 +785,8 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl
-                    
+          sudo apt-get install -y curl bc
+
       - name: Install ASDF
         run: |
           git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
@@ -787,15 +794,18 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools
+      - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          # Only install tools needed for Terraform tests
-          for tool in golang terraform terraform-docs terragrunt tflint tfsec jq; do
-            asdf plugin add $tool || true
+          # Install all tools needed for Terraform validation
+          for tool in golang jq opa terraform terraform-docs tflint tfsec; do
+            if grep -q "^$tool " .tool-versions; then
+              echo "Installing $tool..."
+              asdf plugin add $tool || true
+              VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
+              asdf install $tool $VERSION
+            fi
           done
-          asdf install golang terraform terraform-docs terragrunt tflint tfsec jq
-          asdf reshim
           asdf reshim
           
       - name: Configure environment
