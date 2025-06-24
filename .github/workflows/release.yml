@@ -37,14 +37,23 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Read Python version from .tool-versions
+        id: python-version
+        run: |
+          PYTHON_VERSION=$(grep '^python ' .tool-versions | awk '{print $2}')
+          echo "version=$PYTHON_VERSION" >> $GITHUB_OUTPUT
+          echo "Found Python version: $PYTHON_VERSION"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ steps.python-version.outputs.version }}
           
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev curl \
-            libncursesw5-dev xz-utils tk-dev libxml2-dev \
-            libxmlsec1-dev libffi-dev liblzma-dev bc
+          sudo apt-get install -y curl bc
 
       - name: Install ASDF
         run: |
@@ -53,11 +62,18 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools
+      - name: Install ASDF plugins and tools (excluding everything except jq)
         run: |
           cd $GITHUB_WORKSPACE
-          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
-          asdf install
+          # Install all tools needed for Terraform validation
+          for tool in jq; do
+            if grep -q "^$tool " .tool-versions; then
+              echo "Installing $tool..."
+              asdf plugin add $tool || true
+              VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
+              asdf install $tool $VERSION
+            fi
+          done
           asdf reshim
 
       - name: Install dependencies
@@ -106,14 +122,14 @@ jobs:
             
             # Create a temporary semantic-release config for this module
             cat > .semantic-release-temp.yml <<EOF
-            branch: main
-            version_source: tag
-            tag_format: ${MODULE_PATH}/v{version}
-            commit_parser:
-              major_pattern: "^(feat|fix|refactor|perf|build|ci|chore|docs|style|test)(\\([\\w\\s-]+\\))?!:"
-              minor_pattern: "^feat(\\([\\w\\s-]+\\))?:"
-              patch_pattern: "^(fix|refactor|perf|build|ci|chore|docs|style|test)(\\([\\w\\s-]+\\))?:"
-            EOF
+          branch: main
+          version_source: tag
+          tag_format: ${MODULE_PATH}/v{version}
+          commit_parser:
+            major_pattern: "^(feat|fix|refactor|perf|build|ci|chore|docs|style|test)(\\([\\w\\s-]+\\))?!:"
+            minor_pattern: "^feat(\\([\\w\\s-]+\\))?:"
+            patch_pattern: "^(fix|refactor|perf|build|ci|chore|docs|style|test)(\\([\\w\\s-]+\\))?:"
+          EOF
             
             # Use semantic-release to determine next version
             NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .semantic-release-temp.yml --define-version-var $CURRENT_VERSION --print)
