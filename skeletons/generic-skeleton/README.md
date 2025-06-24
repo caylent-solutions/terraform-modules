@@ -264,3 +264,5 @@ For more information on the `tftest` CLI tool, see the [CLI Usage Documentation]
 
 
 feat: test debug for first module release
+
+feat: test minor bump for tf module
