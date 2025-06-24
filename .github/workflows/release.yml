@@ -122,9 +122,11 @@ jobs:
             if [ -n "$NEXT_VERSION_NUMBER" ]; then
               NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
               echo "Final module next version: $NEXT_VERSION"
+              echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
             else
               echo "No version bump needed for module"
               NEXT_VERSION=""
+              echo "next_version=" >> $GITHUB_OUTPUT
             fi
             
           else
@@ -168,13 +170,9 @@ jobs:
             # Add prefix
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
             echo "Final next version: $NEXT_VERSION"
+            echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           fi
           
-          echo "DEBUG: About to write to GitHub outputs:"
-          echo "DEBUG: NEXT_VERSION='$NEXT_VERSION'"
-          echo "DEBUG: RELEASE_TYPE='$RELEASE_TYPE'"
-          
-          echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
           
           if [[ "$RELEASE_TYPE" == "terraform-module" ]]; then
