@@ -177,7 +177,7 @@ jobs:
           echo "Created PR: $PR_URL"
           
           echo "🔀 Auto-merging release PR..."
-          gh pr merge "$PR_URL" --admin --merge
+          gh pr merge "$PR_URL" --admin --squash
 
           # Tag the release
           echo "🏷️ Creating release tag..."
