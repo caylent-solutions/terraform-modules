@@ -121,16 +121,38 @@ jobs:
             if [[ -z "$LATEST_TAG" ]]; then
               # No existing tag, start with v0.1.0
               CURRENT_VERSION="0.1.0"
+              echo "No existing tags found, starting with version: $CURRENT_VERSION"
             else
               # Extract version number without prefix
               CURRENT_VERSION=$(echo "$LATEST_TAG" | sed "s|v||")
+              echo "Found latest tag: $LATEST_TAG, extracted version: $CURRENT_VERSION"
             fi
             
-            # Use semantic-release to determine next version
-            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .github/semantic-release-config.yml --define-version-var $CURRENT_VERSION --print)
+            echo "Current version: $CURRENT_VERSION"
+            echo "Attempting to determine next version using semantic-release..."
+            
+            # Try to use semantic-release to determine next version, with fallback
+            if command -v python -m semantic_release &> /dev/null; then
+              NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .github/semantic-release-config.yml 2>/dev/null || echo "")
+              echo "Semantic-release returned: '$NEXT_VERSION_NUMBER'"
+            else
+              echo "Semantic-release not available"
+              NEXT_VERSION_NUMBER=""
+            fi
+            
+            # If semantic-release failed or returned empty, fallback to simple increment
+            if [[ -z "$NEXT_VERSION_NUMBER" ]]; then
+              echo "Semantic-release failed or returned empty, using fallback version increment"
+              # Parse current version and increment patch
+              IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+              patch=$((patch + 1))
+              NEXT_VERSION_NUMBER="$major.$minor.$patch"
+              echo "Fallback version: $NEXT_VERSION_NUMBER"
+            fi
             
             # Add prefix
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
+            echo "Final next version: $NEXT_VERSION"
           fi
           
           echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
