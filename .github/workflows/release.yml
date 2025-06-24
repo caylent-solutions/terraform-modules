@@ -125,8 +125,8 @@ jobs:
           echo "$COMMITS" | sed 's/^/  /'
           
           # Check for version bump triggers with debugging
-          FEAT_COMMITS=$(echo "$COMMITS" | grep -E '^[a-f0-9]+ feat:' | cat)
-          FIX_COMMITS=$(echo "$COMMITS" | grep -E '^[a-f0-9]+ fix:' | cat)
+          FEAT_COMMITS=$(echo "$COMMITS" | grep -E '^[a-f0-9]+ feat(\(.*\))?:' | cat)
+          FIX_COMMITS=$(echo "$COMMITS" | grep -E '^[a-f0-9]+ fix(\(.*\))?:' | cat)
           
           echo "DEBUG: Feature commits found:"
           echo "$FEAT_COMMITS" | sed 's/^/  /'
