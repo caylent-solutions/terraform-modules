@@ -1,10 +1,6 @@
 branches:
-  main:
-    match: "main"
-    prerelease: false
-  fix-release-cicd:
-    match: "fix-release-cicd"
-    prerelease: false
+  - main
+  - fix-release-cicd
 major_on_zero: false
 commit_parser: angular
 commit_parser_options:

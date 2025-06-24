@@ -81,7 +81,7 @@ jobs:
             done
             
             # Get the latest tag for this module
-            LATEST_TAG=$(git tag -l "${PREFIX}*" --sort=-v:refname | head -n 1)
+            LATEST_TAG=$(git tag -l "${PREFIX}*" --sort=-v:refname | grep -E "${PREFIX}[0-9]+\.[0-9]+\.[0-9]+" | head -n 1 || echo "")
             
             if [[ -z "$LATEST_TAG" ]]; then
               # No existing tag, start with v0.1.0
@@ -98,12 +98,8 @@ jobs:
             # Create a temporary semantic-release config for this module
             cat > .semantic-release-temp.yml <<EOF
           branches:
-            main:
-              match: "main"
-              prerelease: false
-            fix-release-cicd:
-              match: "fix-release-cicd"
-              prerelease: false
+            - main
+            - fix-release-cicd
           major_on_zero: false
           tag_format: ${MODULE_PATH}/v{version}
           commit_parser: angular
@@ -141,7 +137,7 @@ jobs:
             # Use the main semantic-release config
             
             # Get the latest tag
-            LATEST_TAG=$(git tag -l "${PREFIX}*" --sort=-v:refname | head -n 1)
+            LATEST_TAG=$(git tag -l "${PREFIX}*" --sort=-v:refname | grep -E "${PREFIX}[0-9]+\.[0-9]+\.[0-9]+" | head -n 1 || echo "")
             
             if [[ -z "$LATEST_TAG" ]]; then
               # No existing tag, start with v0.1.0
