@@ -45,6 +45,8 @@ Use the provided Makefile to install all dependencies:
 make install
 ```
 
+# feat: test minor bump for tf module release workflow
+
 ## Module Structure
 
 ```
