@@ -149,8 +149,21 @@ jobs:
             
             echo "Current version: $CURRENT_VERSION"
             
+            # Debug: Show recent commits and tags
+            echo "Recent tags:"
+            git tag --list | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -5
+            echo "Recent commits:"
+            git log --oneline -10
+            
             # Use semantic-release to determine next version
+            echo "Running semantic-release to determine next version..."
             NEXT_VERSION_NUMBER=$(python -m semantic_release version --print)
+            
+            if [ -z "$NEXT_VERSION_NUMBER" ]; then
+              echo "ERROR: semantic-release did not return a version number"
+              echo "This means no conventional commits were found that warrant a version bump"
+              exit 1
+            fi
             
             # Add prefix
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
