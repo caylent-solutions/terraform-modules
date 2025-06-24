@@ -57,11 +57,9 @@ jobs:
           app_id: ${{ secrets.GH_APP_ID }}
           private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           
-      - name: Install Node.js and standard-version
+      - name: Install Python semantic-release
         run: |
-          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-          sudo apt-get install -y nodejs
-          npm install -g standard-version
+          pip install -r .github/workflows/requirements-release.txt
           
       - name: Determine version and tag format
         id: version
@@ -97,30 +95,35 @@ jobs:
             
             echo "Module current version: $CURRENT_VERSION"
             
-            # Use standard-version to determine next version for the module
-            echo "Using standard-version to determine next module version..."
-            
-            # Create a temporary package.json for the module
-            cat > package.json <<EOF
-          {
-            "name": "$(basename ${MODULE_PATH})",
-            "version": "${CURRENT_VERSION}",
-            "description": "Terraform module"
-          }
+            # Create a temporary semantic-release config for this module
+            cat > .semantic-release-temp.yml <<EOF
+          branches:
+            - main
+            - fix-release-cicd
+          major_on_zero: false
+          tag_format: ${MODULE_PATH}/v{version}
+          commit_parser: angular
+          commit_parser_options:
+            allowed_tags:
+              - build
+              - chore
+              - ci
+              - docs
+              - feat
+              - fix
+              - perf
+              - style
+              - refactor
+              - test
+            minor_tags:
+              - feat
+            patch_tags:
+              - fix
+              - perf
           EOF
             
-            # Run standard-version in dry-run mode to get the next version
-            NEXT_VERSION_NUMBER=$(npx standard-version --dry-run --silent | grep "tagging release" | sed 's/.*tagging release v\(.*\)/\1/' || echo "$CURRENT_VERSION")
-            
-            # If standard-version didn't return a version, increment patch
-            if [[ "$NEXT_VERSION_NUMBER" == "$CURRENT_VERSION" ]]; then
-              echo "No conventional commits found for module, incrementing patch version"
-              IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
-              patch=$((patch + 1))
-              NEXT_VERSION_NUMBER="$major.$minor.$patch"
-            fi
-            
-            echo "Next module version number: $NEXT_VERSION_NUMBER"
+            # Use semantic-release to determine next version
+            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .semantic-release-temp.yml --current-version "$CURRENT_VERSION")
             
             # Add prefix
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
@@ -148,21 +151,8 @@ jobs:
             
             echo "Current version: $CURRENT_VERSION"
             
-            # Use standard-version to determine next version based on conventional commits
-            echo "Using standard-version to determine next version..."
-            
-            # Run standard-version in dry-run mode to get the next version
-            NEXT_VERSION_NUMBER=$(npx standard-version --dry-run --silent | grep "tagging release" | sed 's/.*tagging release v\(.*\)/\1/' || echo "$CURRENT_VERSION")
-            
-            # If standard-version didn't return a version, increment patch
-            if [[ "$NEXT_VERSION_NUMBER" == "$CURRENT_VERSION" ]]; then
-              echo "No conventional commits found, incrementing patch version"
-              IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
-              patch=$((patch + 1))
-              NEXT_VERSION_NUMBER="$major.$minor.$patch"
-            fi
-            
-            echo "Next version number: $NEXT_VERSION_NUMBER"
+            # Use semantic-release to determine next version
+            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .github/semantic-release-config.yml --current-version "$CURRENT_VERSION")
             
             # Add prefix
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
@@ -188,15 +178,13 @@ jobs:
             MODULE_PATH="${{ steps.version.outputs.module_path }}"
             PREFIX="${MODULE_PATH}/v"
             
-            # Generate changelog for module using standard-version
-            cd "${MODULE_PATH}"
-            npx standard-version --dry-run --silent > /tmp/module_changelog_output.txt || true
-            cd -
+            # Generate changelog for module
+            python -m semantic_release changelog --noop --config-file .semantic-release-temp.yml --define-version-var "${NEXT_VERSION#$PREFIX}" > MODULE_CHANGELOG.md
             
             # Update module-specific CHANGELOG.md
             echo "## $NEXT_VERSION ($(date +%Y-%m-%d))" > "${MODULE_PATH}/CHANGELOG.md.new"
             echo "" >> "${MODULE_PATH}/CHANGELOG.md.new"
-            echo "Generated with standard-version" >> "${MODULE_PATH}/CHANGELOG.md.new"
+            cat MODULE_CHANGELOG.md >> "${MODULE_PATH}/CHANGELOG.md.new"
             echo "" >> "${MODULE_PATH}/CHANGELOG.md.new"
             
             if [[ -f "${MODULE_PATH}/CHANGELOG.md" ]]; then
@@ -211,13 +199,13 @@ jobs:
             CHANGELOG_CONTENT=$(cat "${MODULE_PATH}/CHANGELOG.md" | head -n 20)
             
           else
-            # Generate changelog for repo using standard-version
-            npx standard-version --dry-run --silent > /tmp/changelog_output.txt || true
+            # Generate changelog for repo
+            python -m semantic_release changelog --noop --config-file .github/semantic-release-config.yml --define-version-var "${NEXT_VERSION#v}" > REPO_CHANGELOG.md
             
             # Update root CHANGELOG.md
             echo "## $NEXT_VERSION ($(date +%Y-%m-%d))" > CHANGELOG.md.new
             echo "" >> CHANGELOG.md.new
-            echo "Generated with standard-version" >> CHANGELOG.md.new
+            cat REPO_CHANGELOG.md >> CHANGELOG.md.new
             echo "" >> CHANGELOG.md.new
             
             if [[ -f "CHANGELOG.md" ]]; then
