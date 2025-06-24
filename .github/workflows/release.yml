@@ -182,6 +182,10 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
+          echo "Raw step outputs:"
+          echo "release_type output: '${{ steps.version.outputs.release_type }}'"
+          echo "next_version output: '${{ steps.version.outputs.next_version }}'"
+          
           RELEASE_TYPE="${{ steps.version.outputs.release_type }}"
           NEXT_VERSION="${{ steps.version.outputs.next_version }}"
           
@@ -249,6 +253,10 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
+          echo "Raw step outputs:"
+          echo "release_type output: '${{ steps.version.outputs.release_type }}'"
+          echo "next_version output: '${{ steps.version.outputs.next_version }}'"
+          
           RELEASE_TYPE="${{ steps.version.outputs.release_type }}"
           NEXT_VERSION="${{ steps.version.outputs.next_version }}"
           
