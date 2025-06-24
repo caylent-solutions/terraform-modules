@@ -116,7 +116,7 @@ func getChangedFiles(config map[string]interface{}) []string {
 		}
 		return changedFiles
 	}
-	
+
 	// If test_changed_files is not provided, this is an error
 	fmt.Println("Error: test_changed_files not found in config")
 	os.Exit(1)
@@ -206,5 +206,3 @@ func matchesPattern(filePath, pattern string) (bool, string) {
 
 	return true, modulePath
 }
-
-

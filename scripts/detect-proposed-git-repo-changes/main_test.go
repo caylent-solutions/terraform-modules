@@ -77,11 +77,13 @@ func TestGetChangedFiles(t *testing.T) {
 		t.Errorf("getChangedFiles() = %v, want %v", files, expected)
 	}
 
-	// Test with no files in config
-	config = map[string]interface{}{}
+	// Test with empty files array in config
+	config = map[string]interface{}{
+		"test_changed_files": []interface{}{},
+	}
 	files = getChangedFiles(config)
 	if len(files) != 0 {
-		t.Errorf("getChangedFiles() with empty config should return empty slice")
+		t.Errorf("getChangedFiles() with empty array should return empty slice")
 	}
 }
 
