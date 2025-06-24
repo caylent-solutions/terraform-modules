@@ -125,13 +125,17 @@ jobs:
           echo "$COMMITS" | sed 's/^/  /'
           
           # Check for version bump triggers with debugging
-          FEAT_COMMITS=$(echo "$COMMITS" | grep -E '^[a-f0-9]+ feat.*:' | cat)
-          FIX_COMMITS=$(echo "$COMMITS" | grep -E '^[a-f0-9]+ fix.*:' | cat)
+          echo "DEBUG: Testing regex patterns..."
+          echo "DEBUG: Checking for feat commits..."
+          FEAT_COMMITS=$(echo "$COMMITS" | grep '^[a-f0-9]' | grep 'feat' | cat)
+          echo "DEBUG: Checking for fix commits..."
+          FIX_COMMITS=$(echo "$COMMITS" | grep '^[a-f0-9]' | grep 'fix' | cat)
           
           echo "DEBUG: Feature commits found:"
           echo "$FEAT_COMMITS" | sed 's/^/  /'
           echo "DEBUG: Fix commits found:"
           echo "$FIX_COMMITS" | sed 's/^/  /'
+          echo "DEBUG: About to check if feature commits exist..."
 
           if [[ -n "$FEAT_COMMITS" ]]; then
             NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."($2+1)".0"}')
