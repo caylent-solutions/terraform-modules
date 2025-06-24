@@ -153,6 +153,7 @@ jobs:
 
         else
           echo "🚀 Non-terraform release with semantic-release v10.1.0"
+          git fetch --tags --force
           git fetch origin
 
           # Compute next version using semantic-release
