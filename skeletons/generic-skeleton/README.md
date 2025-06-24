@@ -47,8 +47,6 @@ Use the provided Makefile to install all dependencies:
 make install
 ```
 
-# feat: test minor bump for tf module release workflow
-
 ## Module Structure
 
 ```
@@ -266,7 +264,4 @@ For more information on the `tftest` CLI tool, see the [CLI Usage Documentation]
 - [Writing Tests Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/WRITING_TESTS.md)
 - [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/CLI_USAGE.md)
 
-
-feat: test debug for first module release
-
-feat: test minor bump for tf module
+# feat: test minor bump for tf module
