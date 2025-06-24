@@ -109,22 +109,33 @@ jobs:
           echo "🔍 Commits since last tag:"
           echo "$COMMITS"
 
-          if echo "$COMMITS" | grep -q '^feat'; then
+          # Debug: print each commit line
+          echo "--- DEBUG: Commits lines ---"
+          echo "$COMMITS" | while read -r line; do echo "> $line"; done
+          echo "--- END DEBUG ---"
+
+          # Debug: check grep for feat and fix (match anywhere after hash)
+          if echo "$COMMITS" | grep -q ' feat:'; then
+            echo "DEBUG: Found feat commit (grep ' feat:')"
             if [[ -z "$LATEST_TAG" ]]; then
               NEXT="0.1.0"
             else
               NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."($2+1)".0"}')
             fi
-          elif echo "$COMMITS" | grep -q '^fix'; then
+          elif echo "$COMMITS" | grep -q ' fix:'; then
+            echo "DEBUG: Found fix commit (grep ' fix:')"
             if [[ -z "$LATEST_TAG" ]]; then
               NEXT="0.0.1"
             else
               NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."$2"."($3+1)}')
             fi
           else
+            echo "DEBUG: No feat or fix commit found (grep did not match)"
             echo "ℹ️ No bump needed."
             exit 0
           fi
+
+          echo "DEBUG: NEXT version will be $NEXT"
 
           NEW_TAG="${PREFIX}${NEXT}"
           echo "$NEXT" > "${MODULE}/VERSION"
