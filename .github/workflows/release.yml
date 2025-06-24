@@ -49,35 +49,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ steps.python-version.outputs.version }}
-          
-      #- name: Install system dependencies
-      #  run: |
-      #    sudo apt-get update
-      #    sudo apt-get install -y curl bc
-
-      - name: Install ASDF
-        run: |
-          git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
-          echo "$HOME/.asdf/bin" >> $GITHUB_PATH
-          echo "$HOME/.asdf/shims" >> $GITHUB_PATH
-          source $HOME/.asdf/asdf.sh
-
-      - name: Install ASDF plugins and tools (excluding everything except jq)
-        run: |
-          cd $GITHUB_WORKSPACE
-          # Install all tools needed for Terraform validation
-          for tool in jq; do
-            if grep -q "^$tool " .tool-versions; then
-              echo "Installing $tool..."
-              asdf plugin add $tool || true
-              VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
-              asdf install $tool $VERSION
-            fi
-          done
-          asdf reshim
-
-      #- name: Install dependencies
-      #  run: make configure
         
       - name: Generate token from GitHub App
         id: generate_token
