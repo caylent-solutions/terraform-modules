@@ -11,10 +11,6 @@ on:
         description: 'Path to the Terraform module (only for terraform-module releases)'
         required: false
         type: string
-      module_type:
-        description: 'Type of Terraform module (only for terraform-module releases)'
-        required: false
-        type: string
       contributor_type:
         description: 'Type of contributor (Internal or External)'
         required: true
@@ -31,322 +27,131 @@ jobs:
     permissions:
       contents: write
       id-token: write
-    
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Read Python version from .tool-versions
-        id: python-version
-        run: |
-          PYTHON_VERSION=$(grep '^python ' .tool-versions | awk '{print $2}')
-          echo "version=$PYTHON_VERSION" >> $GITHUB_OUTPUT
-          echo "Found Python version: $PYTHON_VERSION"
+    - name: Read Python version
+      id: python-version
+      run: |
+        PYTHON_VERSION=$(grep '^python ' .tool-versions | awk '{print $2}')
+        echo "version=$PYTHON_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ steps.python-version.outputs.version }}
-        
-      - name: Generate token from GitHub App
-        id: generate_token
-        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a  # v2
-        with:
-          app_id: ${{ secrets.GH_APP_ID }}
-          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-          
-      - name: Install Python semantic-release
-        run: |
-          pip install -r .github/workflows/requirements-release.txt
-          
-      - name: Determine version and tag format
-        id: version
-        run: |
-          # Determine if this is a terraform module or non-terraform release
-          RELEASE_TYPE="${{ github.event.inputs.release_type }}"
-          
-          if [[ "$RELEASE_TYPE" == "terraform-module" ]]; then
-            MODULE_PATH="${{ github.event.inputs.module_path }}"
-            PREFIX="${MODULE_PATH}/v"
-            echo "This is a Terraform module release for $MODULE_PATH"
-            
-            # For module releases, only analyze commits affecting this module
-            COMMITS=$(git log --format="%H %s" -- "$MODULE_PATH")
-            
-            # Create a temporary file with commits for semantic-release to analyze
-            echo "$COMMITS" | while read -r HASH MESSAGE; do
-              echo "$HASH $MESSAGE" >> commits-to-analyze.txt
-            done
-            
-            # Get the latest tag for this module
-            LATEST_TAG=$(git tag -l "${PREFIX}*" --sort=-v:refname | grep -E "${PREFIX}[0-9]+\.[0-9]+\.[0-9]+" | head -n 1 || echo "")
-            
-            if [[ -z "$LATEST_TAG" ]]; then
-              # No existing tag, start with v0.1.0
-              CURRENT_VERSION="0.1.0"
-              echo "No existing tags found for module, starting with version: $CURRENT_VERSION"
-            else
-              # Extract version number without prefix
-              CURRENT_VERSION=$(echo "$LATEST_TAG" | sed "s|${MODULE_PATH}/v||")
-              echo "Found latest module tag: $LATEST_TAG, extracted version: $CURRENT_VERSION"
-            fi
-            
-            echo "Module current version: $CURRENT_VERSION"
-            
-            # For terraform modules, we need to handle versioning differently
-            # since semantic-release doesn't natively support prefixed tags
-            # We'll use a simple approach - check if there are any conventional commits
-            # and bump the version accordingly
-            
-            # Check for conventional commits since last tag
-            if [ -n "$LATEST_TAG" ]; then
-              COMMITS_SINCE_TAG=$(git log --oneline --pretty=format:"%s" "${LATEST_TAG}..HEAD")
-            else
-              COMMITS_SINCE_TAG=$(git log --oneline --pretty=format:"%s")
-            fi
-            
-            # Check for feat: (minor) and fix: (patch) commits
-            if echo "$COMMITS_SINCE_TAG" | grep -q "^feat[:(]"; then
-              # Minor version bump for feat commits
-              NEXT_VERSION_NUMBER=$(echo "$CURRENT_VERSION" | awk -F. '{print $1"."($2+1)".0"}')
-            elif echo "$COMMITS_SINCE_TAG" | grep -q "^fix[:(]"; then
-              # Patch version bump for fix commits
-              NEXT_VERSION_NUMBER=$(echo "$CURRENT_VERSION" | awk -F. '{print $1"."$2"."($3+1)}')
-            else
-              # No conventional commits, no version bump
-              NEXT_VERSION_NUMBER=""
-            fi
-            
-            if [ -n "$NEXT_VERSION_NUMBER" ]; then
-              NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
-              echo "Final module next version: $NEXT_VERSION"
-              echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-            else
-              echo "No version bump needed for module"
-              NEXT_VERSION=""
-              echo "next_version=" >> $GITHUB_OUTPUT
-            fi
-            
-          else
-            PREFIX="v"
-            echo "This is a non-Terraform release"
-            
-            # For non-terraform releases, analyze all commits
-            # Use the main semantic-release config
-            
-            # Get the latest tag
-            LATEST_TAG=$(git tag -l "${PREFIX}*" --sort=-v:refname | grep -E "${PREFIX}[0-9]+\.[0-9]+\.[0-9]+" | head -n 1 || echo "")
-            
-            if [[ -z "$LATEST_TAG" ]]; then
-              # No existing tag, start with v0.1.0
-              CURRENT_VERSION="0.1.0"
-              echo "No existing tags found, starting with version: $CURRENT_VERSION"
-            else
-              # Extract version number without prefix
-              CURRENT_VERSION=$(echo "$LATEST_TAG" | sed "s|v||")
-              echo "Found latest tag: $LATEST_TAG, extracted version: $CURRENT_VERSION"
-            fi
-            
-            echo "Current version: $CURRENT_VERSION"
-            
-            # Debug: Show recent commits and tags
-            echo "Recent tags:"
-            git tag --list | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -5
-            echo "Recent commits:"
-            git log --oneline -10
-            
-            # Use semantic-release to determine next version
-            echo "Running semantic-release to determine next version..."
-            NEXT_VERSION_NUMBER=$(python -m semantic_release version --print)
-            
-            if [ -z "$NEXT_VERSION_NUMBER" ]; then
-              echo "ERROR: semantic-release did not return a version number"
-              echo "This means no conventional commits were found that warrant a version bump"
-              exit 1
-            fi
-            
-            # Add prefix
-            NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
-            echo "Final next version: $NEXT_VERSION"
-            echo "" >> $GITHUB_OUTPUT  # Ensure newline
-            echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-            echo "DEBUG: Wrote to GITHUB_OUTPUT: next_version=$NEXT_VERSION"
-          fi
-          
-          echo "" >> $GITHUB_OUTPUT  # Ensure newline
-          echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
-          echo "DEBUG: Wrote to GITHUB_OUTPUT: release_type=$RELEASE_TYPE"
-          
-          if [[ "$RELEASE_TYPE" == "terraform-module" ]]; then
-            echo "module_path=$MODULE_PATH" >> $GITHUB_OUTPUT
-          fi
-          
-          echo "Next version will be: $NEXT_VERSION"
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ steps.python-version.outputs.version }}
 
-      - name: Generate changelog
-        id: changelog
-        run: |
-          echo "Raw step outputs:"
-          echo "release_type output: '${{ steps.version.outputs.release_type }}'"
-          echo "next_version output: '${{ steps.version.outputs.next_version }}'"
-          
-          RELEASE_TYPE="${{ steps.version.outputs.release_type }}"
-          NEXT_VERSION="${{ steps.version.outputs.next_version }}"
-          
-          echo "Debug: RELEASE_TYPE=$RELEASE_TYPE"
-          echo "Debug: NEXT_VERSION=$NEXT_VERSION"
-          
-          if [[ "$RELEASE_TYPE" == "terraform-module" ]]; then
-            MODULE_PATH="${{ steps.version.outputs.module_path }}"
-            PREFIX="${MODULE_PATH}/v"
-            
-            # Generate simple changelog for module from git commits
-            if [ -n "$LATEST_TAG" ]; then
-              COMMITS_SINCE_TAG=$(git log --oneline --pretty=format:"* %s" "${LATEST_TAG}..HEAD" -- "${MODULE_PATH}")
-            else
-              COMMITS_SINCE_TAG=$(git log --oneline --pretty=format:"* %s" -- "${MODULE_PATH}")
-            fi
-            
-            # Create changelog content
-            echo "## $NEXT_VERSION ($(date +%Y-%m-%d))" > MODULE_CHANGELOG.md
-            echo "" >> MODULE_CHANGELOG.md
-            echo "$COMMITS_SINCE_TAG" >> MODULE_CHANGELOG.md
-            echo "" >> MODULE_CHANGELOG.md
-            
-            # Update module-specific CHANGELOG.md
-            if [[ -f "${MODULE_PATH}/CHANGELOG.md" ]]; then
-              cat MODULE_CHANGELOG.md "${MODULE_PATH}/CHANGELOG.md" > "${MODULE_PATH}/CHANGELOG.md.new"
-              mv "${MODULE_PATH}/CHANGELOG.md.new" "${MODULE_PATH}/CHANGELOG.md"
-            else
-              cp MODULE_CHANGELOG.md "${MODULE_PATH}/CHANGELOG.md"
-            fi
-            
-            # Update module VERSION file
-            echo "$NEXT_VERSION" > "${MODULE_PATH}/VERSION"
-            
-            # Store changelog for release notes
-            CHANGELOG_CONTENT=$(cat "${MODULE_PATH}/CHANGELOG.md" | head -n 20)
-            
-          else
-            # Generate changelog for repo
-            python -m semantic_release changelog > REPO_CHANGELOG.md
-            
-            # Update root CHANGELOG.md
-            echo "## $NEXT_VERSION ($(date +%Y-%m-%d))" > CHANGELOG.md.new
-            echo "" >> CHANGELOG.md.new
-            cat REPO_CHANGELOG.md >> CHANGELOG.md.new
-            echo "" >> CHANGELOG.md.new
-            
-            if [[ -f "CHANGELOG.md" ]]; then
-              cat CHANGELOG.md >> CHANGELOG.md.new
-            fi
-            mv CHANGELOG.md.new CHANGELOG.md
-            
-            # Update root VERSION file
-            echo "$NEXT_VERSION" > VERSION
-            
-            # Store changelog for release notes
-            CHANGELOG_CONTENT=$(cat CHANGELOG.md | head -n 20)
-          fi
-          
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+    - name: Generate GitHub App token
+      id: generate_token
+      uses: tibdex/github-app-token@v2
+      with:
+        app_id: ${{ secrets.GH_APP_ID }}
+        private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
-      - name: Commit and tag release
-        env:
-          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-        run: |
-          echo "Raw step outputs:"
-          echo "release_type output: '${{ steps.version.outputs.release_type }}'"
-          echo "next_version output: '${{ steps.version.outputs.next_version }}'"
-          
-          RELEASE_TYPE="${{ steps.version.outputs.release_type }}"
-          NEXT_VERSION="${{ steps.version.outputs.next_version }}"
-          
-          echo "Debug: RELEASE_TYPE=$RELEASE_TYPE"
-          echo "Debug: NEXT_VERSION=$NEXT_VERSION"
-          
-          if [ -z "$NEXT_VERSION" ]; then
-            echo "ERROR: NEXT_VERSION is empty"
+    - name: Install python-semantic-release
+      run: pip install -r .github/workflows/requirements-release.txt
+
+    - name: Determine release type & run
+      id: run-release
+      env:
+        GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        set -eo pipefail
+
+        TYPE="${{ github.event.inputs.release_type }}"
+        CONTRIB="${{ github.event.inputs.contributor_type }}"
+        USER="${{ github.event.inputs.contributor_username }}"
+
+        notify_slack() {
+          local TAG="$1"
+          curl -s -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\":rocket: Published *$TAG* ($TYPE) by $USER ($CONTRIB)\"}" \
+            $SLACK_WEBHOOK_URL
+        }
+
+        git config user.name "caylent-platform-bot[bot]"
+        git config user.email "caylent-platform-bot[bot]@users.noreply.github.com"
+
+        if [[ "$TYPE" == "terraform-module" ]]; then
+          MODULE="${{ github.event.inputs.module_path }}"
+          PREFIX="${MODULE}/v"
+          echo "🔧 TF release for: $MODULE"
+
+          if [[ ! -d "$MODULE" ]]; then
+            echo "❌ Module path not found: $MODULE" >&2
             exit 1
           fi
-          
-          git config --global user.name "caylent-platform-bot[bot]"
-          git config --global user.email "caylent-platform-bot[bot]@users.noreply.github.com"
-          
-          # Add updated files to git
-          if [[ "$RELEASE_TYPE" == "terraform-module" ]]; then
-            MODULE_PATH="${{ steps.version.outputs.module_path }}"
-            git add "${MODULE_PATH}/CHANGELOG.md" "${MODULE_PATH}/VERSION"
-            git commit -m "chore(release): ${NEXT_VERSION}"
-          else
-            git add CHANGELOG.md VERSION
-            git commit -m "chore(release): ${NEXT_VERSION}"
+
+          LATEST_TAG=$(git tag --list "${PREFIX}[0-9]*" --sort=-v:refname | head -1)
+          if [[ -n "$LATEST_TAG" && ! "$LATEST_TAG" =~ ^${PREFIX}[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid tag format: $LATEST_TAG" >&2
+            exit 1
           fi
-          
-          # Create and push the tag
-          git tag -a "$NEXT_VERSION" -m "Release $NEXT_VERSION"
+
+          if [[ -z "$LATEST_TAG" ]]; then
+            CURRENT="0.0.0"
+          else
+            CURRENT="${LATEST_TAG#${PREFIX}}"
+          fi
+
+          COMMITS=$(git log --oneline "${LATEST_TAG}..HEAD" -- "$MODULE" || echo "")
+          if echo "$COMMITS" | grep -q '^feat'; then
+            NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."($2+1)".0"}')
+          elif echo "$COMMITS" | grep -q '^fix'; then
+            NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."$2"."($3+1)}')
+          else
+            echo "ℹ️ No bump needed."
+            exit 0
+          fi
+
+          NEW_TAG="${PREFIX}${NEXT}"
+          echo "$NEXT" > "${MODULE}/VERSION"
+          echo "## $NEW_TAG ($(date +'%Y-%m-%d'))" > "${MODULE}/CHANGELOG.md"
+          echo "$COMMITS" | sed 's/^/* /' >> "${MODULE}/CHANGELOG.md"
+
+          git add "${MODULE}/VERSION" "${MODULE}/CHANGELOG.md"
+          git commit -m "chore(release): $NEW_TAG"
+          git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
           git push origin HEAD
-          git push origin "$NEXT_VERSION"
-          
-          echo "✅ Created and pushed tag: $NEXT_VERSION"
+          git push origin "$NEW_TAG"
 
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-        run: |
-          NEXT_VERSION="${{ steps.version.outputs.next_version }}"
-          RELEASE_TYPE="${{ steps.version.outputs.release_type }}"
-          CHANGELOG="${{ steps.changelog.outputs.changelog }}"
-          
-          if [[ "$RELEASE_TYPE" == "terraform-module" ]]; then
-            MODULE_PATH="${{ steps.version.outputs.module_path }}"
-            TITLE="Release $NEXT_VERSION for module $MODULE_PATH"
-          else
-            TITLE="Release $NEXT_VERSION"
+          notify_slack "$NEW_TAG"
+          echo "✅ Terraform release complete"
+
+        else
+          echo "🚀 Non-terraform release with semantic-release"
+
+          # Extract version for future use
+          VERSION=$(python -m semantic_release version --print)
+          TAG="v$VERSION"
+
+          # Generate changelog
+          python -m semantic_release changelog > REPO_CHANGELOG.md
+          echo "## $TAG ($(date +'%Y-%m-%d'))" > CHANGELOG.md.new
+          echo "" >> CHANGELOG.md.new
+          cat REPO_CHANGELOG.md >> CHANGELOG.md.new
+          echo "" >> CHANGELOG.md.new
+          if [[ -f CHANGELOG.md ]]; then
+            cat CHANGELOG.md >> CHANGELOG.md.new
           fi
-          
-          # Create the release
-          gh release create "$NEXT_VERSION" \
-            --title "$TITLE" \
-            --notes "$CHANGELOG" \
-            --target main
-            
-          echo "✅ Created GitHub Release: $NEXT_VERSION"
+          mv CHANGELOG.md.new CHANGELOG.md
 
-      - name: Send release notification to Slack
-        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001  # v1.25.0
-        with:
-          payload: |
-            {
-              "text": ":rocket: New Release Published: ${{ steps.version.outputs.next_version }}",
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": ":rocket: New Release Published: ${{ steps.version.outputs.next_version }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Release Type:* ${{ github.event.inputs.release_type }}${{ github.event.inputs.module_path != '' && format(' - {0}', github.event.inputs.module_path) || '' }}\n*Contributor:* ${{ github.event.inputs.contributor_username }} (${{ github.event.inputs.contributor_type }} contributor)\n*Repository:* ${{ github.repository }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "<https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.next_version }}|View Release on GitHub>"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          echo "$TAG" > VERSION
+
+          git add CHANGELOG.md VERSION
+          git commit -m "chore(release): $TAG"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin HEAD
+          git push origin "$TAG"
+
+          notify_slack "$TAG"
+          echo "✅ Non-terraform release complete"
+        fi
+
+    - name: Show exit status
+      run: echo "Release job completed with exit code $?"
