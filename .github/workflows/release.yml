@@ -171,9 +171,13 @@ jobs:
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
             echo "Final next version: $NEXT_VERSION"
             echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+            echo "DEBUG: Wrote to GITHUB_OUTPUT: next_version=$NEXT_VERSION"
+            echo "DEBUG: GITHUB_OUTPUT file contents:"
+            cat $GITHUB_OUTPUT || echo "ERROR: Could not read GITHUB_OUTPUT file"
           fi
           
           echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+          echo "DEBUG: Wrote to GITHUB_OUTPUT: release_type=$RELEASE_TYPE"
           
           if [[ "$RELEASE_TYPE" == "terraform-module" ]]; then
             echo "module_path=$MODULE_PATH" >> $GITHUB_OUTPUT
