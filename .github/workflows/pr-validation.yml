@@ -596,7 +596,7 @@ jobs:
           cd ${{ needs.validate.outputs.module_path }}
           make go-install
 
-        - name: Run Go linting on module tests
+      - name: Run Go linting on module tests
         run: |
           cd ${{ needs.validate.outputs.module_path }}
           make go-lint
