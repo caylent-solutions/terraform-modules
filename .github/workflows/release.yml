@@ -170,6 +170,10 @@ jobs:
             echo "Final next version: $NEXT_VERSION"
           fi
           
+          echo "DEBUG: About to write to GitHub outputs:"
+          echo "DEBUG: NEXT_VERSION='$NEXT_VERSION'"
+          echo "DEBUG: RELEASE_TYPE='$RELEASE_TYPE'"
+          
           echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
           
