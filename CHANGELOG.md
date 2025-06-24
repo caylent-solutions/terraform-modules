@@ -6,11 +6,25 @@
 
 ## Unreleased
 
+### Chore
+
+* chore(ci): simplify and unify release workflow logic
+
+- Removed unused input `module_type` from release.yml
+- Refactored release job:
+  - Unified Terraform and non-Terraform release logic
+  - Ensured CHANGELOG.md and VERSION files are always updated
+  - Removed fallback commit logic — release always generates real changes
+  - Added Slack notification via webhook per release type
+- Bumped devcontainer VERSION from 1.1.0 to 1.2.0 ([`06ed23a`](https://github.com/caylent-solutions/terraform-modules/commit/06ed23a6a13480c221d36f631285ef2ca978d9a6))
+
 ### Feature
 
 * feat: add test file for changelog generation validation ([`8e4c7ca`](https://github.com/caylent-solutions/terraform-modules/commit/8e4c7caf93d8037cf841968658c8647846fa2e97))
 
 ### Fix
+
+* fix: fix ([`96a169d`](https://github.com/caylent-solutions/terraform-modules/commit/96a169d3d5c9fe19f20a25cbaa0f01eb5f775a4e))
 
 * fix: ensure newlines in GITHUB_OUTPUT to prevent semantic-release from corrupting the file ([`5f78cf2`](https://github.com/caylent-solutions/terraform-modules/commit/5f78cf22b7dc65ecb82957c40d9053139d062644))
 
