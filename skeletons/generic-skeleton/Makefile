@@ -4,8 +4,7 @@
 install:
 	@echo "Installing dependencies..."
 	@go mod tidy
-	@version=$$(grep 'github.com/caylent-solutions/terraform-terratest-framework' go.mod | awk '{print $$2}'); \
-	go install github.com/caylent-solutions/terraform-terratest-framework/cmd/tftest@$$version
+	@go mod download
 	@asdf reshim golang || true
 	@echo "Dependencies installed successfully"
 
