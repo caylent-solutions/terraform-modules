@@ -185,6 +185,9 @@ jobs:
           RELEASE_TYPE="${{ steps.version.outputs.release_type }}"
           NEXT_VERSION="${{ steps.version.outputs.next_version }}"
           
+          echo "Debug: RELEASE_TYPE=$RELEASE_TYPE"
+          echo "Debug: NEXT_VERSION=$NEXT_VERSION"
+          
           if [[ "$RELEASE_TYPE" == "terraform-module" ]]; then
             MODULE_PATH="${{ steps.version.outputs.module_path }}"
             PREFIX="${MODULE_PATH}/v"
@@ -248,6 +251,14 @@ jobs:
         run: |
           RELEASE_TYPE="${{ steps.version.outputs.release_type }}"
           NEXT_VERSION="${{ steps.version.outputs.next_version }}"
+          
+          echo "Debug: RELEASE_TYPE=$RELEASE_TYPE"
+          echo "Debug: NEXT_VERSION=$NEXT_VERSION"
+          
+          if [ -z "$NEXT_VERSION" ]; then
+            echo "ERROR: NEXT_VERSION is empty"
+            exit 1
+          fi
           
           git config --global user.name "caylent-platform-bot[bot]"
           git config --global user.email "caylent-platform-bot[bot]@users.noreply.github.com"
