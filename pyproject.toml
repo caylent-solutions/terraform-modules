@@ -1,12 +1,11 @@
 [tool.semantic_release]
-version_toml = ["pyproject.toml:tool.semantic_release.version"]
 version_variables = []
 build_command = ""
 dist_path = ""
 upload_to_pypi = false
 upload_to_release = false
 remove_dist = false
-patch_without_tag = true  # Allow bumping even with no prior tag
+patch_without_tag = true
 major_on_zero = false
 
 [tool.semantic_release.branches.main]
@@ -15,16 +14,16 @@ prerelease = false
 
 [tool.semantic_release.commit_parser_options]
 allowed_tags = [
-    "build",
-    "chore", 
-    "ci",
-    "docs",
-    "feat",
-    "fix",
-    "perf",
-    "style",
-    "refactor",
-    "test"
+  "build",
+  "chore", 
+  "ci",
+  "docs",
+  "feat",
+  "fix",
+  "perf",
+  "style",
+  "refactor",
+  "test"
 ]
 minor_tags = ["feat"]
 patch_tags = ["fix", "perf"]
@@ -32,5 +31,5 @@ patch_tags = ["fix", "perf"]
 [tool.semantic_release.changelog]
 changelog_file = "CHANGELOG.md"
 exclude_commit_patterns = [
-    "^chore\\(release\\):"
+  "^chore\\(release\\):"
 ]

@@ -1,50 +1,7 @@
-## v0.2.0 (2025-06-24)
-
-
 # CHANGELOG
 
 
 ## Unreleased
-
-### Chore
-
-* chore(ci): simplify and unify release workflow logic
-
-- Removed unused input `module_type` from release.yml
-- Refactored release job:
-  - Unified Terraform and non-Terraform release logic
-  - Ensured CHANGELOG.md and VERSION files are always updated
-  - Removed fallback commit logic — release always generates real changes
-  - Added Slack notification via webhook per release type
-- Bumped devcontainer VERSION from 1.1.0 to 1.2.0 ([`06ed23a`](https://github.com/caylent-solutions/terraform-modules/commit/06ed23a6a13480c221d36f631285ef2ca978d9a6))
-
-### Feature
-
-* feat: add test file for changelog generation validation ([`8e4c7ca`](https://github.com/caylent-solutions/terraform-modules/commit/8e4c7caf93d8037cf841968658c8647846fa2e97))
-
-### Fix
-
-* fix: fix ([`96a169d`](https://github.com/caylent-solutions/terraform-modules/commit/96a169d3d5c9fe19f20a25cbaa0f01eb5f775a4e))
-
-* fix: ensure newlines in GITHUB_OUTPUT to prevent semantic-release from corrupting the file ([`5f78cf2`](https://github.com/caylent-solutions/terraform-modules/commit/5f78cf22b7dc65ecb82957c40d9053139d062644))
-
-* fix: add debugging to verify GITHUB_OUTPUT file writing ([`37384d5`](https://github.com/caylent-solutions/terraform-modules/commit/37384d5a32b9ffc2403fbb3e68359352119a6c92))
-
-* fix: write GitHub outputs immediately after setting variables to avoid scoping issues ([`5ce577f`](https://github.com/caylent-solutions/terraform-modules/commit/5ce577f96b91cd836154e6d11e3834cea7f4c4ea))
-
-* fix: add debug output before writing to GitHub outputs to identify variable scoping issue ([`f719f6e`](https://github.com/caylent-solutions/terraform-modules/commit/f719f6e9db1f348045a17a3b96d1dadcd4db960d))
-
-* fix: add raw step output debugging to identify GitHub Actions templating issue ([`f2756e7`](https://github.com/caylent-solutions/terraform-modules/commit/f2756e77f20636dd3bd759a86390487c80ab7202))
-
-* fix: add debugging to identify why NEXT_VERSION is empty in later steps ([`87f4e40`](https://github.com/caylent-solutions/terraform-modules/commit/87f4e401e85dd31d69a3852a6fd8e2956bc44ddb))
-
-* fix: add better error handling and debugging to version determination ([`27f5051`](https://github.com/caylent-solutions/terraform-modules/commit/27f50515e76fc7477b9bccf049b2aec52691edb1))
-
-* fix: update semantic-release to use TOML config and fix changelog generation ([`6bc9db0`](https://github.com/caylent-solutions/terraform-modules/commit/6bc9db0400fbf29ea47f29c2a8322e99f84c12a1))
-
-
-
-## v0.1.0 (2025-06-24)
 
 ### Breaking
 
@@ -596,13 +553,13 @@ The new structure provides better separation between:
 
 ### Feature
 
-* feat: replace python-semantic-release with npm standard-version
+* feat: trigger bump ([`d58aa34`](https://github.com/caylent-solutions/terraform-modules/commit/d58aa34fd32729c31c5816f79a27111c062519dc))
 
-- Remove problematic python-semantic-release configuration
-- Install Node.js and standard-version for reliable semantic versioning
-- Use standard-version dry-run to determine next version numbers
-- Apply to both terraform module and non-terraform releases
-- Much more reliable and widely adopted tool ([`555436e`](https://github.com/caylent-solutions/terraform-modules/commit/555436ef9f5f7613eac156e416dcc3f58d630252))
+* feat: trigger version bump (#12) ([`d003eed`](https://github.com/caylent-solutions/terraform-modules/commit/d003eed9d5e8b573e779f818156b75379093125d))
+
+* feat: improve version detection and changelog generation (#10)
+
+Self-approved squash merge by authorized user with admin privileges ([`d11ef97`](https://github.com/caylent-solutions/terraform-modules/commit/d11ef9744a2d7af6b2fc074962e6b37bbc830f47))
 
 * feat: test-non-tf-change-cicd (#8)
 
@@ -695,65 +652,19 @@ This lays the foundation for long-term governance, automation, and standardizati
 
 ### Fix
 
-* fix: correct semantic-release v8.3.0 branch syntax and tag filtering
-
-- Use simple array format for branches instead of object format
-- Add regex filtering to only find valid semantic version tags
-- Ignore malformed tags like &#39;v&#39; without version numbers
-- Apply fixes to both main config and terraform module temp config ([`f35a5ba`](https://github.com/caylent-solutions/terraform-modules/commit/f35a5ba3b40c1095b6a1402083d1e68547616d5e))
-
-* fix: add --current-version parameter to semantic-release commands
-
-- Pass current version explicitly to semantic-release version command
-- Should fix empty version number being returned
-- Apply to both terraform module and non-terraform release branches ([`81fff49`](https://github.com/caylent-solutions/terraform-modules/commit/81fff49ad8411370d4d2a099b6ede9fba0e68273))
-
-* fix: update semantic-release config to v8.3.0 format
-
-- Use correct branch configuration format for python-semantic-release v8.3.0
-- Change from array format to object format for branches
-- Use angular commit parser instead of custom patterns
-- Apply same format to both main config and terraform module temp config ([`3a82d4f`](https://github.com/caylent-solutions/terraform-modules/commit/3a82d4fdba7ef9b8ff9b3d65e3836a1c46e8375c))
-
-* fix: remove fallback logic and fix semantic-release configuration
-
-- Remove all fallback version increment logic from both terraform and non-terraform releases
-- Update semantic-release config to support multiple branches (main and fix-release-cicd)
-- Fix semantic-release command usage to work properly
-- Ensure semantic-release determines versions correctly for both release types ([`8d654d4`](https://github.com/caylent-solutions/terraform-modules/commit/8d654d4190941c7429ab80ee4b96a8b825cf1633))
-
-* fix: add robust version determination with fallback logic
-
-- Add debugging output for version determination process
-- Add fallback logic when semantic-release fails or returns empty
-- Increment patch version automatically if semantic-release is unavailable
-- Prevent creating tags with just &#39;v&#39; prefix ([`9e3b84e`](https://github.com/caylent-solutions/terraform-modules/commit/9e3b84e28930263660c28978887e5500c1776df2))
-
-* fix: optimize ([`0cf9821`](https://github.com/caylent-solutions/terraform-modules/commit/0cf9821a7e42b567fa85ed3c335a21c7a43d4684))
-
-* fix: use HEAD instead of hardcoded main branch for git push
-
-- Allows workflow to run from any branch instead of requiring main
-- Fixes &#39;src refspec main does not match any&#39; error when running from feature branches ([`5dc8eb8`](https://github.com/caylent-solutions/terraform-modules/commit/5dc8eb809e368477798ac77e8c30dc1838a4c92d))
-
-* fix: resolve heredoc syntax error and optimize Python setup in release workflow
-
-- Fix heredoc indentation issue in version determination step that was causing syntax errors
-- Add step to read Python version from .tool-versions file
-- Use actions/setup-python for faster Python installation instead of building from source
-- Simplify system dependencies by removing Python build requirements ([`1a69726`](https://github.com/caylent-solutions/terraform-modules/commit/1a697266d1f2062e2606f9e11f8baa22622e9435))
-
 * fix: test non tf pr with no main-validation.yml change (#6)
 
 Self-approved squash merge by authorized user with admin privileges ([`b4ab195`](https://github.com/caylent-solutions/terraform-modules/commit/b4ab19502cf61421f1b04712d49e496cac4a8d4b))
 
 ### Unknown
 
-* Revert &#34;feat: replace python-semantic-release with npm standard-version&#34;
+* Auto PR from non-tf-bump-01 (#11)
 
-This reverts commit 555436ef9f5f7613eac156e416dcc3f58d630252. ([`68708f5`](https://github.com/caylent-solutions/terraform-modules/commit/68708f5aa85a918a98987b554eb50567d7438b69))
+feat: trigger non tf version bump ([`e991cf9`](https://github.com/caylent-solutions/terraform-modules/commit/e991cf96f4577e26cc80afb15b802acaa2a21bf7))
 
-* fix ([`a3e12e3`](https://github.com/caylent-solutions/terraform-modules/commit/a3e12e3f01f5570516319ea9accc14281fe984a7))
+* Fix release cicd (#9)
+
+Self-approved squash merge by authorized user with admin privileges ([`4340325`](https://github.com/caylent-solutions/terraform-modules/commit/43403253c0dd8cb7cf8ab99d16c79439df84c91a))
 
 * temp: add main-validation.yml to main so it can be triggered ([`85a31fb`](https://github.com/caylent-solutions/terraform-modules/commit/85a31fb19e672db282b7252514d446cc19909f4f))
 
@@ -790,3 +701,4 @@ temp: add main-validation.yml to main so it can be triggered ([`e5acd76`](https:
 * stop tracking go.sum ([`5a79779`](https://github.com/caylent-solutions/terraform-modules/commit/5a79779251d147e0feee58a23f0825ce4d4772f3))
 
 * Initial commit ([`f4b2f56`](https://github.com/caylent-solutions/terraform-modules/commit/f4b2f56fb7c91b143283120e6c121f3ab7e1157c))
+
