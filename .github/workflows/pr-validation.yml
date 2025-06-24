@@ -548,13 +548,10 @@ jobs:
           git checkout -b module-validation origin/${{ github.base_ref }}
           git merge --no-commit --no-ff origin/${{ github.head_ref }}
           
-      - name: Install system dependencies for Python build
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev curl \
-            libncursesw5-dev xz-utils tk-dev libxml2-dev \
-            libxmlsec1-dev libffi-dev liblzma-dev bc
+          sudo apt-get install -y curl bc
 
       - name: Install ASDF
         run: |
@@ -563,11 +560,18 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools
+      - name: Install ASDF plugins and tools (excluding Python)
         run: |
           cd $GITHUB_WORKSPACE
-          cat .tool-versions | cut -d' ' -f1 | xargs -I{} asdf plugin add {} || true
-          asdf install
+          # Install all tools needed for Terraform validation
+          for tool in golang jq opa terraform terraform-docs tflint tfsec; do
+            if grep -q "^$tool " .tool-versions; then
+              echo "Installing $tool..."
+              asdf plugin add $tool || true
+              VERSION=$(grep "^$tool " .tool-versions | awk '{print $2}')
+              asdf install $tool $VERSION
+            fi
+          done
           asdf reshim
           
       - name: Configure environment
@@ -594,7 +598,7 @@ jobs:
       - name: Install go dependencies for module tests
         run: |
           cd ${{ needs.validate.outputs.module_path }}
-          make go-install
+          make install
 
       - name: Run Go linting on module tests
         run: |
