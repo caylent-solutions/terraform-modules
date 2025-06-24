@@ -1,20 +1,8 @@
 ## skeletons/generic-skeleton/v0.1.0 (2025-06-24)
-
-* 089e0ce feat: add test documentation change
-* 12927b3 feat: improve generic-skeleton module documentation and fix release regex
-* ff3aa38 feat: test bump
-
-# Changelog - Generic Skeleton Module
-
-All notable changes to this module will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-### Added
-- Initial module structure
-- Basic configuration template
-- Example implementation
-- Comprehensive test suite
+* 1258f2f feat: test debug for first module release
+* d8ba312 feat: trigger minor bump for generic-skeleton
+* 4340325 Fix release cicd (#9)
+* f7f2cd4 feat: (main-validation) add dry run mode, module config parsing, and safe merge simulation (#7)
+* 7da1a57 feat: 🚀 Implement Complete Terraform Monorepo OPA Policy Framework (#3)
+* e2f3488 Updated Readme links (#2)
+* 5a79779 terraform-terratest-framework integration (#1)
