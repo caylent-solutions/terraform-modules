@@ -262,3 +262,5 @@ For more information on the `tftest` CLI tool, see the [CLI Usage Documentation]
 - [Writing Tests Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/WRITING_TESTS.md)
 - [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/CLI_USAGE.md)
 
+
+feat: test debug for first module release
