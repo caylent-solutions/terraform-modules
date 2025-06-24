@@ -38,8 +38,6 @@ asdf reshim
 
 ### Install Dependencies
 
-# fix: test patch bump for tf module release workflow
-
 Use the provided Makefile to install all dependencies:
 
 ```bash
@@ -263,5 +261,3 @@ For more information on the `tftest` CLI tool, see the [CLI Usage Documentation]
 - [Directory Structure Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/DIRECTORY_STRUCTURE.md)
 - [Writing Tests Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/WRITING_TESTS.md)
 - [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/CLI_USAGE.md)
-
-# feat: test minor bump for tf module
