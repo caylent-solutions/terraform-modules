@@ -98,16 +98,32 @@ jobs:
             # Create a temporary semantic-release config for this module
             cat > .semantic-release-temp.yml <<EOF
           branches:
-            - name: main
+            main:
+              match: "main"
               prerelease: false
-            - name: fix-release-cicd
+            fix-release-cicd:
+              match: "fix-release-cicd"
               prerelease: false
           major_on_zero: false
           tag_format: ${MODULE_PATH}/v{version}
-          commit_parser:
-            major_pattern: "^(feat|fix|refactor|perf|build|ci|chore|docs|style|test)(\\([\\w\\s-]+\\))?!:"
-            minor_pattern: "^feat(\\([\\w\\s-]+\\))?:"
-            patch_pattern: "^(fix|refactor|perf|build|ci|chore|docs|style|test)(\\([\\w\\s-]+\\))?:"
+          commit_parser: angular
+          commit_parser_options:
+            allowed_tags:
+              - build
+              - chore
+              - ci
+              - docs
+              - feat
+              - fix
+              - perf
+              - style
+              - refactor
+              - test
+            minor_tags:
+              - feat
+            patch_tags:
+              - fix
+              - perf
           EOF
             
             # Use semantic-release to determine next version
