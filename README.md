@@ -36,8 +36,6 @@ These policies are enforced using Open Policy Agent (OPA) in the CI/CD pipeline.
 
 ## Security
 
-<!-- fix: test patch bump for non-tf workflow -->
-
 This repository implements comprehensive security controls:
 
 1. **GitHub Actions Security**: All third-party actions are SHA-pinned to prevent supply chain attacks
@@ -233,3 +231,5 @@ This repository implements a comprehensive automated CI/CD pipeline that handles
 - [Module Validator](docs/scripts/module-validator.md)
 - [Rego Unit Test](docs/scripts/rego-unit-test.md)
 - [Terraform File Collector](docs/scripts/terraform-file-collector.md)
+
+<!-- fix: test patch bump for non-tf workflow -->
