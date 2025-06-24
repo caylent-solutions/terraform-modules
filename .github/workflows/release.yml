@@ -95,39 +95,37 @@ jobs:
             
             echo "Module current version: $CURRENT_VERSION"
             
-            # Create a temporary semantic-release config for this module
-            cat > .semantic-release-temp.yml <<EOF
-          branches:
-            - main
-            - fix-release-cicd
-          major_on_zero: false
-          tag_format: ${MODULE_PATH}/v{version}
-          commit_parser: angular
-          commit_parser_options:
-            allowed_tags:
-              - build
-              - chore
-              - ci
-              - docs
-              - feat
-              - fix
-              - perf
-              - style
-              - refactor
-              - test
-            minor_tags:
-              - feat
-            patch_tags:
-              - fix
-              - perf
-          EOF
+            # For terraform modules, we need to handle versioning differently
+            # since semantic-release doesn't natively support prefixed tags
+            # We'll use a simple approach - check if there are any conventional commits
+            # and bump the version accordingly
             
-            # Use semantic-release to determine next version
-            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .semantic-release-temp.yml --current-version "$CURRENT_VERSION")
+            # Check for conventional commits since last tag
+            if [ -n "$LATEST_TAG" ]; then
+              COMMITS_SINCE_TAG=$(git log --oneline --pretty=format:"%s" "${LATEST_TAG}..HEAD")
+            else
+              COMMITS_SINCE_TAG=$(git log --oneline --pretty=format:"%s")
+            fi
             
-            # Add prefix
-            NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
-            echo "Final module next version: $NEXT_VERSION"
+            # Check for feat: (minor) and fix: (patch) commits
+            if echo "$COMMITS_SINCE_TAG" | grep -q "^feat[:(]"; then
+              # Minor version bump for feat commits
+              NEXT_VERSION_NUMBER=$(echo "$CURRENT_VERSION" | awk -F. '{print $1"."($2+1)".0"}')
+            elif echo "$COMMITS_SINCE_TAG" | grep -q "^fix[:(]"; then
+              # Patch version bump for fix commits
+              NEXT_VERSION_NUMBER=$(echo "$CURRENT_VERSION" | awk -F. '{print $1"."$2"."($3+1)}')
+            else
+              # No conventional commits, no version bump
+              NEXT_VERSION_NUMBER=""
+            fi
+            
+            if [ -n "$NEXT_VERSION_NUMBER" ]; then
+              NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
+              echo "Final module next version: $NEXT_VERSION"
+            else
+              echo "No version bump needed for module"
+              NEXT_VERSION=""
+            fi
             
           else
             PREFIX="v"
@@ -152,7 +150,7 @@ jobs:
             echo "Current version: $CURRENT_VERSION"
             
             # Use semantic-release to determine next version
-            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .github/semantic-release-config.yml --current-version "$CURRENT_VERSION")
+            NEXT_VERSION_NUMBER=$(python -m semantic_release version --print)
             
             # Add prefix
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
@@ -178,19 +176,26 @@ jobs:
             MODULE_PATH="${{ steps.version.outputs.module_path }}"
             PREFIX="${MODULE_PATH}/v"
             
-            # Generate changelog for module
-            python -m semantic_release changelog --noop --config-file .semantic-release-temp.yml --define-version-var "${NEXT_VERSION#$PREFIX}" > MODULE_CHANGELOG.md
+            # Generate simple changelog for module from git commits
+            if [ -n "$LATEST_TAG" ]; then
+              COMMITS_SINCE_TAG=$(git log --oneline --pretty=format:"* %s" "${LATEST_TAG}..HEAD" -- "${MODULE_PATH}")
+            else
+              COMMITS_SINCE_TAG=$(git log --oneline --pretty=format:"* %s" -- "${MODULE_PATH}")
+            fi
+            
+            # Create changelog content
+            echo "## $NEXT_VERSION ($(date +%Y-%m-%d))" > MODULE_CHANGELOG.md
+            echo "" >> MODULE_CHANGELOG.md
+            echo "$COMMITS_SINCE_TAG" >> MODULE_CHANGELOG.md
+            echo "" >> MODULE_CHANGELOG.md
             
             # Update module-specific CHANGELOG.md
-            echo "## $NEXT_VERSION ($(date +%Y-%m-%d))" > "${MODULE_PATH}/CHANGELOG.md.new"
-            echo "" >> "${MODULE_PATH}/CHANGELOG.md.new"
-            cat MODULE_CHANGELOG.md >> "${MODULE_PATH}/CHANGELOG.md.new"
-            echo "" >> "${MODULE_PATH}/CHANGELOG.md.new"
-            
             if [[ -f "${MODULE_PATH}/CHANGELOG.md" ]]; then
-              cat "${MODULE_PATH}/CHANGELOG.md" >> "${MODULE_PATH}/CHANGELOG.md.new"
+              cat MODULE_CHANGELOG.md "${MODULE_PATH}/CHANGELOG.md" > "${MODULE_PATH}/CHANGELOG.md.new"
+              mv "${MODULE_PATH}/CHANGELOG.md.new" "${MODULE_PATH}/CHANGELOG.md"
+            else
+              cp MODULE_CHANGELOG.md "${MODULE_PATH}/CHANGELOG.md"
             fi
-            mv "${MODULE_PATH}/CHANGELOG.md.new" "${MODULE_PATH}/CHANGELOG.md"
             
             # Update module VERSION file
             echo "$NEXT_VERSION" > "${MODULE_PATH}/VERSION"
@@ -200,7 +205,7 @@ jobs:
             
           else
             # Generate changelog for repo
-            python -m semantic_release changelog --noop --config-file .github/semantic-release-config.yml --define-version-var "${NEXT_VERSION#v}" > REPO_CHANGELOG.md
+            python -m semantic_release changelog > REPO_CHANGELOG.md
             
             # Update root CHANGELOG.md
             echo "## $NEXT_VERSION ($(date +%Y-%m-%d))" > CHANGELOG.md.new
