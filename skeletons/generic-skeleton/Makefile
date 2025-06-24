@@ -23,8 +23,6 @@ test-common:
 	@echo "Running common tests with clean cache..."
 	@. ~/.asdf/asdf.sh && TERRATEST_DISABLE_PARALLEL_TESTS=true go test ./tests/common -v -count=1
 
-
-
 # Clean up temporary files
 clean:
 	@echo "Cleaning up temporary files..."
@@ -150,3 +148,4 @@ help:
 	@echo ""
 	@echo "For tasks without descriptions:"
 	@grep -E '^[a-zA-Z_-]+:' $(MAKEFILE_LIST) | grep -v "## " | sort | awk 'BEGIN {FS = ":"}; {printf "\033[36m%-30s\033[0m\n", $$1}'
+	
