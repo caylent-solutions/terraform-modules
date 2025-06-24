@@ -6,7 +6,7 @@ dist_path = ""
 upload_to_pypi = false
 upload_to_release = false
 remove_dist = false
-patch_without_tag = false
+patch_without_tag = true  # Allow bumping even with no prior tag
 major_on_zero = false
 
 [tool.semantic_release.branches.main]
@@ -34,5 +34,3 @@ changelog_file = "CHANGELOG.md"
 exclude_commit_patterns = [
     "^chore\\(release\\):"
 ]
-
-version = "0.1.0"

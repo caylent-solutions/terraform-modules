@@ -87,6 +87,8 @@ jobs:
             exit 1
           fi
 
+          git fetch origin
+
           LATEST_TAG=$(git tag --list "${PREFIX}[0-9]*" --sort=-v:refname | head -1)
           if [[ -n "$LATEST_TAG" && ! "$LATEST_TAG" =~ ^${PREFIX}[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "❌ Invalid tag format: $LATEST_TAG" >&2
@@ -100,6 +102,9 @@ jobs:
           fi
 
           COMMITS=$(git log --oneline "${LATEST_TAG}..HEAD" -- "$MODULE" || echo "")
+          echo "🔍 Commits since last tag:"
+          echo "$COMMITS"
+
           if echo "$COMMITS" | grep -q '^feat'; then
             NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."($2+1)".0"}')
           elif echo "$COMMITS" | grep -q '^fix'; then
@@ -125,16 +130,19 @@ jobs:
 
         else
           echo "🚀 Non-terraform release with semantic-release"
+          git fetch origin
 
-          # Extract version for future use
           VERSION=$(python -m semantic_release version --print)
-          TAG="v$VERSION"
+          if [[ -z "$VERSION" || "$VERSION" == "0.0.0" ]]; then
+            echo "❌ No version bump detected. Printing parsed commits:"
+            git log --oneline origin/main..HEAD
+            exit 1
+          fi
 
-          # Generate changelog
-          python -m semantic_release changelog > REPO_CHANGELOG.md
-          echo "## $TAG ($(date +'%Y-%m-%d'))" > CHANGELOG.md.new
-          echo "" >> CHANGELOG.md.new
-          cat REPO_CHANGELOG.md >> CHANGELOG.md.new
+          TAG="v$VERSION"
+          python -m semantic_release changelog > CHANGELOG.md.new
+          echo "## $TAG ($(date +'%Y-%m-%d'))" > HEADER
+          cat HEADER CHANGELOG.md.new > TMP && mv TMP CHANGELOG.md.new
           echo "" >> CHANGELOG.md.new
           if [[ -f CHANGELOG.md ]]; then
             cat CHANGELOG.md >> CHANGELOG.md.new
