@@ -28,9 +28,8 @@ func main() {
 	// Get changed files
 	changedFiles := getChangedFiles(config)
 	if len(changedFiles) == 0 {
-		fmt.Println("No changed files detected")
-		fmt.Println("IS_MODULE=false")
-		os.Exit(0)
+		fmt.Println("Error: No changed files provided in test_changed_files")
+		os.Exit(1)
 	}
 
 	// Check if changes are in modules
@@ -110,13 +109,17 @@ func loadConfig(path string) (map[string]interface{}, error) {
 // getChangedFiles gets the list of changed files from the configuration
 func getChangedFiles(config map[string]interface{}) []string {
 	// For testing, use files from config if provided
-	if files, ok := config["test_changed_files"].([]interface{}); ok && len(files) > 0 {
+	if files, ok := config["test_changed_files"].([]interface{}); ok {
 		changedFiles := make([]string, len(files))
 		for i, file := range files {
 			changedFiles[i] = file.(string)
 		}
 		return changedFiles
 	}
+	
+	// If test_changed_files is not provided, this is an error
+	fmt.Println("Error: test_changed_files not found in config")
+	os.Exit(1)
 	return []string{}
 }
 
@@ -203,3 +206,5 @@ func matchesPattern(filePath, pattern string) (bool, string) {
 
 	return true, modulePath
 }
+
+

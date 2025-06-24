@@ -153,9 +153,16 @@ jobs:
       - name: Get changed files
         id: changed-files
         run: |
-          # Get list of changed files
+          # Get list of changed files (compare base branch to current merge state)
           CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "Changed files: $CHANGED_FILES"
+          
+          # Fail if no changed files detected
+          if [ "$CHANGED_FILES" = "[]" ]; then
+            echo "❌ ERROR: No changed files detected in git diff"
+            echo "This indicates a problem with the git diff command or branch references"
+            exit 1
+          fi
           
           # Update the config file with actual changed files
           jq --argjson files "$CHANGED_FILES" '.test_changed_files = $files' monorepo-config.json > monorepo-config.json.tmp
