@@ -1,0 +1,14 @@
+{% for version, version_data in context.history.items() %}
+## {{ version }} ({{ version_data.date }})
+
+{% for type, commits in version_data.elements.items() %}
+{% if commits %}
+### {{ type | title }}
+
+{% for commit in commits %}
+- {{ commit.descriptions[0] }}{% if commit.scope %} ({{ commit.scope }}){% endif %}
+{% endfor %}
+
+{% endif %}
+{% endfor %}
+{% endfor %}

@@ -1,0 +1,34 @@
+[semantic_release]
+major_on_zero = false
+allow_zero_version = true
+tag_format = "v{version}"
+
+[semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[semantic_release.branches.testing]
+match = "fix-release-workflow"
+prerelease = false
+
+[semantic_release.commit_parser_options]
+allowed_tags = [
+    "build",
+    "chore", 
+    "ci",
+    "docs",
+    "feat",
+    "fix",
+    "perf",
+    "style",
+    "refactor",
+    "test"
+]
+minor_tags = ["feat"]
+patch_tags = ["fix", "refactor", "perf", "build", "ci", "chore", "docs", "style", "test"]
+
+[semantic_release.changelog]
+exclude_commit_patterns = ["^chore\\(release\\):"]
+
+[semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"

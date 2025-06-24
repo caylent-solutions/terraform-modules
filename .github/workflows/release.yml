@@ -27,6 +27,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      pull-requests: write
 
     steps:
     - name: Checkout code
@@ -59,6 +60,7 @@ jobs:
       id: run-release
       env:
         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       run: |
         set -eo pipefail
@@ -129,36 +131,68 @@ jobs:
           echo "✅ Terraform release complete"
 
         else
-          echo "🚀 Non-terraform release with semantic-release"
+          echo "🚀 Non-terraform release with semantic-release v10.1.0"
           git fetch origin
 
-          VERSION=$(python -m semantic_release version --print)
-          if [[ -z "$VERSION" || "$VERSION" == "0.0.0" ]]; then
-            echo "❌ No version bump detected. Printing parsed commits:"
-            git log --oneline origin/main..HEAD
-            exit 1
+          # Compute next version using semantic-release
+          CURRENT_VERSION=$(cat VERSION || echo "0.0.0")
+          RAW_VERSION=$(python -m semantic_release --config .github/semantic-release-config.toml version --print || echo "")
+          
+          if [[ -z "$RAW_VERSION" ]]; then
+            echo "ℹ️ No new version detected by semantic-release, no release needed"
+            echo "Current version: $CURRENT_VERSION"
+            exit 0
+          elif [[ "$RAW_VERSION" != v* ]]; then
+            NEW_VERSION="v$RAW_VERSION"
+          else
+            NEW_VERSION="$RAW_VERSION"
+          fi
+          
+          echo "Computed new version: $NEW_VERSION (from $CURRENT_VERSION)"
+
+          # Only proceed if we have a new version
+          if [[ "$NEW_VERSION" == "$CURRENT_VERSION" ]]; then
+            echo "ℹ️ Version unchanged, no release needed"
+            exit 0
           fi
 
-          TAG="v$VERSION"
-          python -m semantic_release changelog > CHANGELOG.md.new
-          echo "## $TAG ($(date +'%Y-%m-%d'))" > HEADER
-          cat HEADER CHANGELOG.md.new > TMP && mv TMP CHANGELOG.md.new
-          echo "" >> CHANGELOG.md.new
-          if [[ -f CHANGELOG.md ]]; then
-            cat CHANGELOG.md >> CHANGELOG.md.new
-          fi
-          mv CHANGELOG.md.new CHANGELOG.md
+          # Generate changelog
+          echo "📝 Generating changelog..."
+          python -m semantic_release --config .github/semantic-release-config.toml changelog
 
-          echo "$TAG" > VERSION
+          # Update VERSION file
+          echo "$NEW_VERSION" > VERSION
 
+          # Create release branch and commit changes
+          BRANCH_NAME="release-$NEW_VERSION"
+          git checkout -b "$BRANCH_NAME"
           git add CHANGELOG.md VERSION
-          git commit -m "chore(release): $TAG"
-          git tag -a "$TAG" -m "Release $TAG"
-          git push origin HEAD
-          git push origin "$TAG"
+          git commit -m "chore(release): $NEW_VERSION"
+          git push origin "$BRANCH_NAME"
 
-          notify_slack "$TAG"
-          echo "✅ Non-terraform release complete"
+          # Create PR and merge it
+          echo "🔀 Creating release PR..."
+          PR_BODY="Automated release PR for version $NEW_VERSION"
+          PR_URL=$(gh pr create --title "Release $NEW_VERSION" --body "$PR_BODY" --base main --head "$BRANCH_NAME")
+          echo "Created PR: $PR_URL"
+          
+          echo "🔀 Auto-merging release PR..."
+          gh pr merge "$PR_URL" --admin --merge
+
+          # Tag the release
+          echo "🏷️ Creating release tag..."
+          git fetch --all
+          git checkout main
+          git pull origin main
+          git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION"
+          git push origin "$NEW_VERSION"
+
+          # Clean up release branch
+          echo "🧹 Cleaning up release branch..."
+          git push origin --delete "$BRANCH_NAME" || true
+
+          notify_slack "$NEW_VERSION"
+          echo "✅ Non-terraform release complete: $NEW_VERSION"
         fi
 
     - name: Show exit status
