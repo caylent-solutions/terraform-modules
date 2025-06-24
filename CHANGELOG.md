@@ -1,3 +1,6 @@
+## v0.2.0 (2025-06-24)
+
+
 # CHANGELOG
 
 
@@ -6,6 +9,24 @@
 ### Feature
 
 * feat: add test file for changelog generation validation ([`8e4c7ca`](https://github.com/caylent-solutions/terraform-modules/commit/8e4c7caf93d8037cf841968658c8647846fa2e97))
+
+### Fix
+
+* fix: ensure newlines in GITHUB_OUTPUT to prevent semantic-release from corrupting the file ([`5f78cf2`](https://github.com/caylent-solutions/terraform-modules/commit/5f78cf22b7dc65ecb82957c40d9053139d062644))
+
+* fix: add debugging to verify GITHUB_OUTPUT file writing ([`37384d5`](https://github.com/caylent-solutions/terraform-modules/commit/37384d5a32b9ffc2403fbb3e68359352119a6c92))
+
+* fix: write GitHub outputs immediately after setting variables to avoid scoping issues ([`5ce577f`](https://github.com/caylent-solutions/terraform-modules/commit/5ce577f96b91cd836154e6d11e3834cea7f4c4ea))
+
+* fix: add debug output before writing to GitHub outputs to identify variable scoping issue ([`f719f6e`](https://github.com/caylent-solutions/terraform-modules/commit/f719f6e9db1f348045a17a3b96d1dadcd4db960d))
+
+* fix: add raw step output debugging to identify GitHub Actions templating issue ([`f2756e7`](https://github.com/caylent-solutions/terraform-modules/commit/f2756e77f20636dd3bd759a86390487c80ab7202))
+
+* fix: add debugging to identify why NEXT_VERSION is empty in later steps ([`87f4e40`](https://github.com/caylent-solutions/terraform-modules/commit/87f4e401e85dd31d69a3852a6fd8e2956bc44ddb))
+
+* fix: add better error handling and debugging to version determination ([`27f5051`](https://github.com/caylent-solutions/terraform-modules/commit/27f50515e76fc7477b9bccf049b2aec52691edb1))
+
+* fix: update semantic-release to use TOML config and fix changelog generation ([`6bc9db0`](https://github.com/caylent-solutions/terraform-modules/commit/6bc9db0400fbf29ea47f29c2a8322e99f84c12a1))
 
 
 
