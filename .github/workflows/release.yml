@@ -81,13 +81,23 @@ jobs:
           MODULE="${{ github.event.inputs.module_path }}"
           PREFIX="${MODULE}/v"
           echo "🔧 TF release for: $MODULE"
+          echo "DEBUG: Module path: $MODULE"
+          echo "DEBUG: Tag prefix: $PREFIX"
 
           if [[ ! -d "$MODULE" ]]; then
             echo "❌ Module path not found: $MODULE" >&2
             exit 1
           fi
 
-          LATEST_TAG=$(git tag --list "${PREFIX}[0-9]*" --sort=-v:refname | head -1)
+          # Get the latest tag with comprehensive debugging
+          echo "DEBUG: Searching for tags with pattern: ${PREFIX}[0-9]*"
+          ALL_TAGS=$(git tag --list "${PREFIX}[0-9]*" --sort=-v:refname | cat)
+          echo "DEBUG: All matching tags found:"
+          echo "$ALL_TAGS" | sed 's/^/  /'
+          
+          LATEST_TAG=$(echo "$ALL_TAGS" | head -1)
+          echo "DEBUG: Latest tag detected: '$LATEST_TAG'"
+          
           if [[ -n "$LATEST_TAG" && ! "$LATEST_TAG" =~ ^${PREFIX}[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "❌ Invalid tag format: $LATEST_TAG" >&2
             exit 1
@@ -95,33 +105,100 @@ jobs:
 
           if [[ -z "$LATEST_TAG" ]]; then
             CURRENT="0.0.0"
+            echo "DEBUG: No previous tag found, using initial version: $CURRENT"
           else
             CURRENT="${LATEST_TAG#${PREFIX}}"
+            echo "DEBUG: Current version extracted from tag: $CURRENT"
           fi
 
-          COMMITS=$(git log --oneline "${LATEST_TAG}..HEAD" -- "$MODULE" || echo "")
-          if echo "$COMMITS" | grep -q '^feat'; then
-            NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."($2+1)".0"}')
-          elif echo "$COMMITS" | grep -q '^fix'; then
-            NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."$2"."($3+1)}')
+          # Get commits since last tag with debugging
+          echo "DEBUG: Searching for commits since '$LATEST_TAG' in path '$MODULE'"
+          if [[ -z "$LATEST_TAG" ]]; then
+            COMMITS=$(git log --oneline -- "$MODULE" | cat)
+            echo "DEBUG: Getting all commits for module (no previous tag)"
           else
-            echo "ℹ️ No bump needed."
+            COMMITS=$(git log --oneline "${LATEST_TAG}..HEAD" -- "$MODULE" | cat)
+            echo "DEBUG: Getting commits since last tag"
+          fi
+          
+          echo "DEBUG: Raw commits found:"
+          echo "$COMMITS" | sed 's/^/  /'
+          
+          # Check for version bump triggers with debugging
+          FEAT_COMMITS=$(echo "$COMMITS" | grep -E '^[a-f0-9]+ feat:' | cat)
+          FIX_COMMITS=$(echo "$COMMITS" | grep -E '^[a-f0-9]+ fix:' | cat)
+          
+          echo "DEBUG: Feature commits found:"
+          echo "$FEAT_COMMITS" | sed 's/^/  /'
+          echo "DEBUG: Fix commits found:"
+          echo "$FIX_COMMITS" | sed 's/^/  /'
+
+          if [[ -n "$FEAT_COMMITS" ]]; then
+            NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."($2+1)".0"}')
+            BUMP_TYPE="minor"
+            echo "DEBUG: Feature commits detected, performing minor bump"
+          elif [[ -n "$FIX_COMMITS" ]]; then
+            NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."$2"."($3+1)}')
+            BUMP_TYPE="patch"
+            echo "DEBUG: Fix commits detected, performing patch bump"
+          else
+            echo "ℹ️ No bump needed - no feat: or fix: commits found."
+            echo "DEBUG: Available commits do not match bump criteria"
             exit 0
           fi
 
           NEW_TAG="${PREFIX}${NEXT}"
-          echo "$NEXT" > "${MODULE}/VERSION"
-          echo "## $NEW_TAG ($(date +'%Y-%m-%d'))" > "${MODULE}/CHANGELOG.md"
-          echo "$COMMITS" | sed 's/^/* /' >> "${MODULE}/CHANGELOG.md"
+          echo "DEBUG: New version calculated: $NEXT"
+          echo "DEBUG: New tag will be: $NEW_TAG"
+          echo "DEBUG: Bump type: $BUMP_TYPE"
 
+          # Check if tag already exists
+          if git tag --list | grep -q "^${NEW_TAG}$"; then
+            echo "❌ Tag $NEW_TAG already exists!" >&2
+            exit 1
+          fi
+
+          # Update VERSION file with v prefix
+          echo "DEBUG: Writing version to ${MODULE}/VERSION"
+          echo "v$NEXT" > "${MODULE}/VERSION"
+          echo "DEBUG: VERSION file content:"
+          cat "${MODULE}/VERSION" | sed 's/^/  /'
+
+          # Update CHANGELOG
+          echo "DEBUG: Updating ${MODULE}/CHANGELOG.md"
+          {
+            echo "## $NEW_TAG ($(date +'%Y-%m-%d'))"
+            echo ""
+            echo "$COMMITS" | sed 's/^/* /'
+            echo ""
+            if [[ -f "${MODULE}/CHANGELOG.md" ]]; then
+              cat "${MODULE}/CHANGELOG.md"
+            fi
+          } > "${MODULE}/CHANGELOG.md.new"
+          mv "${MODULE}/CHANGELOG.md.new" "${MODULE}/CHANGELOG.md"
+          
+          echo "DEBUG: CHANGELOG.md updated, first 10 lines:"
+          head -10 "${MODULE}/CHANGELOG.md" | sed 's/^/  /'
+
+          # Git operations with debugging
+          echo "DEBUG: Adding files to git"
           git add "${MODULE}/VERSION" "${MODULE}/CHANGELOG.md"
+          
+          echo "DEBUG: Git status after adding files:"
+          git status --porcelain | sed 's/^/  /'
+          
+          echo "DEBUG: Creating commit"
           git commit -m "chore(release): $NEW_TAG"
+          
+          echo "DEBUG: Creating tag"
           git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
+          
+          echo "DEBUG: Pushing to origin"
           git push origin HEAD
           git push origin "$NEW_TAG"
 
           notify_slack "$NEW_TAG"
-          echo "✅ Terraform release complete"
+          echo "✅ Terraform release complete: $NEW_TAG"
 
         else
           echo "🚀 Non-terraform release with semantic-release"
