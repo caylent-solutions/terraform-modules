@@ -1,4 +1,8 @@
-branch: main
+branches:
+  - name: main
+    prerelease: false
+  - name: fix-release-cicd
+    prerelease: false
 major_on_zero: false
 commit_parser:
   major_pattern: "^(feat|fix|refactor|perf|build|ci|chore|docs|style|test)(\\([\\w\\s-]+\\))?!:"

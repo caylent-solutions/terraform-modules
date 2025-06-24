@@ -86,15 +86,23 @@ jobs:
             if [[ -z "$LATEST_TAG" ]]; then
               # No existing tag, start with v0.1.0
               CURRENT_VERSION="0.1.0"
+              echo "No existing tags found for module, starting with version: $CURRENT_VERSION"
             else
               # Extract version number without prefix
               CURRENT_VERSION=$(echo "$LATEST_TAG" | sed "s|${MODULE_PATH}/v||")
+              echo "Found latest module tag: $LATEST_TAG, extracted version: $CURRENT_VERSION"
             fi
+            
+            echo "Module current version: $CURRENT_VERSION"
             
             # Create a temporary semantic-release config for this module
             cat > .semantic-release-temp.yml <<EOF
-          branch: main
-          version_source: tag
+          branches:
+            - name: main
+              prerelease: false
+            - name: fix-release-cicd
+              prerelease: false
+          major_on_zero: false
           tag_format: ${MODULE_PATH}/v{version}
           commit_parser:
             major_pattern: "^(feat|fix|refactor|perf|build|ci|chore|docs|style|test)(\\([\\w\\s-]+\\))?!:"
@@ -103,10 +111,11 @@ jobs:
           EOF
             
             # Use semantic-release to determine next version
-            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .semantic-release-temp.yml --define-version-var $CURRENT_VERSION --print)
+            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .semantic-release-temp.yml)
             
             # Add prefix
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
+            echo "Final module next version: $NEXT_VERSION"
             
           else
             PREFIX="v"
@@ -129,26 +138,9 @@ jobs:
             fi
             
             echo "Current version: $CURRENT_VERSION"
-            echo "Attempting to determine next version using semantic-release..."
             
-            # Try to use semantic-release to determine next version, with fallback
-            if command -v python -m semantic_release &> /dev/null; then
-              NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .github/semantic-release-config.yml 2>/dev/null || echo "")
-              echo "Semantic-release returned: '$NEXT_VERSION_NUMBER'"
-            else
-              echo "Semantic-release not available"
-              NEXT_VERSION_NUMBER=""
-            fi
-            
-            # If semantic-release failed or returned empty, fallback to simple increment
-            if [[ -z "$NEXT_VERSION_NUMBER" ]]; then
-              echo "Semantic-release failed or returned empty, using fallback version increment"
-              # Parse current version and increment patch
-              IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
-              patch=$((patch + 1))
-              NEXT_VERSION_NUMBER="$major.$minor.$patch"
-              echo "Fallback version: $NEXT_VERSION_NUMBER"
-            fi
+            # Use semantic-release to determine next version
+            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .github/semantic-release-config.yml)
             
             # Add prefix
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
