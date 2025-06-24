@@ -249,7 +249,7 @@ jobs:
           
           # Create and push the tag
           git tag -a "$NEXT_VERSION" -m "Release $NEXT_VERSION"
-          git push origin main
+          git push origin HEAD
           git push origin "$NEXT_VERSION"
           
           echo "✅ Created and pushed tag: $NEXT_VERSION"
