@@ -1,3 +1,9 @@
+## skeletons/generic-skeleton/v0.1.0 (2025-06-24)
+
+* 089e0ce feat: add test documentation change
+* 12927b3 feat: improve generic-skeleton module documentation and fix release regex
+* ff3aa38 feat: test bump
+
 # Changelog - Generic Skeleton Module
 
 All notable changes to this module will be documented in this file.
