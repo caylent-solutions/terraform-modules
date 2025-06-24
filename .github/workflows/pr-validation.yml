@@ -591,7 +591,12 @@ jobs:
       - name: Run Terraform plan
         run: make tf-plan MODULE_PATH=${{ needs.validate.outputs.module_path }}
 
-      - name: Run Go linting on module tests
+      - name: Install go dependencies for module tests
+        run: |
+          cd ${{ needs.validate.outputs.module_path }}
+          make go-install
+
+        - name: Run Go linting on module tests
         run: |
           cd ${{ needs.validate.outputs.module_path }}
           make go-lint
