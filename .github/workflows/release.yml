@@ -127,7 +127,7 @@ jobs:
           EOF
             
             # Use semantic-release to determine next version
-            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .semantic-release-temp.yml)
+            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .semantic-release-temp.yml --current-version "$CURRENT_VERSION")
             
             # Add prefix
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
@@ -156,7 +156,7 @@ jobs:
             echo "Current version: $CURRENT_VERSION"
             
             # Use semantic-release to determine next version
-            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .github/semantic-release-config.yml)
+            NEXT_VERSION_NUMBER=$(python -m semantic_release version --noop --config-file .github/semantic-release-config.yml --current-version "$CURRENT_VERSION")
             
             # Add prefix
             NEXT_VERSION="${PREFIX}${NEXT_VERSION_NUMBER}"
