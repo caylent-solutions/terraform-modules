@@ -263,7 +263,7 @@ jobs:
           # Compute next version using semantic-release
           CURRENT_VERSION=$(cat VERSION 2>/dev/null)
           [[ -z "$CURRENT_VERSION" ]] && CURRENT_VERSION="0.0.0"
-          RAW_VERSION=$(python -m semantic_release --config .github/semantic-release-config.toml version --print || echo "")
+          RAW_VERSION=$(python -m semantic_release version --print || echo "")
           
           NEW_VERSION="monorepo-config/v$RAW_VERSION"
           
@@ -284,7 +284,7 @@ jobs:
 
           # Generate changelog
           echo "📝 Generating changelog..."
-          python -m semantic_release --config .github/semantic-release-config.toml changelog
+          python -m semantic_release changelog
 
           # Update VERSION file
           echo "$RAW_VERSION" > VERSION
