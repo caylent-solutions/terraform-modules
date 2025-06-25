@@ -114,23 +114,48 @@ jobs:
           echo "$COMMITS" | while read -r line; do echo "> $line"; done
           echo "--- END DEBUG ---"
 
-          # Debug: check grep for feat and fix (match anywhere after hash)
-          if echo "$COMMITS" | grep -q ' feat:'; then
-            echo "DEBUG: Found feat commit (grep ' feat:')"
-            if [[ -z "$LATEST_TAG" ]]; then
-              NEXT="0.1.0"
-            else
-              NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."($2+1)".0"}')
-            fi
-          elif echo "$COMMITS" | grep -q ' fix:'; then
-            echo "DEBUG: Found fix commit (grep ' fix:')"
-            if [[ -z "$LATEST_TAG" ]]; then
-              NEXT="0.0.1"
-            else
-              NEXT=$(echo "$CURRENT" | awk -F. '{print $1"."$2"."($3+1)}')
-            fi
+          # --- Updated bump logic to match semantic-release config ---
+          if echo "$COMMITS" | grep -E -q '^(.* )?(feat!|fix!|perf!|build!|ci!|chore!|docs!|style!|refactor!|test!):'; then
+            echo "DEBUG: Found major commit (type!:) in commit messages"
+            IS_MAJOR=1
+          elif echo "$COMMITS" | grep -q 'BREAKING CHANGE'; then
+            echo "DEBUG: Found BREAKING CHANGE in commit messages"
+            IS_MAJOR=1
           else
-            echo "DEBUG: No feat or fix commit found (grep did not match)"
+            IS_MAJOR=0
+          fi
+
+          if echo "$COMMITS" | grep -q ' feat:'; then
+            IS_MINOR=1
+          else
+            IS_MINOR=0
+          fi
+
+          if echo "$COMMITS" | grep -q ' fix:'; then
+            IS_PATCH=1
+          else
+            IS_PATCH=0
+          fi
+
+          if [[ $IS_MAJOR -eq 1 ]]; then
+            MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+            MINOR=$(echo "$CURRENT" | cut -d. -f2)
+            if [[ "$MAJOR" == "0" ]]; then
+              NEXT="0.$((MINOR + 1)).0"
+            else
+              NEXT="$((MAJOR + 1)).0.0"
+            fi
+          elif [[ $IS_MINOR -eq 1 ]]; then
+            MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+            MINOR=$(echo "$CURRENT" | cut -d. -f2)
+            NEXT="$MAJOR.$((MINOR + 1)).0"
+          elif [[ $IS_PATCH -eq 1 ]]; then
+            MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+            MINOR=$(echo "$CURRENT" | cut -d. -f2)
+            PATCH=$(echo "$CURRENT" | cut -d. -f3)
+            NEXT="$MAJOR.$MINOR.$((PATCH + 1))"
+          else
+            echo "DEBUG: No relevant commit found (no bump needed)"
             echo "ℹ️ No bump needed."
             exit 0
           fi

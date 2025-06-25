@@ -1,5 +1,5 @@
 [semantic_release]
-major_on_zero = false
+major_on_zero = true
 allow_zero_version = true
 tag_format = "v{version}"
 
@@ -22,10 +22,12 @@ allowed_tags = [
     "perf",
     "style",
     "refactor",
-    "test"
+    "test",
+    "BREAKING CHANGE"
 ]
 minor_tags = ["feat"]
 patch_tags = ["fix", "refactor", "perf", "build", "ci", "chore", "docs", "style", "test"]
+major_tags = ["BREAKING CHANGE", "feat!", "fix!", "perf!", "build!", "ci!", "chore!", "docs!", "style!", "refactor!", "test!"]
 parse_squash_commits = true
 
 [semantic_release.changelog]
