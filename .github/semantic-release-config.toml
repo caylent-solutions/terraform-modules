@@ -11,6 +11,10 @@ prerelease = false
 match = "fix-release-workflow"
 prerelease = false
 
+[semantic_release.branches.support-major-semver-bumps]
+match = "support-major-semver-bumps"
+prerelease = false
+
 [semantic_release.commit_parser_options]
 allowed_tags = [
     "build",
