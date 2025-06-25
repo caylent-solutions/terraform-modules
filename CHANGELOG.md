@@ -4,6 +4,63 @@
 
 ## Unreleased
 
+### Features
+
+- Support major semver bumps; fix weekly global tf module validations
+  ([#63](https://github.com/caylent-solutions/terraform-modules/pull/63),
+  [`689cf84`](https://github.com/caylent-solutions/terraform-modules/commit/689cf844920e253663700399b8ca8bcff85d0b05))
+
+- Update tf docs ([#62](https://github.com/caylent-solutions/terraform-modules/pull/62),
+  [`8a67f18`](https://github.com/caylent-solutions/terraform-modules/commit/8a67f18a930c8bfeb4af27a82de117c3b303e55c))
+
+
+## v0.5.0 (2025-06-25)
+
+### Bug Fixes
+
+- Changes to main for release for terraform code
+  ([#47](https://github.com/caylent-solutions/terraform-modules/pull/47),
+  [`b642d90`](https://github.com/caylent-solutions/terraform-modules/commit/b642d90872c546b5a45ebcab1787bec7f35ca704))
+
+- Install of tftest cli ([#44](https://github.com/caylent-solutions/terraform-modules/pull/44),
+  [`eb052a7`](https://github.com/caylent-solutions/terraform-modules/commit/eb052a77bf43f9236a7da08f5f335b6ce5530e65))
+
+- Install of tftest from make install
+  ([#44](https://github.com/caylent-solutions/terraform-modules/pull/44),
+  [`eb052a7`](https://github.com/caylent-solutions/terraform-modules/commit/eb052a77bf43f9236a7da08f5f335b6ce5530e65))
+
+- Make install now installed the tftest cli command
+  ([#44](https://github.com/caylent-solutions/terraform-modules/pull/44),
+  [`eb052a7`](https://github.com/caylent-solutions/terraform-modules/commit/eb052a77bf43f9236a7da08f5f335b6ce5530e65))
+
+- Tf ([#37](https://github.com/caylent-solutions/terraform-modules/pull/37),
+  [`d2758b8`](https://github.com/caylent-solutions/terraform-modules/commit/d2758b8d41c15ed0b94f71fc479429baa5283116))
+
+- Tf module install of go deps for tests
+  ([#43](https://github.com/caylent-solutions/terraform-modules/pull/43),
+  [`7b49fbd`](https://github.com/caylent-solutions/terraform-modules/commit/7b49fbddd639cd95056ccc6c366480cb2da8db80))
+
+- Tf release workflow trigger input and name
+  ([#45](https://github.com/caylent-solutions/terraform-modules/pull/45),
+  [`faa75de`](https://github.com/caylent-solutions/terraform-modules/commit/faa75de9e126d796ab79846bb3814009feac018a))
+
+### Chores
+
+- Restructure contributor documentation and policies
+  ([#50](https://github.com/caylent-solutions/terraform-modules/pull/50),
+  [`e38138b`](https://github.com/caylent-solutions/terraform-modules/commit/e38138b2d5957a2280610b120a3d9b28ba335aad))
+
+### Features
+
+- Bump tf ([#48](https://github.com/caylent-solutions/terraform-modules/pull/48),
+  [`631ab20`](https://github.com/caylent-solutions/terraform-modules/commit/631ab20e64e19db2ecce243357c6479cc08c83ec))
+
+- Bump tf test ([#46](https://github.com/caylent-solutions/terraform-modules/pull/46),
+  [`290a72c`](https://github.com/caylent-solutions/terraform-modules/commit/290a72c6c34bd1118958ac210ec867a65753edb4))
+
+
+## Unreleased
+
 ### Bug Fixes
 
 - Changes to main for release for terraform code
