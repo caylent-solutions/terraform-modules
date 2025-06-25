@@ -4,6 +4,19 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- Update module version in readme example
+  ([#65](https://github.com/caylent-solutions/terraform-modules/pull/65),
+  [`1e47ddf`](https://github.com/caylent-solutions/terraform-modules/commit/1e47ddf071c1726863dcb379b97a1e3474b61409))
+
+
+## v1.0.0 (2025-06-25)
+
+- Initial Release
+
+## Unreleased
+
 ### Features
 
 - Support major semver bumps; fix weekly global tf module validations
