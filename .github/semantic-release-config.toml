@@ -7,10 +7,6 @@ tag_format = "v{version}"
 match = "main"
 prerelease = false
 
-[semantic_release.branches.testing]
-match = "reword-commits"
-prerelease = false
-
 [semantic_release.commit_parser_options]
 allowed_tags = [
     "build",
