@@ -1268,7 +1268,6 @@ jobs:
             
             if ('${{ github.event.inputs.change_type }}' === 'terraform') {
               releaseInputs.module_path = '${{ needs.merge-approval-routing.outputs.module_path }}';
-              releaseInputs.module_type = '${{ needs.merge-approval-routing.outputs.module_type }}';
             }
             
             await github.rest.actions.createWorkflowDispatch({
@@ -1323,8 +1322,8 @@ jobs:
           echo "::notice::🎯 The workflow is ready for production execution when dry run is disabled"
           echo "::endgroup::"
 
-  release-complete:
-    name: Release Complete
+  release-successfully-triggered:
+    name: Release Successfully Triggered
     runs-on: ubuntu-24.04
     needs: [merge-approval-routing, release-approval, release-approval-dry-run]
     if: always() && (needs.release-approval.result == 'success' || needs.release-approval-dry-run.result == 'success')
