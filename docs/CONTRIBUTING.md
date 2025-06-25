@@ -347,6 +347,8 @@ Internal contributors have direct repository access with streamlined workflow:
 
 ### Conventional Commit Message Prefixes and Version Bumps
 
+The following commit prefixes and version bump rules apply to both Terraform module changes and non-Terraform changes in this repository.
+
 This repository uses [Conventional Commits](https://www.conventionalcommits.org/) for automated versioning and changelog generation. The type of version bump is determined by the commit message prefix:
 
 | Prefix Example      | Version Bump | Description                                 |
