@@ -5,8 +5,9 @@ go 1.23.0
 toolchain go1.23.9
 
 require (
-	github.com/caylent-solutions/terraform-terratest-framework v1.1.0
+	github.com/caylent-solutions/terraform-terratest-framework v1.2.0
 	github.com/gruntwork-io/terratest v0.49.0
+	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.10.0
 )
 
@@ -23,6 +24,7 @@ require (
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
 	github.com/hashicorp/terraform-json v0.23.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a // indirect
 	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
@@ -31,6 +33,7 @@ require (
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tmccombs/hcl2json v0.6.4 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/zclconf/go-cty v1.15.0 // indirect
