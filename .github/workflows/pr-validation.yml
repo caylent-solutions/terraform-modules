@@ -364,11 +364,10 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools (excluding Python)
+      - name: Install ASDF plugins and tools (excluding Python and Terraform tools)
         run: |
           cd $GITHUB_WORKSPACE
-          # Install all tools needed for Terraform validation
-          for tool in golang jq opa terraform terraform-docs tflint tfsec; do
+          for tool in golang jq opa; do
             if grep -q "^$tool " .tool-versions; then
               echo "Installing $tool..."
               asdf plugin add $tool || true
@@ -457,11 +456,10 @@ jobs:
           echo "$HOME/.asdf/shims" >> $GITHUB_PATH
           source $HOME/.asdf/asdf.sh
 
-      - name: Install ASDF plugins and tools (excluding Python)
+      - name: Install ASDF plugins and tools (excluding Python and Terraform tools)
         run: |
           cd $GITHUB_WORKSPACE
-          # Install all tools needed for Terraform validation
-          for tool in golang jq opa terraform terraform-docs tflint tfsec; do
+          for tool in golang jq opa; do
             if grep -q "^$tool " .tool-versions; then
               echo "Installing $tool..."
               asdf plugin add $tool || true
