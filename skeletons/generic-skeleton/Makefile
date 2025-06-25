@@ -3,6 +3,7 @@
 # Install dependencies
 install:
 	@echo "Installing dependencies..."
+	@go clean -cache -testcache -modcache
 	@go mod tidy
 	@go mod download
 	@go install github.com/caylent-solutions/terraform-terratest-framework/cmd/tftest
