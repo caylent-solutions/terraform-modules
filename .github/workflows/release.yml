@@ -255,7 +255,7 @@ jobs:
           git fetch origin
 
           echo "--- DEBUG: Commits since last tag ---"
-          LATEST_TAG=$(git describe --tags --abbrev=0 || echo "")
+          LATEST_TAG=$(git tag --list "v[0-9]*" --sort=-v:refname | head -n 1)
           echo "Latest tag: $LATEST_TAG"
           git log --oneline "$LATEST_TAG"..HEAD || echo "No commits since last tag."
           echo "--- END DEBUG ---"
