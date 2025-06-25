@@ -378,8 +378,14 @@ jobs:
           done
           asdf reshim
           
-      - name: Configure environment
-        run: make configure
+      - name: Install module dependencies
+        run: |
+          if [ -n "${{ needs.validate.outputs.module_path }}" ]; then
+            (cd "${{ needs.validate.outputs.module_path }}" && make install)
+          else
+            echo "MODULE_PATH not set, failing build."
+            exit 1
+          fi
 
       - name: Run Go linting
         run: make go-lint
@@ -471,8 +477,14 @@ jobs:
           done
           asdf reshim
           
-      - name: Configure environment
-        run: make configure
+      - name: Install module dependencies
+        run: |
+          if [ -n "${{ needs.validate.outputs.module_path }}" ]; then
+            (cd "${{ needs.validate.outputs.module_path }}" && make install)
+          else
+            echo "MODULE_PATH not set, failing build."
+            exit 1
+          fi
 
       - name: Run Go linting
         run: make go-lint
@@ -577,8 +589,14 @@ jobs:
           done
           asdf reshim
           
-      - name: Configure environment
-        run: make configure
+      - name: Install module dependencies
+        run: |
+          if [ -n "${{ needs.validate.outputs.module_path }}" ]; then
+            (cd "${{ needs.validate.outputs.module_path }}" && make install)
+          else
+            echo "MODULE_PATH not set, failing build."
+            exit 1
+          fi
 
       - name: Run module validation
         run: make module-validate MODULE_PATH=${{ needs.validate.outputs.module_path }} MODULE_TYPE=${{ needs.validate.outputs.module_type }}
@@ -752,8 +770,14 @@ jobs:
           done
           asdf reshim
           
-      - name: Configure environment
-        run: make configure
+      - name: Install module dependencies
+        run: |
+          if [ -n "${{ needs.validate.outputs.module_path }}" ]; then
+            (cd "${{ needs.validate.outputs.module_path }}" && make install)
+          else
+            echo "MODULE_PATH not set, failing build."
+            exit 1
+          fi
 
       - name: Run module tests with configuration
         run: |
@@ -808,8 +832,14 @@ jobs:
           done
           asdf reshim
           
-      - name: Configure environment
-        run: make configure
+      - name: Install module dependencies
+        run: |
+          if [ -n "${{ needs.validate.outputs.module_path }}" ]; then
+            (cd "${{ needs.validate.outputs.module_path }}" && make install)
+          else
+            echo "MODULE_PATH not set, failing build."
+            exit 1
+          fi
 
       - name: Run module tests with configuration
         run: |
@@ -824,16 +854,35 @@ jobs:
       contents: read
       pull-requests: read
       actions: write
-    needs: [
-      validate, 
-      non-terraform-contributor-analysis,
-      run-non-terraform-tests-internal, 
-      run-non-terraform-tests-external,
-      terraform-contributor-analysis,
-      run-terraform-tests-internal,
-      run-terraform-tests-external
-    ]
-    if: always() && needs.validate.result == 'success' && ((needs.validate.outputs.is_module != 'true' && needs.non-terraform-contributor-analysis.result == 'success' && (needs.run-non-terraform-tests-internal.result == 'success' || needs.run-non-terraform-tests-external.result == 'success')) || (needs.validate.outputs.is_module == 'true' && needs.terraform-contributor-analysis.result == 'success' && (needs.run-terraform-tests-internal.result == 'success' || needs.run-terraform-tests-external.result == 'success')))
+    needs:
+      - validate
+      - non-terraform-contributor-analysis
+      - run-non-terraform-tests-internal
+      - run-non-terraform-tests-external
+      - terraform-contributor-analysis
+      - run-terraform-tests-internal
+      - run-terraform-tests-external
+    if: >
+      always() &&
+      needs.validate.result == 'success' &&
+      (
+        (
+          needs.validate.outputs.is_module != 'true' &&
+          needs.non-terraform-contributor-analysis.result == 'success' &&
+          (
+            needs.run-non-terraform-tests-internal.result == 'success' ||
+            needs.run-non-terraform-tests-external.result == 'success'
+          )
+        ) ||
+        (
+          needs.validate.outputs.is_module == 'true' &&
+          needs.terraform-contributor-analysis.result == 'success' &&
+          (
+            needs.run-terraform-tests-internal.result == 'success' ||
+            needs.run-terraform-tests-external.result == 'success'
+          )
+        )
+      )
     outputs:
       change_type: ${{ steps.determine-outputs.outputs.change_type }}
       contributor_type: ${{ steps.determine-outputs.outputs.contributor_type }}
