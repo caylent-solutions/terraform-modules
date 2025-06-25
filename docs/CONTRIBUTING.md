@@ -344,3 +344,31 @@ Internal contributors have direct repository access with streamlined workflow:
 4. **Validate Your Module**:
    - Run validation (from repo root): `make module-validate MODULE_PATH=providers/aws/primitives/your-module-name MODULE_TYPE=primitive`
    - Run tests (from module dir): `make test` (all tests), `make test-common` (common tests)
+
+### Conventional Commit Message Prefixes and Version Bumps
+
+This repository uses [Conventional Commits](https://www.conventionalcommits.org/) for automated versioning and changelog generation. The type of version bump is determined by the commit message prefix:
+
+| Prefix Example      | Version Bump | Description                                 |
+|--------------------|--------------|---------------------------------------------|
+| `feat!:`           | Major        | Breaking change (any type with `!:`)        |
+| `fix!:`            | Major        | Breaking change (any type with `!:`)        |
+| `refactor!:`       | Major        | Breaking change (any type with `!:`)        |
+| `BREAKING CHANGE`  | Major        | Footer contains `BREAKING CHANGE`           |
+| `feat:`            | Minor        | New feature                                 |
+| `perf:`            | Minor        | Performance improvement                     |
+| `build:`           | Minor        | Build system change                         |
+| `revert:`          | Minor        | Revert commit                               |
+| `release:`         | Minor        | Release commit                              |
+| `module:`          | Minor        | Module-level change                         |
+| `meta:`            | Minor        | Metadata change                             |
+| `ci:`              | Minor        | CI/CD change                                |
+| `fix:`             | Patch        | Bug fix                                     |
+| `chore:`           | Patch        | Chore/maintenance                           |
+| `docs:`            | Patch        | Documentation change                        |
+| `style:`           | Patch        | Code style change                           |
+| `refactor:`        | Patch        | Refactoring (non-breaking)                  |
+| `test:`            | Patch        | Test-related change                         |
+
+- Use the appropriate prefix for your commit messages to ensure correct versioning.
+- See `.github/SEMANTIC_RELEASE_IMPLEMENTATION.md` for full details.
