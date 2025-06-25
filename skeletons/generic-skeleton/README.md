@@ -106,6 +106,8 @@ The `testctx` package is the core of the Terraform Terratest Framework, providin
 
 For more detailed documentation on the testctx package, see the [TestCtx Package Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/TESTCTX_PACKAGE.md).
 
+> **Note:** The `tftest` CLI tool, provided by the Terraform Terratest Framework, is required for running tests and is tracked as a dependency via the `tools.go` file at the root of this repository. This ensures `make install` works for both CI/CD and local development.
+
 ### Using Assertions
 
 The framework provides a set of assertions in the `pkg/assertions` package that you can use to verify your Terraform module's behavior:
@@ -171,21 +173,24 @@ This approach:
 Tests can be run using the provided Makefile commands:
 
 ```bash
-# Run all tests
+# Run all tests (default test suite)
 make test
-
-# Run tests for a specific example
-make test-basic
-make test-advanced
 
 # Run only common tests
 make test-common
 
-# Run a specific test
-go test ./tests/common -run '^TestInputsMatchProvisioned
+# Run all Terraform tests (with security, lint, plan, etc)
+make tf-test
+
+# Run the full comprehensive suite (lint, format, docs, plan, security, tf-test)
+make test-all
 ```
 
-For more information on the `tftest` CLI tool, see the [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/CLI_USAGE.md).
+You can also run specific Go tests directly:
+
+```bash
+go test ./tests/common -run '^TestInputsMatchProvisioned'
+```
 
 ## Developer Workflow
 
@@ -240,7 +245,6 @@ make test-all
 
 # Clean up temporary files
 make clean
-```
 
 For more information on the `tftest` CLI tool, see the [CLI Usage Documentation](https://github.com/caylent-solutions/terraform-terratest-framework/blob/main/docs/CLI_USAGE.md).
 
