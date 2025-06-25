@@ -29,13 +29,13 @@ To use any module from this repo, reference it directly in your Terraform config
 
 ```hcl
 module "generic_skeleton" {
-  source = "git::https://github.com/caylent-solutions/terraform-modules.git//skeletons/generic-skeleton?ref=skeletons/generic-skeleton/v0.1.0"
+  source = "git::https://github.com/caylent-solutions/terraform-modules.git//skeletons/generic-skeleton?ref=skeletons/generic-skeleton/v1.0.0"
   # ...module inputs...
 }
 ```
 
 - Replace the module path (`skeletons/generic-skeleton`) with the one you need.
-- Replace the version (`v0.1.0`) with the exact tag to pin the module version.  
+- Replace the version (`v1.0.0`) with the exact tag to pin the module version.  
   ⚠️ **Pinning is required** — Terraform’s `git` source does not support version ranges.
 
 ---
