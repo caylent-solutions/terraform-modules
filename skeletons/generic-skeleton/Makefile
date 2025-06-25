@@ -5,6 +5,7 @@ install:
 	@echo "Installing dependencies..."
 	@go mod tidy
 	@go mod download
+	@go install github.com/caylent-solutions/terraform-terratest-framework/cmd/tftest
 	@asdf reshim golang || true
 	@echo "Dependencies installed successfully"
 
