@@ -79,10 +79,15 @@ jobs:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       run: |
         set -eo pipefail
-
+      
         TYPE="${{ github.event.inputs.release_type }}"
         CONTRIB="${{ github.event.inputs.contributor_type }}"
         USER="${{ github.event.inputs.contributor_username }}"
+      
+        if [[ "$TYPE" != "terraform-module" && "$TYPE" != "non-terraform" ]]; then
+          echo "❌ Invalid release_type: $TYPE"
+          exit 1
+        fi
 
         notify_slack() {
           local TAG="$1"
@@ -90,28 +95,28 @@ jobs:
             --data "{\"text\":\":rocket: Published *$TAG* ($TYPE) by $USER ($CONTRIB)\"}" \
             $SLACK_WEBHOOK_URL
         }
-
+      
         git config user.name "caylent-platform-bot[bot]"
         git config user.email "caylent-platform-bot[bot]@users.noreply.github.com"
-
+      
         if [[ "$TYPE" == "terraform-module" ]]; then
           MODULE="${{ github.event.inputs.module_path }}"
           PREFIX="${MODULE}/v"
           echo "🔧 TF release for: $MODULE"
-
+      
           if [[ ! -d "$MODULE" ]]; then
             echo "❌ Module path not found: $MODULE" >&2
             exit 1
           fi
-
+      
           git fetch origin
-
+      
           LATEST_TAG=$(git tag --list "${PREFIX}[0-9]*" --sort=-v:refname | head -1)
           if [[ -n "$LATEST_TAG" && ! "$LATEST_TAG" =~ ^${PREFIX}[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "❌ Invalid tag format: $LATEST_TAG" >&2
             exit 1
           fi
-
+      
           if [[ -z "$LATEST_TAG" ]]; then
             CURRENT="0.0.0"
             # For first release, get all commits for the module
@@ -120,15 +125,15 @@ jobs:
             CURRENT="${LATEST_TAG#${PREFIX}}"
             COMMITS=$(git log --oneline "${LATEST_TAG}..HEAD" -- "$MODULE" || echo "")
           fi
-
+      
           echo "🔍 Commits since last tag:"
           echo "$COMMITS"
-
+      
           # Debug: print each commit line
           echo "--- DEBUG: Commits lines ---"
           echo "$COMMITS" | while read -r line; do echo "> $line"; done
           echo "--- END DEBUG ---"
-
+      
           # --- Updated bump logic to match semantic-release config ---
           BUMP_TYPE="${{ github.event.inputs.bump_type }}"
           
@@ -145,30 +150,43 @@ jobs:
             IS_MINOR=0
             IS_PATCH=1
           else
-            # Auto-detect from commits
-            if echo "$COMMITS" | grep -E -q '^(.* )?(feat!|fix!|perf!|build!|ci!|chore!|docs!|style!|refactor!|test!):'; then
-              echo "DEBUG: Found major commit (type!:) in commit messages"
+            # --- Auto-detect bump level from commit messages ---
+            IS_MAJOR=0
+            IS_MINOR=0
+            IS_PATCH=0
+            
+            echo "--- DEBUG: Scanning commit messages for bump type ---"
+            echo "$COMMITS"
+            
+            # Trigger major bump if any commit has a breaking type suffix (!)
+            if echo "$COMMITS" | grep -Eq '\b(feat|fix|perf|build|ci|chore|docs|style|refactor|test|release|module|meta|revert)!:'; then
+              echo "DEBUG: Found 'type!:' breaking change — will trigger major bump"
               IS_MAJOR=1
             elif echo "$COMMITS" | grep -q 'BREAKING CHANGE'; then
-              echo "DEBUG: Found BREAKING CHANGE in commit messages"
+              echo "DEBUG: Found 'BREAKING CHANGE' footer — will trigger major bump"
               IS_MAJOR=1
-            else
-              IS_MAJOR=0
             fi
-
-            if echo "$COMMITS" | grep -q ' feat:'; then
-              IS_MINOR=1
-            else
-              IS_MINOR=0
-            fi
-
-            if echo "$COMMITS" | grep -q ' fix:'; then
-              IS_PATCH=1
-            else
-              IS_PATCH=0
+            
+            if [[ $IS_MAJOR -ne 1 ]]; then
+              # Minor bump if any of the minor types appear
+              if echo "$COMMITS" | grep -Eq '\b(feat|perf|build|revert|release|module|meta|ci):'; then
+                echo "DEBUG: Found minor commit (feat/perf/build/etc)"
+                IS_MINOR=1
+              fi
+            
+              # Patch bump if any of the patch-level types appear
+              if echo "$COMMITS" | grep -Eq '\b(fix|chore|docs|style|refactor|test):'; then
+                echo "DEBUG: Found patch commit (fix/chore/docs/etc)"
+                IS_PATCH=1
+              fi
+            
+              # If no matching bump-worthy commits found, no bump
+              if [[ $IS_MINOR -eq 0 && $IS_PATCH -eq 0 ]]; then
+                echo "DEBUG: No minor or patch commits matched — no bump"
+              fi
             fi
           fi
-
+            
           if [[ $IS_MAJOR -eq 1 ]]; then
             MAJOR=$(echo "$CURRENT" | cut -d. -f1)
             NEXT="$((MAJOR + 1)).0.0"
@@ -186,11 +204,11 @@ jobs:
             echo "ℹ️ No bump needed."
             exit 0
           fi
-
+            
           echo "DEBUG: NEXT version will be $NEXT"
-
+            
           NEW_TAG="${PREFIX}${NEXT}"
-          
+            
           if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
             echo "🔍 DRY RUN: Would create tag $NEW_TAG"
             echo "🔍 DRY RUN: Current version: $CURRENT"
@@ -199,39 +217,35 @@ jobs:
             echo "$COMMITS"
             exit 0
           fi
-
+            
           echo "$NEXT" > "${MODULE}/VERSION"
           echo "## $NEW_TAG ($(date +'%Y-%m-%d'))" > "${MODULE}/CHANGELOG.md"
           echo "$COMMITS" | sed 's/^/* /' >> "${MODULE}/CHANGELOG.md"
-
-          # Create release branch and commit changes
+            
           BRANCH_NAME="release-$NEW_TAG"
           git checkout -b "$BRANCH_NAME"
           git add "${MODULE}/VERSION" "${MODULE}/CHANGELOG.md"
           git commit -m "chore(release): $NEW_TAG"
           git push origin "$BRANCH_NAME"
-
-          # Create PR and merge it
+            
           echo "🔀 Creating release PR..."
           PR_BODY="Automated terraform module release PR for $NEW_TAG"
           PR_URL=$(gh pr create --title "Release $NEW_TAG" --body "$PR_BODY" --base main --head "$BRANCH_NAME")
           echo "Created PR: $PR_URL"
-          
+            
           echo "🔀 Auto-merging release PR..."
           gh pr merge "$PR_URL" --admin --squash
-
-          # Tag the release
+            
           echo "🏷️ Creating release tag..."
           git fetch --all
           git checkout main
           git pull origin main
           git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
           git push origin "$NEW_TAG"
-
-          # Clean up release branch
+            
           echo "🧹 Cleaning up release branch..."
           git push origin --delete "$BRANCH_NAME" || true
-
+            
           notify_slack "$NEW_TAG"
           echo "✅ Terraform release complete"
 
@@ -247,7 +261,8 @@ jobs:
           echo "--- END DEBUG ---"
 
           # Compute next version using semantic-release
-          CURRENT_VERSION=$(cat VERSION || echo "0.0.0")
+          CURRENT_VERSION=$(cat VERSION 2>/dev/null)
+          [[ -z "$CURRENT_VERSION" ]] && CURRENT_VERSION="0.0.0"
           RAW_VERSION=$(python -m semantic_release --config .github/semantic-release-config.toml version --print || echo "")
           
           if [[ -z "$RAW_VERSION" ]]; then

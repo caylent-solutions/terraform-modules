@@ -1,5 +1,9 @@
 # Contributing to Terraform Modules
 
+> **All contributions should be made using the Caylent Devcontainer and Caylent Devcontainer CLI.**
+>
+> Local development outside the devcontainer is not supported. See the [Caylent Devcontainer & CLI documentation](https://github.com/caylent-solutions/devcontainer) for setup and usage instructions.
+
 This comprehensive guide explains the complete Software Development Life Cycle (SDLC) and contribution process for both Terraform and non-Terraform code in this repository. It covers workflow logic, security, and the CI/CD pipeline for all contributor types.
 
 ---
