@@ -19,6 +19,21 @@ on:
         description: 'Username of the contributor'
         required: true
         type: string
+      bump_type:
+        description: 'Version bump type (major, minor, patch, or auto)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - major
+          - minor
+          - patch
+      dry_run:
+        description: 'Dry run - show what would happen without creating tags/releases'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   release:
@@ -115,26 +130,43 @@ jobs:
           echo "--- END DEBUG ---"
 
           # --- Updated bump logic to match semantic-release config ---
-          if echo "$COMMITS" | grep -E -q '^(.* )?(feat!|fix!|perf!|build!|ci!|chore!|docs!|style!|refactor!|test!):'; then
-            echo "DEBUG: Found major commit (type!:) in commit messages"
+          BUMP_TYPE="${{ github.event.inputs.bump_type }}"
+          
+          if [[ "$BUMP_TYPE" == "major" ]]; then
             IS_MAJOR=1
-          elif echo "$COMMITS" | grep -q 'BREAKING CHANGE'; then
-            echo "DEBUG: Found BREAKING CHANGE in commit messages"
-            IS_MAJOR=1
-          else
-            IS_MAJOR=0
-          fi
-
-          if echo "$COMMITS" | grep -q ' feat:'; then
-            IS_MINOR=1
-          else
             IS_MINOR=0
-          fi
-
-          if echo "$COMMITS" | grep -q ' fix:'; then
+            IS_PATCH=0
+          elif [[ "$BUMP_TYPE" == "minor" ]]; then
+            IS_MAJOR=0
+            IS_MINOR=1
+            IS_PATCH=0
+          elif [[ "$BUMP_TYPE" == "patch" ]]; then
+            IS_MAJOR=0
+            IS_MINOR=0
             IS_PATCH=1
           else
-            IS_PATCH=0
+            # Auto-detect from commits
+            if echo "$COMMITS" | grep -E -q '^(.* )?(feat!|fix!|perf!|build!|ci!|chore!|docs!|style!|refactor!|test!):'; then
+              echo "DEBUG: Found major commit (type!:) in commit messages"
+              IS_MAJOR=1
+            elif echo "$COMMITS" | grep -q 'BREAKING CHANGE'; then
+              echo "DEBUG: Found BREAKING CHANGE in commit messages"
+              IS_MAJOR=1
+            else
+              IS_MAJOR=0
+            fi
+
+            if echo "$COMMITS" | grep -q ' feat:'; then
+              IS_MINOR=1
+            else
+              IS_MINOR=0
+            fi
+
+            if echo "$COMMITS" | grep -q ' fix:'; then
+              IS_PATCH=1
+            else
+              IS_PATCH=0
+            fi
           fi
 
           if [[ $IS_MAJOR -eq 1 ]]; then
@@ -163,6 +195,16 @@ jobs:
           echo "DEBUG: NEXT version will be $NEXT"
 
           NEW_TAG="${PREFIX}${NEXT}"
+          
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            echo "🔍 DRY RUN: Would create tag $NEW_TAG"
+            echo "🔍 DRY RUN: Current version: $CURRENT"
+            echo "🔍 DRY RUN: Next version: $NEXT"
+            echo "🔍 DRY RUN: Commits that would be included:"
+            echo "$COMMITS"
+            exit 0
+          fi
+
           echo "$NEXT" > "${MODULE}/VERSION"
           echo "## $NEW_TAG ($(date +'%Y-%m-%d'))" > "${MODULE}/CHANGELOG.md"
           echo "$COMMITS" | sed 's/^/* /' >> "${MODULE}/CHANGELOG.md"
@@ -228,6 +270,13 @@ jobs:
           # Only proceed if we have a new version
           if [[ "$NEW_VERSION" == "$CURRENT_VERSION" ]]; then
             echo "ℹ️ Version unchanged, no release needed"
+            exit 0
+          fi
+
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            echo "🔍 DRY RUN: Would create tag $NEW_VERSION"
+            echo "🔍 DRY RUN: Current version: $CURRENT_VERSION"
+            echo "🔍 DRY RUN: Next version: $NEW_VERSION"
             exit 0
           fi
 
