@@ -180,6 +180,8 @@ test-all-terraform-modules:
 		echo "\n\033[1;36m=== Testing module: {} ===\033[0m"; \
 		( \
 			cd {} && \
+			echo "\033[36m→ Running install\033[0m" && \
+			make install && \
 			echo "\033[36m→ Running go-lint on tests\033[0m" && \
 			make go-lint && \
 			echo "\033[36m→ Running go-format on tests\033[0m" && \
