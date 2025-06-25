@@ -171,12 +171,7 @@ jobs:
 
           if [[ $IS_MAJOR -eq 1 ]]; then
             MAJOR=$(echo "$CURRENT" | cut -d. -f1)
-            MINOR=$(echo "$CURRENT" | cut -d. -f2)
-            if [[ "$MAJOR" == "0" ]]; then
-              NEXT="0.$((MINOR + 1)).0"
-            else
-              NEXT="$((MAJOR + 1)).0.0"
-            fi
+            NEXT="$((MAJOR + 1)).0.0"
           elif [[ $IS_MINOR -eq 1 ]]; then
             MAJOR=$(echo "$CURRENT" | cut -d. -f1)
             MINOR=$(echo "$CURRENT" | cut -d. -f2)
