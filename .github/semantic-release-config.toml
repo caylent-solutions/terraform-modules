@@ -1,7 +1,7 @@
 [semantic_release]
 major_on_zero = true
 allow_zero_version = true
-tag_format = "v{version}"
+tag_format = "monorepo-config/v{version}"
 
 [semantic_release.branches.main]
 match = "main"

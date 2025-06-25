@@ -255,7 +255,7 @@ jobs:
           git fetch origin
 
           echo "--- DEBUG: Commits since last tag ---"
-          LATEST_TAG=$(git tag --list "v[0-9]*" --sort=-v:refname | head -n 1)
+          LATEST_TAG=$(git tag --list "monorepo-config/v[0-9]*" --sort=-v:refname | head -n 1)
           echo "Latest tag: $LATEST_TAG"
           git log --oneline "$LATEST_TAG"..HEAD || echo "No commits since last tag."
           echo "--- END DEBUG ---"
@@ -265,15 +265,7 @@ jobs:
           [[ -z "$CURRENT_VERSION" ]] && CURRENT_VERSION="0.0.0"
           RAW_VERSION=$(python -m semantic_release --config .github/semantic-release-config.toml version --print || echo "")
           
-          if [[ -z "$RAW_VERSION" ]]; then
-            echo "ℹ️ No new version detected by semantic-release, no release needed"
-            echo "Current version: $CURRENT_VERSION"
-            exit 0
-          elif [[ "$RAW_VERSION" != v* ]]; then
-            NEW_VERSION="v$RAW_VERSION"
-          else
-            NEW_VERSION="$RAW_VERSION"
-          fi
+          NEW_VERSION="monorepo-config/v$RAW_VERSION"
           
           echo "Computed new version: $NEW_VERSION (from $CURRENT_VERSION)"
 
@@ -295,7 +287,7 @@ jobs:
           python -m semantic_release --config .github/semantic-release-config.toml changelog
 
           # Update VERSION file
-          echo "$NEW_VERSION" > VERSION
+          echo "$RAW_VERSION" > VERSION
 
           # Create release branch and commit changes
           BRANCH_NAME="release-$NEW_VERSION"
