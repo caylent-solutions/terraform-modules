@@ -4,6 +4,27 @@
 
 ## Unreleased
 
+### Chores
+
+- Add Caylent Devcontainer as preferred development environment …
+  ([#70](https://github.com/caylent-solutions/terraform-modules/pull/70),
+  [`95698dd`](https://github.com/caylent-solutions/terraform-modules/commit/95698dd2cdd9e4bb7ad6a939f1c39295267e7b0e))
+
+- Major tf semver bump ([#68](https://github.com/caylent-solutions/terraform-modules/pull/68),
+  [`ecc6f6f`](https://github.com/caylent-solutions/terraform-modules/commit/ecc6f6f277bc996db08e0cfe5b9c211a52bb5f4d))
+
+
+## v1.0.1 (2025-06-25)
+
+### Bug Fixes
+
+- Update module version in readme example
+  ([#65](https://github.com/caylent-solutions/terraform-modules/pull/65),
+  [`1e47ddf`](https://github.com/caylent-solutions/terraform-modules/commit/1e47ddf071c1726863dcb379b97a1e3474b61409))
+
+
+## Unreleased
+
 ### Bug Fixes
 
 - Update module version in readme example
