@@ -293,15 +293,23 @@ jobs:
           SPECIFIC_OWNERS=""
           if [ -f ".github/CODEOWNERS" ]; then
             for FILE in $CHANGED_FILES; do
+              BASENAME=$(basename "$FILE")
               FILE_EXT="${FILE##*.}"
+              # 1. Check for exact filename match (e.g., 'Makefile')
+              EXACT_MATCH=$(grep -E "^$BASENAME(\s|$)" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+              if [ -n "$EXACT_MATCH" ]; then
+                SPECIFIC_OWNERS="$SPECIFIC_OWNERS $EXACT_MATCH"
+                continue
+              fi
+              # 2. Check for extension-based pattern (e.g., '*.tf')
               if [ "$FILE_EXT" != "$FILE" ]; then
-                PATTERN_MATCH=$(grep -E "^\*\.$FILE_EXT" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                PATTERN_MATCH=$(grep -E "^\*\.$FILE_EXT(\s|$)" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
                 if [ -n "$PATTERN_MATCH" ]; then
                   SPECIFIC_OWNERS="$SPECIFIC_OWNERS $PATTERN_MATCH"
                   continue
                 fi
               fi
-              
+              # 3. Directory pattern matching
               TEMP_FILE="$FILE"
               while [[ "$TEMP_FILE" == */* ]]; do
                 DIR=$(dirname "$TEMP_FILE")
@@ -666,15 +674,23 @@ jobs:
           SPECIFIC_OWNERS=""
           if [ -f ".github/CODEOWNERS" ]; then
             for FILE in $CHANGED_FILES; do
+              BASENAME=$(basename "$FILE")
               FILE_EXT="${FILE##*.}"
+              # 1. Check for exact filename match (e.g., 'Makefile')
+              EXACT_MATCH=$(grep -E "^$BASENAME(\s|$)" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+              if [ -n "$EXACT_MATCH" ]; then
+                SPECIFIC_OWNERS="$SPECIFIC_OWNERS $EXACT_MATCH"
+                continue
+              fi
+              # 2. Check for extension-based pattern (e.g., '*.tf')
               if [ "$FILE_EXT" != "$FILE" ]; then
-                PATTERN_MATCH=$(grep -E "^\*\.$FILE_EXT" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
+                PATTERN_MATCH=$(grep -E "^\*\.$FILE_EXT(\s|$)" .github/CODEOWNERS | awk '{for(i=2;i<=NF;i++) print $i}')
                 if [ -n "$PATTERN_MATCH" ]; then
                   SPECIFIC_OWNERS="$SPECIFIC_OWNERS $PATTERN_MATCH"
                   continue
                 fi
               fi
-              
+              # 3. Directory pattern matching
               TEMP_FILE="$FILE"
               while [[ "$TEMP_FILE" == */* ]]; do
                 DIR=$(dirname "$TEMP_FILE")
