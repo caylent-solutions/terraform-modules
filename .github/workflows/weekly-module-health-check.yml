@@ -55,4 +55,19 @@ jobs:
         run: make configure
 
       - name: Run comprehensive module tests
+        id: test-modules
         run: make test-all-terraform-modules
+
+      - name: Notify Slack on success
+        if: success()
+        run: |
+          curl -s -X POST -H 'Content-type: application/json' \
+            --data '{"text":":white_check_mark: Weekly module health check passed - all Terraform modules are healthy\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on failure
+        if: failure()
+        run: |
+          curl -s -X POST -H 'Content-type: application/json' \
+            --data '{"text":":x: Weekly module health check failed - some Terraform modules have issues\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
