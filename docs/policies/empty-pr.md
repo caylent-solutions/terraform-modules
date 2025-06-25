@@ -22,3 +22,11 @@ If your PR fails this policy check:
 1. **Empty PR**: Add meaningful changes to your PR or close it if created by mistake.
 2. **False positive**: Ensure your PR actually contains file changes.
 3. **Policy evaluation error**: Ensure OPA is installed (`asdf install opa`) and the policy file is valid.
+
+## Documentation
+- [Module Structure](../terraform-module-structure.md)
+- [Module Policies](../terraform-module-policies.md)
+- [Testing Requirements](../terraform-module-testing.md)
+- [Complete Workflow Logic](../WORKFLOW_LOGIC.md)
+- [Main Validation SDLC Guide](../main-validation-sdlc.md)
+- [Contributing Guidelines](../CONTRIBUTING.md)

@@ -29,3 +29,11 @@ If your PR fails this policy check:
 2. **False positive**: Check if your module path is correctly defined in `pr-policy-config.json`.
 3. **Policy evaluation error**: Ensure OPA is installed (`asdf install opa`) and the policy file is valid.
 
+## Documentation
+- [Module Structure](terraform-module-structure.md)
+- [Module Policies](terraform-module-policies.md)
+- [Testing Requirements](terraform-module-testing.md)
+- [Complete Workflow Logic](WORKFLOW_LOGIC.md)
+- [Main Validation SDLC Guide](main-validation-sdlc.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+

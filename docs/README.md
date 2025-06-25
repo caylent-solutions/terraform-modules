@@ -11,7 +11,7 @@ This directory contains documentation for the Terraform Modules repository.
 - [Complete Workflow Logic](WORKFLOW_LOGIC.md) - Detailed flow of all CI/CD workflows
 - [Main Validation SDLC Guide](main-validation-sdlc.md) - SDLC process for workflow maintenance
 - [Contributor Guide](../CONTRIBUTOR_GUIDE.md) - Complete SDLC process for contributors
-- [Contributing Guidelines](../CONTRIBUTING.md) - How to contribute to this repository
+- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to this repository
 
 ## Module Development
 
@@ -40,6 +40,14 @@ This directory contains documentation for the Terraform Modules repository.
 - [Rego Unit Test](scripts/rego-unit-test.md) - Runs OPA/Rego unit tests and collects coverage metrics
 - [Terraform File Collector](scripts/terraform-file-collector.md) - Collects Terraform files for policy evaluation
 
+## Documentation
+- [Module Structure](terraform-module-structure.md)
+- [Module Policies](terraform-module-policies.md)
+- [Testing Requirements](terraform-module-testing.md)
+- [Complete Workflow Logic](WORKFLOW_LOGIC.md)
+- [Main Validation SDLC Guide](main-validation-sdlc.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+
 ## Contributing
 
-For information on how to contribute to this repository, see the [Contributing Guidelines](../CONTRIBUTING.md) in the repository root.
+For information on how to contribute to this repository, see the [Contributing Guidelines](CONTRIBUTING.md) in the repository root.

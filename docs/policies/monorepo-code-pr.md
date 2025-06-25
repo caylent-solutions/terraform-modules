@@ -32,3 +32,11 @@ If your PR fails this check:
 2. **Mixed module and non-module changes**: Split your changes into separate PRs - one for module changes and one for non-module changes.
 3. **False positive**: Check if your module paths are correctly defined in `monorepo-config.json`.
 
+## Documentation
+- [Module Structure](../terraform-module-structure.md)
+- [Module Policies](../terraform-module-policies.md)
+- [Testing Requirements](../terraform-module-testing.md)
+- [Complete Workflow Logic](../WORKFLOW_LOGIC.md)
+- [Main Validation SDLC Guide](../main-validation-sdlc.md)
+- [Contributing Guidelines](../CONTRIBUTING.md)
+

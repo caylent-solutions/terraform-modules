@@ -38,6 +38,18 @@ Defines the different types of modules and their associated policies.
   "utility": {
     "path_patterns": ["generics/utilities/*"],
     "policy_dir": "policies/opa/terraform/module_types/utility"
+  },
+  "primitive": {
+    "path_patterns": ["providers/*/primitives/*"],
+    "policy_dir": "policies/opa/terraform/module_types/primitive"
+  },
+  "collection": {
+    "path_patterns": ["providers/*/collections/*"],
+    "policy_dir": "policies/opa/terraform/module_types/collection"
+  },
+  "reference": {
+    "path_patterns": ["providers/*/references/*"],
+    "policy_dir": "policies/opa/terraform/module_types/reference"
   }
 }
 ```
@@ -48,12 +60,39 @@ Configuration for various scripts used in the monorepo.
 
 ```json
 "scripts": {
-  "terraform_file_collector": "terraform-file-collector",  // Script to collect Terraform files
-  "temp_file_pattern": "terraform-files-*.json",           // Pattern for temporary files
-  "excluded_dirs": [".terraform", ".git", "node_modules"], // Directories to exclude when collecting files
-  "important_dirs": ["examples", "tests"],                 // Important directories to mark in the output
-  "directory_marker": "directory"                          // Value to use for marking directories in the output
+  "terraform_file_collector": "terraform-file-collector",
+  "temp_file_pattern": "terraform-files-*.json",
+  "go_unit_test": "./scripts/go-unit-test/main.go",
+  "rego_unit_test": "./scripts/rego-unit-test/main.go",
+  "excluded_dirs": [".terraform", ".git", "node_modules", ".terragrunt-cache"],
+  "important_dirs": ["examples", "tests"],
+  "directory_marker": "directory",
+  "lint_directories": [
+    "scripts/detect-proposed-git-repo-changes",
+    "scripts/go-format",
+    "scripts/go-lint",
+    "scripts/go-unit-test",
+    "scripts/install-tools",
+    "scripts/main-validation",
+    "scripts/module-type-validator",
+    "scripts/module-validator",
+    "scripts/rego-unit-test",
+    "scripts/terraform-file-collector"
+  ]
 }
+```
+
+### rego_tests
+
+List of rego test directories.
+
+```json
+"rego_tests": [
+  "tests/opa/unit/global",
+  "tests/opa/unit/terraform/module",
+  "tests/opa/unit/terraform/module_types",
+  "tests/opa/unit/terraform/provider"
+]
 ```
 
 ### rego_policy_dirs
@@ -63,8 +102,18 @@ Maps test directories to their corresponding policy directories.
 ```json
 "rego_policy_dirs": {
   "tests/opa/unit/global": "policies/opa/global",
-  "tests/opa/unit/terraform/module": "policies/opa/terraform/module"
+  "tests/opa/unit/terraform/module": "policies/opa/terraform/module",
+  "tests/opa/unit/terraform/module_types": "policies/opa/terraform/module_types",
+  "tests/opa/unit/terraform/provider": "policies/opa/terraform/provider"
 }
+```
+
+### rego_helpers_dir
+
+Directory containing rego helper files.
+
+```json
+"rego_helpers_dir": "tests/opa/unit/helpers"
 ```
 
 ### module_validator_additional_policies
@@ -75,22 +124,6 @@ List of additional policy directories to include when validating modules.
 "module_validator_additional_policies": [
   "tests/opa/unit/terraform/module",
   "tests/opa/unit/terraform/provider"
-]
-```
-
-### coverage_groups
-
-Configuration for test coverage reporting.
-
-```json
-"coverage_groups": [
-  {
-    "name": "Go Unit Test",
-    "emoji": "🧪",
-    "outputFile": "go-unit-test.out",
-    "testPath": "./scripts/go-unit-test",
-    "coverPkg": "./scripts/go-unit-test"
-  }
 ]
 ```
 
@@ -114,6 +147,41 @@ Configuration for testing GitHub Actions workflows, specifically the main valida
       "contributor_type": "Internal",
       "can_self_approve": "true",
       "description": "Internal contributor making non-terraform changes with self-approval permissions"
+    },
+    {
+      "name": "Internal-NonTerraform-ManualApproval",
+      "change_type": "non-terraform",
+      "contributor_type": "Internal",
+      "can_self_approve": "false",
+      "description": "Internal contributor making non-terraform changes requiring manual approval"
+    },
+    {
+      "name": "External-NonTerraform-ManualApproval",
+      "change_type": "non-terraform",
+      "contributor_type": "External",
+      "can_self_approve": "false",
+      "description": "External contributor making non-terraform changes (always requires manual approval)"
+    },
+    {
+      "name": "Internal-Terraform-SelfApproval",
+      "change_type": "terraform",
+      "contributor_type": "Internal",
+      "can_self_approve": "true",
+      "description": "Internal contributor making terraform changes with self-approval permissions"
+    },
+    {
+      "name": "Internal-Terraform-ManualApproval",
+      "change_type": "terraform",
+      "contributor_type": "Internal",
+      "can_self_approve": "false",
+      "description": "Internal contributor making terraform changes requiring manual approval"
+    },
+    {
+      "name": "External-Terraform-ManualApproval",
+      "change_type": "terraform",
+      "contributor_type": "External",
+      "can_self_approve": "false",
+      "description": "External contributor making terraform changes (always requires manual approval)"
     }
   ]
 }
@@ -139,3 +207,83 @@ Each variation in the `variations` array must include:
 - **inputs** (optional): Additional workflow inputs specific to this variation
 
 This configuration is used by the [Main Validation Script](scripts/main-validation.md) to test all merge approval job variations in the main validation workflow.
+
+### coverage_groups
+
+Configuration for test coverage reporting.
+
+```json
+"coverage_groups": [
+  {
+    "name": "Go Unit Test",
+    "emoji": "🧪",
+    "outputFile": "go-unit-test.out",
+    "testPath": "./scripts/go-unit-test",
+    "coverPkg": "./scripts/go-unit-test"
+  },
+  {
+    "name": "Detect Proposed Git Repo Changes",
+    "emoji": "🔍",
+    "outputFile": "detect-proposed-git-repo-changes.out",
+    "testPath": "./scripts/detect-proposed-git-repo-changes",
+    "coverPkg": "./scripts/detect-proposed-git-repo-changes"
+  },
+  {
+    "name": "Install Tools",
+    "emoji": "🔧",
+    "outputFile": "go-unit-test.out",
+    "testPath": "./scripts/go-unit-test",
+    "coverPkg": "./scripts/go-unit-test"
+  },
+  {
+    "name": "Module Type Validator",
+    "emoji": "✅",
+    "outputFile": "module-type-validator.out",
+    "testPath": "./scripts/module-type-validator",
+    "coverPkg": "./scripts/module-type-validator"
+  },
+  {
+    "name": "Main Validation",
+    "emoji": "🔎",
+    "outputFile": "main-validation.out",
+    "testPath": "./scripts/main-validation",
+    "coverPkg": "./scripts/main-validation"
+  },
+  {
+    "name": "Module Validator",
+    "emoji": "🔎",
+    "outputFile": "module-validator.out",
+    "testPath": "./scripts/module-validator",
+    "coverPkg": "./scripts/module-validator"
+  },
+  {
+    "name": "Terraform File Collector",
+    "emoji": "📁",
+    "outputFile": "terraform-file-collector.out",
+    "testPath": "./scripts/terraform-file-collector",
+    "coverPkg": "./scripts/terraform-file-collector"
+  },
+  {
+    "name": "Lint",
+    "emoji": "🧹",
+    "outputFile": "lint.out",
+    "testPath": "./scripts/go-lint",
+    "coverPkg": "./scripts/go-lint"
+  },
+  {
+    "name": "Rego Unit Test",
+    "emoji": "🔍",
+    "outputFile": "rego-unit-test.out",
+    "testPath": "./scripts/rego-unit-test",
+    "coverPkg": "./scripts/rego-unit-test"
+  }
+]
+```
+
+## Documentation
+- [Module Structure](terraform-module-structure.md)
+- [Module Policies](terraform-module-policies.md)
+- [Testing Requirements](terraform-module-testing.md)
+- [Complete Workflow Logic](WORKFLOW_LOGIC.md)
+- [Main Validation SDLC Guide](main-validation-sdlc.md)
+- [Contributing Guidelines](CONTRIBUTING.md)

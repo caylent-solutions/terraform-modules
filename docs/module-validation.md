@@ -2,6 +2,13 @@
 
 This document describes the validation process for Terraform modules in the monorepo.
 
+## Repository Principles
+
+This monorepo enforces the following principles for all modules and services:
+
+- **Self-Contained Repository Deployment Principle:** Every module must be self-contained, including all code, tests, and pipeline logic needed for deployment and validation. See [Self-Contained Repository Deployment Principle](./principles/self-contained-repository-deployment-principle.md).
+- **Single Purpose Repository Principle:** Each module must focus on a single responsibility, producing a single, environment-agnostic artifact or service. See [Single Purpose Repository Principle](./principles/single-purpose-repository-principle.md).
+
 ## Module Types
 
 The repository supports several types of Terraform modules, each with specific validation rules:
@@ -27,6 +34,11 @@ The repository supports several types of Terraform modules, each with specific v
 5. **Skeleton Modules**
    - No specific content restrictions
    - Located in `skeletons/`
+
+## Provider Strategy
+
+- Always use the latest stable official provider.
+- If a required feature/bugfix is missing, fork the provider, follow best practices for forking, and upstream changes when possible. See [CONTRIBUTING.md](../CONTRIBUTING.md) for the provider forking workflow.
 
 ## Validation Process
 
@@ -140,3 +152,11 @@ To add validation for a new module type:
 
 2. Create a new policy directory: `policies/opa/terraform_module_types/new-type/`
 3. Add Rego policies with appropriate rules
+
+## Documentation
+- [Module Structure](terraform-module-structure.md)
+- [Module Policies](terraform-module-policies.md)
+- [Testing Requirements](terraform-module-testing.md)
+- [Complete Workflow Logic](WORKFLOW_LOGIC.md)
+- [Main Validation SDLC Guide](main-validation-sdlc.md)
+- [Contributing Guidelines](CONTRIBUTING.md)

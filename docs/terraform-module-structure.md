@@ -123,3 +123,45 @@ To create a new module that follows these requirements:
    ```bash
    make module-validate MODULE_PATH=your-new-module MODULE_TYPE=<module_type>
    ```
+
+## Documentation
+- [Module Structure](terraform-module-structure.md)
+- [Module Policies](terraform-module-policies.md)
+- [Testing Requirements](terraform-module-testing.md)
+- [Complete Workflow Logic](WORKFLOW_LOGIC.md)
+- [Main Validation SDLC Guide](main-validation-sdlc.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+
+## Repository Principles
+
+This monorepo enforces the following principles for all modules and services:
+
+- **Self-Contained Repository Deployment Principle:** Every module must be self-contained, including all code, tests, and pipeline logic needed for deployment and validation. See [Self-Contained Repository Deployment Principle](./principles/self-contained-repository-deployment-principle.md).
+- **Single Purpose Repository Principle:** Each module must focus on a single responsibility, producing a single, environment-agnostic artifact or service. See [Single Purpose Repository Principle](./principles/single-purpose-repository-principle.md).
+- **Poly Repo and Future Mono Repo Support:** This monorepo currently supports a nested poly-repo strategy for module development and deployment. All nested repos will be required to adhere to the same self-contained and single-purpose strategies described here.
+
+## Module Types
+
+- **Primitive Module:**
+  - Manages a single major resource type from a provider (e.g., S3, ECS, EC2). Resource blocks are permitted. Must be agnostic, use official providers, and follow the latest skeleton and repo policies. Primitive modules are not a composition of multiple resources or services—they map directly to a single core resource type.
+
+- **Collection Module:**
+  - A composition of primitive modules and/or other collection modules. Collection modules can only import other modules (OPA enforced) and cannot contain resource blocks. They provide an opinionated, specialized set of resources to support a use case (e.g., EKS cluster integrated with SumoLogic or Datadog). They do not provide a full reference architecture but are designed to be integrated with reference modules for more complex use cases.
+
+- **Reference Module:**
+  - Provides a fully baked, production-ready service that is secure, observable, follows best practices, and modern architecture patterns. Reference modules are a starting point for what good looks like, are known to work reliably, and provide everything needed to serve a function in production.
+
+- **Utility Module:**
+  - Adds opinionated functionality (e.g., naming/tagging) or provides data-only structures (such as resource naming constraints for every AWS resource). No resource blocks. Must be agnostic and live in this monorepo.
+
+- **Client Wrapper Module:**
+  - Client-specific wrapper that imports reference modules and adds custom logic. Must live in the client’s repo and follow the same structure/testing standards.
+
+## Provider Strategy
+
+- Always use the latest stable official provider.
+- If a required feature/bugfix is missing, fork the provider, follow best practices for forking, and upstream changes when possible. See [CONTRIBUTING.md](../CONTRIBUTING.md) for the provider forking workflow.
+
+## Terragrunt Usage
+
+Terragrunt may be used in downstream consumer repositories for orchestration, but all Terraform logic must reside in this monorepo. Terragrunt HCL should only be used for orchestration, not for defining resource logic.

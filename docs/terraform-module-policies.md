@@ -135,3 +135,46 @@ This document outlines the policies enforced for all Terraform modules in this r
 1. **Standard Makefile**
    - The Makefile must match the content of the skeleton Makefile
    - No modifications to the Makefile are allowed
+
+## Documentation
+- [Module Structure](terraform-module-structure.md)
+- [Module Policies](terraform-module-policies.md)
+- [Testing Requirements](terraform-module-testing.md)
+- [Complete Workflow Logic](WORKFLOW_LOGIC.md)
+- [Main Validation SDLC Guide](main-validation-sdlc.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+
+## Repository Principles
+
+This monorepo enforces the following principles for all modules and services:
+
+- **Self-Contained Repository Deployment Principle:** Every module must be self-contained, including all code, tests, and pipeline logic needed for deployment and validation. See [Self-Contained Repository Deployment Principle](./principles/self-contained-repository-deployment-principle.md).
+- **Single Purpose Repository Principle:** Each module must focus on a single responsibility, producing a single, environment-agnostic artifact or service. See [Single Purpose Repository Principle](./principles/single-purpose-repository-principle.md).
+
+## Module Types
+
+- **Primitive Module:**
+  - Manages a single major resource type from a provider (e.g., S3, ECS, EC2). Resource blocks are permitted. Must be agnostic, use official providers, and follow the latest skeleton and repo policies. Primitive modules are the most complex and where most raw development occurs. They require the highest level of expertise and scrutiny, as mistakes here can introduce security or compliance risks.
+
+- **Collection Module:**
+  - A composition of primitive modules and/or other collection modules. Collection modules can only import other modules (OPA enforced) and cannot contain resource blocks. They are less complex than primitives, and are designed to provide specialized, opinionated sets of resources for use cases (e.g., EKS cluster with SumoLogic integration). Collections are safer for less experienced consumers, as they cannot introduce new resource blocks or bypass security controls.
+
+- **Reference Module:**
+  - Provides a fully baked, production-ready service that is secure, observable, follows best practices, and modern architecture patterns. Reference modules are less complex than primitives, and are intended as the main entry point for most consumers. They offer a high degree of confidence, as they are fully tested for security, policy, governance, linting, formatting, and functional testing. Most users will consume reference or collection modules, not primitives.
+
+- **Utility Module:**
+  - Adds opinionated functionality (e.g., naming/tagging) or provides data-only structures (such as resource naming constraints for every AWS resource). No resource blocks. Must be agnostic and live in this monorepo.
+
+- **Client Wrapper Module:**
+  - Client-specific wrapper that imports reference modules and adds custom logic. Must live in the client’s repo and follow the same structure/testing standards.
+
+> **Note:** This module organization schema is intentionally layered by complexity. Most consumers should use reference or collection modules, which are less complex and safer by design. The everything-as-a-module approach ensures that consumers can import modules that have already passed all security, policy, governance, linting, formatting, and functional testing, without needing to understand or modify the underlying complexity.
+
+## Provider Strategy
+
+- Always use the latest stable official provider.
+- If a required feature/bugfix is missing, fork the provider, follow best practices for forking, and upstream changes when possible. See [CONTRIBUTING.md](../CONTRIBUTING.md) for the provider forking workflow.
+
+## Terragrunt Usage
+
+Terragrunt may be used in downstream consumer repositories for orchestration, but all Terraform logic must reside in this monorepo. Terragrunt HCL should only be used for orchestration, not for defining resource logic.
