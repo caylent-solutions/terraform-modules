@@ -142,11 +142,33 @@ jobs:
           echo "## $NEW_TAG ($(date +'%Y-%m-%d'))" > "${MODULE}/CHANGELOG.md"
           echo "$COMMITS" | sed 's/^/* /' >> "${MODULE}/CHANGELOG.md"
 
+          # Create release branch and commit changes
+          BRANCH_NAME="release-$NEW_TAG"
+          git checkout -b "$BRANCH_NAME"
           git add "${MODULE}/VERSION" "${MODULE}/CHANGELOG.md"
           git commit -m "chore(release): $NEW_TAG"
+          git push origin "$BRANCH_NAME"
+
+          # Create PR and merge it
+          echo "🔀 Creating release PR..."
+          PR_BODY="Automated terraform module release PR for $NEW_TAG"
+          PR_URL=$(gh pr create --title "Release $NEW_TAG" --body "$PR_BODY" --base main --head "$BRANCH_NAME")
+          echo "Created PR: $PR_URL"
+          
+          echo "🔀 Auto-merging release PR..."
+          gh pr merge "$PR_URL" --admin --squash
+
+          # Tag the release
+          echo "🏷️ Creating release tag..."
+          git fetch --all
+          git checkout main
+          git pull origin main
           git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
-          git push origin HEAD
           git push origin "$NEW_TAG"
+
+          # Clean up release branch
+          echo "🧹 Cleaning up release branch..."
+          git push origin --delete "$BRANCH_NAME" || true
 
           notify_slack "$NEW_TAG"
           echo "✅ Terraform release complete"
