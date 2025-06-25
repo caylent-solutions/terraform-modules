@@ -40,7 +40,7 @@ module "generic_skeleton" {
 
 ---
 
-### 🏗 Coming Soon: Caylent Public Terraform Registry
+### Coming Soon: Caylent Public Terraform Registry
 
 You’ll soon be able to consume modules directly via a public Caylent registry:
 
@@ -56,16 +56,16 @@ _Stay tuned for release announcements._
 ## 📋 Table of Contents
 - [Who This Repo Is For](#-who-this-repo-is-for)
 - [How to Use: Sourcing & Importing Modules](#-how-to-use-sourcing--importing-modules)
-- [Coming Soon: Caylent Public Terraform Registry](#-coming-soon-caylent-public-terraform-registry)
+- [Coming Soon: Caylent Public Terraform Registry](#coming-soon-caylent-public-terraform-registry)
 - [Repository Structure](#-repository-structure)
 - [Governance](#-governance)
-- [Security](#-security)
+- [Security](#security)
 - [Repository Principles and Strategy](#-repository-principles-and-strategy)
 - [Module Types](#-module-types)
 - [Terraform Provider Strategy](#-terraform-provider-strategy)
 - [Module Structure](#-module-structure)
 - [Testing Requirements](#-testing-requirements)
-- [Configuration](#-configuration)
+- [Configuration](#configuration)
 - [Getting Started](#-getting-started)
 - [Workflow Development and Testing](#-workflow-development-and-testing)
 - [Repository Health Checks](#-repository-health-checks)
@@ -107,7 +107,7 @@ This repository implements governance policies to ensure consistent and maintain
 
 These policies are enforced using Open Policy Agent (OPA) in the CI/CD pipeline.
 
-## 🛡️ Security
+## Security
 
 This repository implements comprehensive security controls:
 
@@ -185,7 +185,7 @@ All modules must include comprehensive functional tests using the [Terraform Ter
 
 See [Module Testing](docs/terraform-module-testing.md) for detailed testing requirements and examples.
 
-## ⚙️ Configuration
+## Configuration
 
 All monorepo automation is configured through a single centralized file:
 
