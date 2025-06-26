@@ -1,6 +1,6 @@
 # Terraform Modules Documentation
 
-This directory contains documentation for the Terraform Modules repository.
+This directory contains documentation for the Terraform Modules repository.  It is organized by aspect, and primarily targeted at contributors to the repository. You should start with the [Contributing Guidelines](CONTRIBUTING.md) and then look into the details below after that.
 
 ## Security
 
