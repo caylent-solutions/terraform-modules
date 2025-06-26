@@ -50,4 +50,4 @@ This directory contains documentation for the Terraform Modules repository.  It 
 
 ## Contributing
 
-For information on how to contribute to this repository, see the [Contributing Guidelines](CONTRIBUTING.md) in the repository root.
+For information on how to contribute to this repository, see the [Contributing Guidelines](CONTRIBUTING.md).
