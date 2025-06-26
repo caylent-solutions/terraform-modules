@@ -146,11 +146,19 @@ Terragrunt may be used in downstream consumer repositories to orchestrate deploy
 
 This repository supports several types of Terraform modules, each with a specific purpose and scope:
 
-1. **Primitive Modules**: Manages a single major resource type from a provider (e.g., S3, ECS, EC2). Resource blocks are permitted. Must be agnostic, use official providers, and follow the latest skeleton and repo policies. Primitive modules are the most complex and where most raw development occurs. They require the highest level of expertise and scrutiny, as mistakes here can introduce security or compliance risks.
-2. **Utility Modules**: Adds opinionated functionality (e.g., naming/tagging) or provides data-only structures (such as resource naming constraints for every AWS resource). No resource blocks. Must be agnostic and live in this monorepo.
-3. **Collection Modules**: A composition of primitive modules and/or other collection modules. Collection modules can only import other modules (OPA enforced) and cannot contain resource blocks. They provide an opinionated, specialized set of resources to support a use case (e.g., EKS cluster integrated with SumoLogic or Datadog). They do not provide a full reference architecture but are designed to be integrated with reference modules for more complex use cases.
-4. **Reference Modules**: Provides a fully baked, production-ready service that is secure, observable, follows best practices, and modern architecture patterns. Reference modules are less complex than primitives, and are intended as the main entry point for most consumers. They offer a high degree of confidence, as they are fully tested for security, policy, governance, linting, formatting, and functional testing. Most users will consume reference or collection modules, not primitives.
-5. **Client Wrapper Modules**: Client-specific wrapper that imports reference modules and adds custom logic. Must live in the client’s repo and follow the same structure/testing standards.
+1. **Primitive Modules**:
+   - Manages a single major resource type from a provider (e.g., S3, ECS, EC2).
+   - These modules are the most complex and where most raw development occurs. 
+2. **Utility Modules**:
+   - Adds opinionated functionality (e.g., naming/tagging) or provides data-only structures (such as resource naming constraints for every AWS resource).
+3. **Collection Modules**:
+   - A composition of primitive modules and/or other collection modules.
+   - They provide an opinionated, specialized set of resources to support a use case (e.g., EKS cluster integrated with SumoLogic or Datadog).
+   - They do not provide a full reference architecture.
+4. **Reference Modules**:
+   - Provides a fully baked, production-ready service that is secure, observable, follows best practices, and modern architecture patterns. 
+5. **Client Wrapper Modules**:
+   - Client-specific wrapper that imports reference modules and adds custom logic. Must live in the client’s repo and follow the same structure/testing standards.
 
 All modules must:
 - Use the latest skeleton
