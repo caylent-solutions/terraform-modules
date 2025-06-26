@@ -179,11 +179,11 @@ If you must fork a provider:
 ## Module Types and Structure
 
 This repository contains different types of Terraform modules:
-- **Primitives**: Basic building blocks that manage a single AWS resource
-- **Collections**: Combinations of primitives that solve common use cases
-- **References**: Reference implementations for specific scenarios
-- **Utilities**: Helper modules for common tasks
-- **Skeletons**: Template modules for creating new modules
+- **Primitive Modules**: Manages a single major resource type from a provider (e.g., S3, ECS, EC2). Resource blocks are permitted. Must be agnostic, use official providers, and follow the latest skeleton and repo policies. Primitive modules are the most complex and where most raw development occurs. They require the highest level of expertise and scrutiny, as mistakes here can introduce security or compliance risks.
+- **Utility Modules**: Adds opinionated functionality (e.g., naming/tagging) or provides data-only structures (such as resource naming constraints for every AWS resource). No resource blocks. Must be agnostic and live in this monorepo.
+- **Collection Modules**: A composition of primitive modules and/or other collection modules. Collection modules can only import other modules (OPA enforced) and cannot contain resource blocks. They provide an opinionated, specialized set of resources to support a use case (e.g., EKS cluster integrated with SumoLogic or Datadog). They do not provide a full reference architecture but are designed to be integrated with reference modules for more complex use cases.
+- **Reference Modules**: Provides a fully baked, production-ready service that is secure, observable, follows best practices, and modern architecture patterns. Reference modules are less complex than primitives, and are intended as the main entry point for most consumers. They offer a high degree of confidence, as they are fully tested for security, policy, governance, linting, formatting, and functional testing. Most users will consume reference or collection modules, not primitives.
+- **Client Wrapper Modules**: Client-specific wrapper that imports reference modules and adds custom logic. Must live in the client’s repo and follow the same structure/testing standards.
 
 All modules must follow the [required structure](terraform-module-structure.md) and [policies](terraform-module-policies.md).
 

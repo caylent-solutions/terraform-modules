@@ -146,10 +146,19 @@ Terragrunt may be used in downstream consumer repositories to orchestrate deploy
 
 This repository supports several types of Terraform modules, each with a specific purpose and scope:
 
-1. **Primitive Modules**: Basic building blocks that manage a single resource type. Resource blocks are permitted. Must be agnostic and use official providers where possible.
-2. **Utility Modules**: Opinionated helpers that add functionality (e.g., naming/tagging). No resource blocks allowed. Must be agnostic and live in this monorepo.
-3. **Reference Modules**: Collections of primitives/utilities that provide a reference architecture or service. Must be agnostic and tested for integration.
-4. **Client Wrapper Modules**: Client-specific wrappers that import reference modules and add custom logic. Must live in the client’s repo and follow the same structure/testing standards.
+1. **Primitive Modules**:
+   - Manages a single major resource type from a provider (e.g., S3, ECS, EC2).
+   - These modules are the most complex and where most raw development occurs. 
+2. **Utility Modules**:
+   - Adds opinionated functionality (e.g., naming/tagging) or provides data-only structures (such as resource naming constraints for every AWS resource).
+3. **Collection Modules**:
+   - A composition of primitive modules and/or other collection modules.
+   - They provide an opinionated, specialized set of resources to support a use case (e.g., EKS cluster integrated with SumoLogic or Datadog).
+   - They do not provide a full reference architecture.
+4. **Reference Modules**:
+   - Provides a fully baked, production-ready service that is secure, observable, follows best practices, and modern architecture patterns. 
+5. **Client Wrapper Modules**:
+   - Client-specific wrapper that imports reference modules and adds custom logic. Must live in the client’s repo and follow the same structure/testing standards.
 
 All modules must:
 - Use the latest skeleton
