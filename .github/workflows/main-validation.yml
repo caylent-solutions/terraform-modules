@@ -1028,6 +1028,14 @@ jobs:
           done
           asdf reshim
           
+      - name: Configure AWS credentials for AWS modules
+        if: startsWith(needs.merge-approval-routing.outputs.module_path, 'providers/aws/')
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActions-PostMerge-${{ github.run_id }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+
       - name: Configure environment
         run: make configure
 
