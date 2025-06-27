@@ -42,12 +42,12 @@ clean-all: clean
 # Lint Go files in tests directory
 go-lint:
 	@echo "Linting Go files in tests directory..."
-	@go run ../../scripts/go-lint/main.go --path tests
+	@REPO_ROOT=$$(git rev-parse --show-toplevel) && go run $$REPO_ROOT/scripts/go-lint/main.go --path tests
 
 # Format Go files in tests directory
 go-format:
 	@echo "Formatting Go files in tests directory..."
-	@go run ../../scripts/go-format/main.go --path tests
+	@REPO_ROOT=$$(git rev-parse --show-toplevel) && go run $$REPO_ROOT/scripts/go-format/main.go --path tests
 
 # Generate Terraform documentation
 tf-docs:
@@ -133,7 +133,7 @@ tf-test:
 
 # Run all tests (not fixing tasks)
 test-all:
-	@echo "Running all tests..."
+	@make clean-all
 	@make go-lint
 	@make go-format
 	@make tf-docs-check
