@@ -122,6 +122,7 @@ jobs:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
           role-session-name: GitHubActions-Nuke-${{ github.run_id }}
           aws-region: us-east-1
+          audience: sts.amazonaws.com
 
       - name: Install ASDF
         run: |
@@ -196,8 +197,16 @@ jobs:
           if [ -n "${{ github.event.inputs.regions_override }}" ]; then
             echo "🌍 Using regions override: ${{ github.event.inputs.regions_override }}"
             
-            # Convert comma-separated regions to YAML array and replace
-            REGIONS_YAML=$(echo "${{ github.event.inputs.regions_override }}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | yq -n '[inputs]')
+            # Convert comma-separated regions to YAML array
+            IFS=',' read -ra REGIONS <<< "${{ github.event.inputs.regions_override }}"
+            REGIONS_YAML="["
+            for i in "${!REGIONS[@]}"; do
+              REGIONS_YAML+="\"${REGIONS[i]}\""
+              if [ $i -lt $((${#REGIONS[@]} - 1)) ]; then
+                REGIONS_YAML+=","
+              fi
+            done
+            REGIONS_YAML+="]"
             yq eval ".regions = $REGIONS_YAML" -i aws-nuke-config-temp.yaml
           fi
           
@@ -239,8 +248,16 @@ jobs:
           if [ -n "${{ github.event.inputs.regions_override }}" ]; then
             echo "🌍 Using regions override: ${{ github.event.inputs.regions_override }}"
             
-            # Convert comma-separated regions to YAML array and replace
-            REGIONS_YAML=$(echo "${{ github.event.inputs.regions_override }}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | yq -n '[inputs]')
+            # Convert comma-separated regions to YAML array
+            IFS=',' read -ra REGIONS <<< "${{ github.event.inputs.regions_override }}"
+            REGIONS_YAML="["
+            for i in "${!REGIONS[@]}"; do
+              REGIONS_YAML+="\"${REGIONS[i]}\""
+              if [ $i -lt $((${#REGIONS[@]} - 1)) ]; then
+                REGIONS_YAML+=","
+              fi
+            done
+            REGIONS_YAML+="]"
             yq eval ".regions = $REGIONS_YAML" -i aws-nuke-config-temp.yaml
           fi
           
