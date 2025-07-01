@@ -167,8 +167,6 @@ jobs:
 
       - name: Run AWS Nuke (Dry Run Preview)
         if: ${{ github.event_name == 'schedule' || github.event.inputs.dry_run == 'true' }}
-        env:
-          AWS_PROFILE: platform-qa
         run: |
           echo "🧪 Running AWS Nuke in DRY RUN mode to preview what would be deleted..."
           
@@ -211,14 +209,14 @@ jobs:
           fi
           
           echo "🚀 Executing: aws-nuke $NUKE_ARGS"
+          echo "📝 Final config:"
+          cat aws-nuke-config-temp.yaml
           
           # Execute with timeout
           timeout 3600 aws-nuke $NUKE_ARGS || echo "⚠️ AWS Nuke completed (exit code $? is often normal due to protected resources)"
 
       - name: Run AWS Nuke (Real Execution)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false' }}
-        env:
-          AWS_PROFILE: platform-qa
         run: |
           echo "💥 Running AWS Nuke in REAL mode - actually deleting resources..."
           echo "⚠️  This will PERMANENTLY DELETE AWS resources!"
@@ -262,6 +260,8 @@ jobs:
           fi
           
           echo "🚀 Executing: aws-nuke $NUKE_ARGS"
+          echo "📝 Final config:"
+          cat aws-nuke-config-temp.yaml
           
           # Execute with timeout
           timeout 3600 aws-nuke $NUKE_ARGS || echo "⚠️ AWS Nuke completed (exit code $? is often normal due to protected resources)"
