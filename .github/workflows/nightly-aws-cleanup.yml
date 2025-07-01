@@ -184,8 +184,13 @@ jobs:
 
           if [ -z "$REGIONS_OVERRIDE" ]; then
             echo "💉 Injecting account number and blocklist..."
-            yq eval "del(.accounts) | .accounts[\"$ACCOUNT_NUMBER\"] = {\"presets\": [\"complete-destruction\"]}" -i aws-nuke-config-temp.yaml
-            BLOCKLIST_YAML=$(echo "$AWS_NUKE_BLOCKLIST" | yq -p=json '.')
+          
+            # Build dynamic yq expression for account injection
+            ACCOUNT_EXPR=".accounts[\"$ACCOUNT_NUMBER\"] = {\"presets\": [\"complete-destruction\"]}"
+            yq eval "del(.accounts) | $ACCOUNT_EXPR" -i aws-nuke-config-temp.yaml
+          
+            # Convert blocklist string (assumed JSON array) to YAML using yq
+            BLOCKLIST_YAML=$(echo "$AWS_NUKE_BLOCKLIST" | yq -p=json -o=yaml '.')
             yq eval ".blocklist = $BLOCKLIST_YAML" -i aws-nuke-config-temp.yaml
           fi
 
@@ -230,12 +235,13 @@ jobs:
 
           if [ -z "$REGIONS_OVERRIDE" ]; then
             echo "💉 Injecting account number and blocklist..."
-            yq eval "del(.accounts) | .accounts[\"$ACCOUNT_NUMBER\"] = {\"presets\": [\"complete-destruction\"]}" -i aws-nuke-config-temp.yaml
-            
+ 
             # Inject account number
-
+            ACCOUNT_EXPR=".accounts[\"$ACCOUNT_NUMBER\"] = {\"presets\": [\"complete-destruction\"]}"
+            yq eval "del(.accounts) | $ACCOUNT_EXPR" -i aws-nuke-config-temp.yaml
+ 
             # Inject blocklist
-            BLOCKLIST_YAML=$(echo "$AWS_NUKE_BLOCKLIST" | yq -p=json '.')
+            BLOCKLIST_YAML=$(echo "$AWS_NUKE_BLOCKLIST" | yq -p=json -o=yaml '.')
             yq eval ".blocklist = $BLOCKLIST_YAML" -i aws-nuke-config-temp.yaml
           fi
 
