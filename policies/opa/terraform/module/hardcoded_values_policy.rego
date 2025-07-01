@@ -53,9 +53,12 @@ contains_hardcoded_value(content) if {
 	regex.match(`\w+\s*=\s*\d+`, content)
 }
 
-# Match hardcoded booleans
+# Match hardcoded booleans (excluding lifecycle blocks)
 contains_hardcoded_value(content) if {
 	regex.match(`\w+\s*=\s*(true|false)`, content)
+
+	# Exclude lifecycle blocks which require literal values
+	not regex.match(`lifecycle\s*\{[^}]*create_before_destroy\s*=\s*(true|false)[^}]*\}`, content)
 }
 
 # Match hardcoded JSON-style maps
