@@ -10,16 +10,16 @@ install:
 	@asdf reshim golang || true
 	@echo "Dependencies installed successfully"
 
-# Run all tests with clean cache
+# Run all tests with clean cache and timeout
 test:
 	@echo "Cleaning Go test cache..."
 	@go clean -cache -testcache
 	@echo "Cleaning up any existing Terraform state..."
 	@find . -name "terraform.tfstate*" -delete 2>/dev/null || true
 	@find . -type d -name ".terraform" -exec rm -rf {} + 2>/dev/null || true
-	@echo "Running all tests with clean cache..."
-	@echo "TERRATEST_IDEMPOTENCY=${TERRATEST_IDEMPOTENCY:-true}"
-	@export AWS_PROFILE=platform-qa && TERRATEST_IDEMPOTENCY=${TERRATEST_IDEMPOTENCY:-true} GOFLAGS="-count=1" tftest run --parallel-fixtures=false --parallel-tests=false
+	@echo "Running tests with clean cache..."
+	@echo "GO_TEST_TIMEOUT=$${GO_TEST_TIMEOUT:-not set}"
+	@tftest run --parallel-fixtures=false --parallel-tests=false GOFLAGS="-count=1"
 
 # Run common tests with clean cache
 test-common:
@@ -122,17 +122,21 @@ tf-security:
 	@echo "Checking for security issues..."
 	@tfsec .
 
-# Run Terraform tests
+# Run Terraform tests with required config file
 tf-test:
 	@echo "Running Terraform tests..."
 	@if [ -f "test.config" ]; then \
 		echo "Loading test configuration from test.config"; \
-		export $(grep -v '^#' test.config | xargs); \
-		TERRATEST_IDEMPOTENCY=${TERRATEST_IDEMPOTENCY:-true} make test; \
+		export $$(grep -v '^#' test.config | xargs); \
+		echo "Loaded environment variables:"; \
+		VAR_PATTERN=$$(grep -v '^#' test.config | cut -d= -f1 | paste -sd '|' -); \
+		printenv | grep -E "^($$VAR_PATTERN)="; \
+		make test; \
 	else \
-		echo "No test.config found, using default settings"; \
-		TERRATEST_IDEMPOTENCY=true make test; \
+		echo "Error: test.config not found. Aborting."; \
+		exit 1; \
 	fi
+
 
 # Run all tests (not fixing tasks)
 test-all:

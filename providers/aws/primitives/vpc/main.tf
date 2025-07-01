@@ -18,7 +18,34 @@ resource "aws_vpc" "vpc" {
   }
 }
 
-# VPC Flow Logs (optional)
+resource "aws_default_security_group" "this" {
+  vpc_id = aws_vpc.vpc.id
+
+  ingress = []
+  egress  = []
+
+  tags = local.common_tags
+}
+
+resource "aws_vpc_dhcp_options" "this" {
+  count = var.dhcp_options != null ? 1 : 0
+
+  domain_name_servers = (
+    var.dhcp_options != null && var.dhcp_options.domain_name_servers != null
+    ? var.dhcp_options.domain_name_servers
+    : ["AmazonProvidedDNS"]
+  )
+
+  tags = local.common_tags
+}
+
+resource "aws_vpc_dhcp_options_association" "this" {
+  count = var.dhcp_options != null ? 1 : 0
+
+  vpc_id          = aws_vpc.vpc.id
+  dhcp_options_id = aws_vpc_dhcp_options.this[0].id
+}
+
 resource "aws_flow_log" "vpc_flow_log" {
   count = var.enable_flow_logs ? 1 : 0
 
@@ -34,5 +61,7 @@ resource "aws_flow_log" "vpc_flow_log" {
     }
   )
 
-  depends_on = [aws_vpc.vpc]
+  depends_on = [
+    aws_vpc_dhcp_options_association.this
+  ]
 }

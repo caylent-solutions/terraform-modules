@@ -140,3 +140,11 @@ variable "flow_logs_name_suffix" {
   description = "(Optional) Suffix for flow logs name."
   default     = "flow-logs"
 }
+
+variable "dhcp_options" {
+  type = object({
+    domain_name_servers = optional(list(string))
+  })
+  description = "(Optional) DHCP options configuration. When null, uses AWS default DHCP options."
+  default     = null
+}
