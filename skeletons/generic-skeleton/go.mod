@@ -1,11 +1,9 @@
 module github.com/caylent-solutions/terraform-modules/skeletons/generic-skeleton
 
-go 1.23.0
-
-toolchain go1.23.9
+go 1.24.4
 
 require (
-	github.com/caylent-solutions/terraform-terratest-framework v1.2.0
+	github.com/caylent-solutions/terraform-terratest-framework v1.3.0
 	github.com/gruntwork-io/terratest v0.49.0
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.10.0

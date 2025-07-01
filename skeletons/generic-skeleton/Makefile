@@ -1,29 +1,44 @@
 .PHONY: install test test-common clean clean-all go-lint go-format tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test test-all help
 
+# Set GOARCH based on system architecture
+define set_goarch
+	ARCH=$$(uname -m); \
+	if [ "$$ARCH" = "aarch64" ]; then \
+		export GOARCH=arm64; \
+	elif [ "$$ARCH" = "x86_64" ]; then \
+		export GOARCH=amd64; \
+	fi
+endef
+
 # Install dependencies
 install:
 	@echo "Installing dependencies..."
-	@go clean -cache -testcache -modcache
-	@go mod tidy
-	@go mod download
-	@go install github.com/caylent-solutions/terraform-terratest-framework/cmd/tftest
+	@$(call set_goarch); \
+	echo "Detected architecture: $$ARCH, setting GOARCH=$$GOARCH"; \
+	go clean -cache -testcache -modcache; \
+	go mod tidy; \
+	go mod download; \
+	go install github.com/caylent-solutions/terraform-terratest-framework/cmd/tftest
 	@asdf reshim golang || true
 	@echo "Dependencies installed successfully"
 
-# Run all tests with clean cache
+# Run all tests with clean cache and timeout
 test:
 	@echo "Cleaning Go test cache..."
-	@go clean -cache -testcache
-	@echo "Running all tests with clean cache..."
-	@echo "TERRATEST_IDEMPOTENCY=${TERRATEST_IDEMPOTENCY:-true}"
-	@TERRATEST_IDEMPOTENCY=${TERRATEST_IDEMPOTENCY:-true} GOFLAGS="-count=1" tftest run --parallel-fixtures=false --parallel-tests=false
+	@$(call set_goarch); go clean -cache -testcache
+	@echo "Cleaning up any existing Terraform state..."
+	@find . -name "terraform.tfstate*" -delete 2>/dev/null || true
+	@find . -type d -name ".terraform" -exec rm -rf {} + 2>/dev/null || true
+	@echo "Running tests with clean cache..."
+	@echo "GO_TEST_TIMEOUT=$${GO_TEST_TIMEOUT:-not set}"
+	@$(call set_goarch); tftest run --parallel-fixtures=false --parallel-tests=false GOFLAGS="-count=1"
 
 # Run common tests with clean cache
 test-common:
 	@echo "Cleaning Go test cache..."
-	@go clean -cache -testcache
+	@$(call set_goarch); go clean -cache -testcache
 	@echo "Running common tests with clean cache..."
-	@. ~/.asdf/asdf.sh && TERRATEST_DISABLE_PARALLEL_TESTS=true go test ./tests/common -v -count=1
+	@$(call set_goarch); TERRATEST_DISABLE_PARALLEL_TESTS=true go test ./tests/common -v -count=1
 
 # Clean up temporary files
 clean:
@@ -36,18 +51,18 @@ clean:
 # Clean up everything including Go cache
 clean-all: clean
 	@echo "Cleaning Go cache..."
-	@go clean -cache -testcache
+	@$(call set_goarch); go clean -cache -testcache
 	@echo "All caches cleaned"
 
 # Lint Go files in tests directory
 go-lint:
 	@echo "Linting Go files in tests directory..."
-	@go run ../../scripts/go-lint/main.go --path tests
+	@$(call set_goarch); REPO_ROOT=$$(git rev-parse --show-toplevel) && go run $$REPO_ROOT/scripts/go-lint/main.go --path tests
 
 # Format Go files in tests directory
 go-format:
 	@echo "Formatting Go files in tests directory..."
-	@go run ../../scripts/go-format/main.go --path tests
+	@$(call set_goarch); REPO_ROOT=$$(git rev-parse --show-toplevel) && go run $$REPO_ROOT/scripts/go-format/main.go --path tests
 
 # Generate Terraform documentation
 tf-docs:
@@ -119,21 +134,25 @@ tf-security:
 	@echo "Checking for security issues..."
 	@tfsec .
 
-# Run Terraform tests
+# Run Terraform tests with required config file
 tf-test:
 	@echo "Running Terraform tests..."
 	@if [ -f "test.config" ]; then \
 		echo "Loading test configuration from test.config"; \
-		export $(grep -v '^#' test.config | xargs); \
-		TERRATEST_IDEMPOTENCY=${TERRATEST_IDEMPOTENCY:-true} make test; \
+		export $$(grep -v '^#' test.config | xargs); \
+		echo "Loaded environment variables:"; \
+		VAR_PATTERN=$$(grep -v '^#' test.config | cut -d= -f1 | paste -sd '|' -); \
+		printenv | grep -E "^($$VAR_PATTERN)="; \
+		make test; \
 	else \
-		echo "No test.config found, using default settings"; \
-		TERRATEST_IDEMPOTENCY=true make test; \
+		echo "Error: test.config not found. Aborting."; \
+		exit 1; \
 	fi
+
 
 # Run all tests (not fixing tasks)
 test-all:
-	@echo "Running all tests..."
+	@make clean-all
 	@make go-lint
 	@make go-format
 	@make tf-docs-check
