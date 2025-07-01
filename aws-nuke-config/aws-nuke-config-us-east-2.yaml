@@ -1,0 +1,44 @@
+---
+# AWS Nuke Configuration for Platform QA Account - US East 1 Only
+regions:
+  - us-east-2
+
+# Protected accounts that cannot be nuked (injected at runtime)
+blocklist: []
+
+# Account-specific configurations (injected at runtime)
+accounts: {}
+
+# Presets define filters for resource protection
+presets:
+  complete-destruction:
+    filters:
+      # Protect critical IAM roles from deletion
+      IAMRole:
+        - property: RoleName
+          type: exact
+          value: OrganizationAccountAccessRole
+        - property: RoleName
+          type: exact
+          value: gh-actions-terraform-modules-pr-main-validation
+      
+      # Protect AWS managed policies
+      IAMPolicy:
+        - property: Arn
+          type: glob
+          value: "arn:aws:iam::aws:policy/*"
+      
+      # Protect critical role policy attachments
+      IAMRolePolicyAttachment:
+        - property: RoleName
+          type: exact
+          value: OrganizationAccountAccessRole
+        - property: RoleName
+          type: exact
+          value: gh-actions-terraform-modules-pr-main-validation
+      
+      # Protect Control Tower CloudTrail
+      CloudTrailTrail:
+        - property: Name
+          type: exact
+          value: aws-controltower-BaselineCloudTrail

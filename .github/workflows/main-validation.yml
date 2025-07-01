@@ -985,6 +985,9 @@ jobs:
   post-merge-revalidation-terraform:
     name: Post-Merge Revalidation (Terraform)
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
     needs: 
       - merge-approval-routing
       - merge-approval-routing-terraform
@@ -1029,7 +1032,11 @@ jobs:
           asdf reshim
           
       - name: Configure AWS credentials for AWS modules
+<<<<<<< HEAD
         if: startsWith(needs.merge-approval-routing.outputs.module_path, 'providers/aws/')
+=======
+        if: needs.merge-approval-routing.outputs.is_terraform == 'true' && startsWith(needs.merge-approval-routing.outputs.module_path, 'providers/aws/')
+>>>>>>> origin/main
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
