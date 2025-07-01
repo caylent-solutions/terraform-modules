@@ -13,8 +13,8 @@ on:
         default: 'true'
         type: choice
         options:
-        - 'true'
-        - 'false'
+          - 'true'
+          - 'false'
       regions_override:
         description: 'Regions to target (comma-separated, leave empty for all regions)'
         required: false
@@ -53,13 +53,20 @@ jobs:
 
       - name: Check if user is GitHub admin
         uses: actions/github-script@v7
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'true' }}
+          REGIONS_OVERRIDE: ${{ github.event.inputs.regions_override }}
+          TRIGGERED_BY: ${{ github.event.inputs.triggered_by || github.actor }}
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
           script: |
             const username = context.actor;
-            
+            const dryRun = process.env.DRY_RUN;
+            const regionsOverride = process.env.REGIONS_OVERRIDE;
+            const triggeredBy = process.env.TRIGGERED_BY;
+        
             console.log(`🔍 Checking permissions for user: ${username}`);
-            
+        
             try {
               // Check if user has admin permissions on the repository
               const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
@@ -67,32 +74,26 @@ jobs:
                 repo: context.repo.repo,
                 username: username
               });
-              
-              const userPermission = permission.permission;
-              const isAdmin = userPermission === 'admin';
-              
-              console.log(`📋 User permission level: ${userPermission}`);
+        
+              const isAdmin = permission.permission === 'admin';
+              console.log(`📋 User permission level: ${permission.permission}`);
               console.log(`🔐 Is admin: ${isAdmin}`);
-              
+        
               if (!isAdmin) {
+                // Block execution for non-admins
                 console.log('\n🚨 SECURITY ALERT: Non-admin user attempting manual AWS cleanup!');
                 console.log(`❌ BLOCKING: User '${username}' does not have admin permissions.`);
                 console.log('\nOnly GitHub repository admins can manually trigger AWS cleanup for security reasons.');
-                
                 core.setFailed(`Access denied: User '${username}' must have admin permissions to manually trigger AWS cleanup`);
               } else {
+                // Grant access and log manual trigger details
                 console.log(`✅ Access granted: User '${username}' has admin permissions`);
-                
-                // Log the manual trigger details
-                const dryRun = '${{ github.event.inputs.dry_run || 'true' }}';
-                const regionsOverride = '${{ github.event.inputs.regions_override }}';
-                const triggeredBy = '${{ github.event.inputs.triggered_by || github.actor }}';
-                
+        
                 console.log('\n📊 Manual trigger details:');
                 console.log(`  🎯 Triggered by: ${triggeredBy}`);
                 console.log(`  🔍 Dry run: ${dryRun}`);
                 console.log(`  🌍 Regions override: ${regionsOverride || 'All regions from config'}`);
-                
+        
                 if (dryRun === 'false') {
                   console.log('\n⚠️  WARNING: This is a REAL execution - resources will be ACTUALLY DELETED!');
                 } else {
@@ -100,6 +101,7 @@ jobs:
                 }
               }
             } catch (error) {
+              // Handle failure to retrieve permission level
               console.log('❌ Unable to determine user permissions');
               console.log('Error:', error.message);
               core.setFailed('Unable to verify user permissions');
@@ -111,7 +113,7 @@ jobs:
     timeout-minutes: 60
     needs: [security-check]
     if: ${{ always() && (github.event_name == 'schedule' || needs.security-check.result == 'success') }}
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -167,36 +169,33 @@ jobs:
 
       - name: Run AWS Nuke (Dry Run Preview)
         if: ${{ github.event_name == 'schedule' || github.event.inputs.dry_run == 'true' }}
+        env:
+          ACCOUNT_NUMBER: ${{ vars.PLATFORM_QA_AWS_ACCOUNT_NUMBER }}
+          AWS_NUKE_BLOCKLIST: ${{ vars.AWS_NUKE_BLOCKLIST }}
+          REGIONS_OVERRIDE: ${{ github.event.inputs.regions_override }}
         run: |
           echo "🧪 Running AWS Nuke in DRY RUN mode to preview what would be deleted..."
-          
+
           # Change to config directory
           cd aws-nuke-config
           
           # Create temporary config and inject GitHub variables
           cp aws-nuke-config.yaml aws-nuke-config-temp.yaml
-          
-          # Inject account number and blocklist from GitHub variables
-          if [ -z "${{ github.event.inputs.regions_override }}" ]; then
-            echo "💉 Injecting account number and blocklist from GitHub variables..."
-            
-            # Inject account number
-            yq eval 'del(.accounts) | .accounts["${{ vars.PLATFORM_QA_AWS_ACCOUNT_NUMBER }}"] = {"presets": ["complete-destruction"]}' -i aws-nuke-config-temp.yaml
-            
-            # Inject blocklist
-            BLOCKLIST_YAML=$(echo '${{ vars.AWS_NUKE_BLOCKLIST }}' | yq -p=json '.')
+
+          if [ -z "$REGIONS_OVERRIDE" ]; then
+            echo "💉 Injecting account number and blocklist..."
+            yq eval "del(.accounts) | .accounts[\"$ACCOUNT_NUMBER\"] = {\"presets\": [\"complete-destruction\"]}" -i aws-nuke-config-temp.yaml
+            BLOCKLIST_YAML=$(echo "$AWS_NUKE_BLOCKLIST" | yq -p=json '.')
             yq eval ".blocklist = $BLOCKLIST_YAML" -i aws-nuke-config-temp.yaml
           fi
-          
+
           # Build command args (dry run is default, so no --no-dry-run flag)
           NUKE_ARGS="run --config ./aws-nuke-config-temp.yaml --force"
           
           # Add regions override if specified
-          if [ -n "${{ github.event.inputs.regions_override }}" ]; then
-            echo "🌍 Using regions override: ${{ github.event.inputs.regions_override }}"
-            
-            # Convert comma-separated regions to YAML array
-            IFS=',' read -ra REGIONS <<< "${{ github.event.inputs.regions_override }}"
+          if [ -n "$REGIONS_OVERRIDE" ]; then
+            echo "🌍 Overriding regions: $REGIONS_OVERRIDE"
+            IFS=',' read -ra REGIONS <<< "$REGIONS_OVERRIDE"
             REGIONS_YAML="["
             for i in "${!REGIONS[@]}"; do
               REGIONS_YAML+="\"${REGIONS[i]}\""
@@ -207,47 +206,48 @@ jobs:
             REGIONS_YAML+="]"
             yq eval ".regions = $REGIONS_YAML" -i aws-nuke-config-temp.yaml
           fi
-          
+
           echo "🚀 Executing: aws-nuke $NUKE_ARGS"
           echo "📝 Final config:"
           cat aws-nuke-config-temp.yaml
-          
-          # Execute with timeout
-          timeout 3600 aws-nuke $NUKE_ARGS || echo "⚠️ AWS Nuke completed (exit code $? is often normal due to protected resources)"
+          timeout 3600 aws-nuke $NUKE_ARGS || echo "⚠️ AWS Nuke exited with code $?"
 
       - name: Run AWS Nuke (Real Execution)
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false' }}
+        env:
+          ACCOUNT_NUMBER: ${{ vars.PLATFORM_QA_AWS_ACCOUNT_NUMBER }}
+          AWS_NUKE_BLOCKLIST: ${{ vars.AWS_NUKE_BLOCKLIST }}
+          REGIONS_OVERRIDE: ${{ github.event.inputs.regions_override }}
         run: |
-          echo "💥 Running AWS Nuke in REAL mode - actually deleting resources..."
+          echo "💥 Running AWS Nuke in REAL mode - DELETIONS will occur!"
           echo "⚠️  This will PERMANENTLY DELETE AWS resources!"
-          
+
           # Change to config directory
           cd aws-nuke-config
           
           # Create temporary config and inject GitHub variables
           cp aws-nuke-config.yaml aws-nuke-config-temp.yaml
-          
-          # Inject account number and blocklist from GitHub variables
-          if [ -z "${{ github.event.inputs.regions_override }}" ]; then
-            echo "💉 Injecting account number and blocklist from GitHub variables..."
+
+          if [ -z "$REGIONS_OVERRIDE" ]; then
+            echo "💉 Injecting account number and blocklist..."
+            yq eval "del(.accounts) | .accounts[\"$ACCOUNT_NUMBER\"] = {\"presets\": [\"complete-destruction\"]}" -i aws-nuke-config-temp.yaml
             
             # Inject account number
-            yq eval 'del(.accounts) | .accounts["${{ vars.PLATFORM_QA_AWS_ACCOUNT_NUMBER }}"] = {"presets": ["complete-destruction"]}' -i aws-nuke-config-temp.yaml
-            
+
             # Inject blocklist
-            BLOCKLIST_YAML=$(echo '${{ vars.AWS_NUKE_BLOCKLIST }}' | yq -p=json '.')
+            BLOCKLIST_YAML=$(echo "$AWS_NUKE_BLOCKLIST" | yq -p=json '.')
             yq eval ".blocklist = $BLOCKLIST_YAML" -i aws-nuke-config-temp.yaml
           fi
-          
+
           # Build command args for real execution
           NUKE_ARGS="run --config ./aws-nuke-config-temp.yaml --force --no-dry-run"
-          
+
           # Add regions override if specified
-          if [ -n "${{ github.event.inputs.regions_override }}" ]; then
-            echo "🌍 Using regions override: ${{ github.event.inputs.regions_override }}"
-            
+          if [ -n "$REGIONS_OVERRIDE" ]; then
+            echo "🌍 Overriding regions: $REGIONS_OVERRIDE"
+
             # Convert comma-separated regions to YAML array
-            IFS=',' read -ra REGIONS <<< "${{ github.event.inputs.regions_override }}"
+            IFS=',' read -ra REGIONS <<< "$REGIONS_OVERRIDE"
             REGIONS_YAML="["
             for i in "${!REGIONS[@]}"; do
               REGIONS_YAML+="\"${REGIONS[i]}\""
@@ -258,17 +258,16 @@ jobs:
             REGIONS_YAML+="]"
             yq eval ".regions = $REGIONS_YAML" -i aws-nuke-config-temp.yaml
           fi
-          
+
           echo "🚀 Executing: aws-nuke $NUKE_ARGS"
           echo "📝 Final config:"
           cat aws-nuke-config-temp.yaml
-          
           # Execute with timeout
-          timeout 3600 aws-nuke $NUKE_ARGS || echo "⚠️ AWS Nuke completed (exit code $? is often normal due to protected resources)"
+          timeout 3600 aws-nuke $NUKE_ARGS || echo "⚠️ AWS Nuke exited with code $?"
 
       - name: Cleanup Summary
         if: always()
         run: |
-          echo "✅ AWS Nuke cleanup completed"
-          echo "📊 Check the logs above for details on what resources were processed"
-          echo "⚠️  Any 'errors' shown are typically expected AWS protection mechanisms"
+          echo "✅ AWS Nuke cleanup complete"
+          echo "📊 See logs above for deleted resources"
+          echo "⚠️ Errors are normal if protected resources were skipped"
