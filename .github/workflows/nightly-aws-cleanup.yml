@@ -25,11 +25,6 @@ on:
         required: false
         default: 'Scheduled'
         type: string
-      branch:
-        description: 'Branch to run from (leave empty for default branch)'
-        required: false
-        default: ''
-        type: string
 
 concurrency:
   group: aws-nuke-cleanup
@@ -120,8 +115,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.branch || github.ref }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
