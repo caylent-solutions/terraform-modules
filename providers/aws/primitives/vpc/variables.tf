@@ -22,7 +22,7 @@ variable "ipv4_netmask_length" {
   default     = null
   validation {
     condition     = coalesce(var.ipv4_netmask_length, 1) > 0
-    error_message = "ipv4_netmask_length should be greather than 0"
+    error_message = "ipv4_netmask_length should be greater than 0"
   }
 }
 
