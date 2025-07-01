@@ -599,7 +599,7 @@ jobs:
         run: make tf-docs-check MODULE_PATH=${{ needs.validate.outputs.module_path }}
 
       - name: Configure AWS credentials for AWS modules
-        if: startsWith(needs.validate.outputs.module_path, 'providers/aws/')
+        if: needs.validate.outputs.is_module == 'true' && startsWith(needs.validate.outputs.module_path, 'providers/aws/')
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
@@ -775,7 +775,7 @@ jobs:
           asdf reshim
 
       - name: Configure AWS credentials for AWS modules
-        if: startsWith(needs.validate.outputs.module_path, 'providers/aws/')
+        if: needs.validate.outputs.is_module == 'true' && startsWith(needs.validate.outputs.module_path, 'providers/aws/')
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
@@ -840,7 +840,7 @@ jobs:
           asdf reshim
 
       - name: Configure AWS credentials for AWS modules
-        if: startsWith(needs.validate.outputs.module_path, 'providers/aws/')
+        if: needs.validate.outputs.is_module == 'true' && startsWith(needs.validate.outputs.module_path, 'providers/aws/')
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
