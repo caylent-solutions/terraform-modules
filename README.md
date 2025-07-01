@@ -321,6 +321,7 @@ See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed instructions.
 - [Contributing Guidelines](docs/CONTRIBUTING.md) - How to contribute and SDLC process
 - [Workflow Logic Documentation](docs/WORKFLOW_LOGIC.md) - Detailed CI/CD flow explanation
 - [Main Validation SDLC Guide](docs/main-validation-sdlc.md) - SDLC process for workflow maintenance
+- [AWS Authentication Integration](aws-authentication-integration.md) - How AWS authentication works with GitHub Actions for module testing
 
 ### Technical Documentation
 - [Terraform Module Structure](docs/terraform-module-structure.md)
@@ -331,6 +332,7 @@ See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed instructions.
 
 ### Scripts Documentation
 - [Scripts Documentation Index](docs/scripts/README.md) - Complete index of all scripts
+
 - [GitHub Actions Security Scripts](security-scripts/README.md) - Secure GitHub Actions management
 - [Detect Proposed Git Repo Changes](docs/scripts/detect-proposed-git-repo-changes.md)
 - [Go Format](docs/scripts/go-format.md)

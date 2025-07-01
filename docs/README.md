@@ -5,6 +5,7 @@ This directory contains documentation for the Terraform Modules repository.  It 
 ## Security
 
 - [GitHub Actions Security Scripts](../security-scripts/README.md) - Tools for maintaining secure GitHub Actions
+- [AWS Authentication Integration](aws-authentication-integration.md) - How AWS authentication works with GitHub Actions for module testing
 
 ## Workflow and Process
 
@@ -47,6 +48,7 @@ This directory contains documentation for the Terraform Modules repository.  It 
 - [Complete Workflow Logic](WORKFLOW_LOGIC.md)
 - [Main Validation SDLC Guide](main-validation-sdlc.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
+- [AWS Authentication Integration](aws-authentication-integration.md)
 
 ## Contributing
 

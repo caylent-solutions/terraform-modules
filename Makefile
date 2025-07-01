@@ -107,8 +107,6 @@ module-validate:
 	@echo "Validating $(MODULE_TYPE) module at $(MODULE_PATH)..."
 	@go run ./scripts/module-validator/main.go --module-path $(MODULE_PATH) --module-type $(MODULE_TYPE) --config ./monorepo-config.json $(if $(VERBOSE),--verbose,)
 
-
-
 # Run all Rego unit tests based on monorepo-config.json
 rego-unit-test:
 	@echo "Running Rego unit tests based on monorepo-config.json..."
@@ -375,4 +373,3 @@ tf-test:
 		echo "No test.config found, using default settings"; \
 		cd $(MODULE_PATH) && make test; \
 	fi
-	

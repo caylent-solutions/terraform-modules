@@ -598,6 +598,14 @@ jobs:
       - name: Check Terraform documentation is up-to-date
         run: make tf-docs-check MODULE_PATH=${{ needs.validate.outputs.module_path }}
 
+      - name: Configure AWS credentials for AWS modules
+        if: startsWith(needs.validate.outputs.module_path, 'providers/aws/')
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActions-PR-${{ github.run_id }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+
       - name: Run security checks
         run: make tf-security MODULE_PATH=${{ needs.validate.outputs.module_path }}
 
@@ -765,6 +773,14 @@ jobs:
             fi
           done
           asdf reshim
+
+      - name: Configure AWS credentials for AWS modules
+        if: startsWith(needs.validate.outputs.module_path, 'providers/aws/')
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActions-PR-Internal-${{ github.run_id }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
           
       - name: Configure environment
         run: |
@@ -822,6 +838,14 @@ jobs:
             fi
           done
           asdf reshim
+
+      - name: Configure AWS credentials for AWS modules
+        if: startsWith(needs.validate.outputs.module_path, 'providers/aws/')
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActions-PR-External-${{ github.run_id }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
           
       - name: Configure environment
         run: |
