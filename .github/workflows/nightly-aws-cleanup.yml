@@ -168,7 +168,7 @@ jobs:
           fi
 
       - name: Run AWS Nuke (Dry Run Preview)
-        if: ${{ github.event_name == 'schedule' || github.event.inputs.dry_run == 'true' }}
+        if: ${{ github.event.inputs.dry_run == 'true' }}
         env:
           ACCOUNT_NUMBER: ${{ vars.PLATFORM_QA_AWS_ACCOUNT_NUMBER }}
           AWS_NUKE_BLOCKLIST: ${{ vars.AWS_NUKE_BLOCKLIST }}
@@ -214,7 +214,7 @@ jobs:
           timeout 3600 aws-nuke $NUKE_ARGS || echo "⚠️ AWS Nuke exited with code $?"
 
       - name: Run AWS Nuke (Real Execution)
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false' }}
+        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false') }}
         env:
           ACCOUNT_NUMBER: ${{ vars.PLATFORM_QA_AWS_ACCOUNT_NUMBER }}
           AWS_NUKE_BLOCKLIST: ${{ vars.AWS_NUKE_BLOCKLIST }}

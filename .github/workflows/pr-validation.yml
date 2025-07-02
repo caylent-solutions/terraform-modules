@@ -605,6 +605,7 @@ jobs:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
           role-session-name: GitHubActions-PR-${{ github.run_id }}
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          audience: sts.amazonaws.com
 
       - name: Run security checks
         run: make tf-security MODULE_PATH=${{ needs.validate.outputs.module_path }}
@@ -781,6 +782,7 @@ jobs:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
           role-session-name: GitHubActions-PR-Internal-${{ github.run_id }}
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          audience: sts.amazonaws.com
           
       - name: Configure environment
         run: |
@@ -846,6 +848,7 @@ jobs:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
           role-session-name: GitHubActions-PR-External-${{ github.run_id }}
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          audience: sts.amazonaws.com
           
       - name: Configure environment
         run: |
