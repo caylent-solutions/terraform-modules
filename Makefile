@@ -373,3 +373,4 @@ tf-test:
 		echo "No test.config found, using default settings"; \
 		cd $(MODULE_PATH) && make test; \
 	fi
+	
