@@ -367,10 +367,13 @@ tf-test:
 	@echo "Running tests for Terraform module at $(MODULE_PATH)..."
 	@if [ -f "$(MODULE_PATH)/test.config" ]; then \
 		echo "Loading test configuration from $(MODULE_PATH)/test.config"; \
-		. $(MODULE_PATH)/test.config; \
-		cd $(MODULE_PATH) && TERRATEST_IDEMPOTENCY=$TERRATEST_IDEMPOTENCY make test; \
+		cd $(MODULE_PATH) && set -a && . ./test.config && set +a && \
+		echo "Loaded environment variables:" && \
+		VAR_PATTERN=$$(grep -v '^#' test.config | cut -d= -f1 | paste -sd '|' -) && \
+		printenv | grep -E "^($$VAR_PATTERN)=" && \
+		make test; \
 	else \
-		echo "No test.config found, using default settings"; \
-		cd $(MODULE_PATH) && make test; \
+		echo "Error: test.config not found. Aborting."; \
+		exit 1; \
 	fi
 	
