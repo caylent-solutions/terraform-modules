@@ -360,17 +360,20 @@ tf-security:
 # Usage: make tf-test MODULE_PATH=path/to/module
 # In CI: Called with MODULE_PATH from detect-module-changes
 tf-test:
-	@if [ -z "$(MODULE_PATH)" ]; then \
-		echo "Error: MODULE_PATH is required"; \
-		exit 1; \
-	fi
-	@echo "Running tests for Terraform module at $(MODULE_PATH)..."
-	@if [ -f "$(MODULE_PATH)/test.config" ]; then \
-		echo "Loading test configuration from $(MODULE_PATH)/test.config"; \
-		. $(MODULE_PATH)/test.config; \
-		cd $(MODULE_PATH) && TERRATEST_IDEMPOTENCY=$TERRATEST_IDEMPOTENCY make test; \
-	else \
-		echo "No test.config found, using default settings"; \
-		cd $(MODULE_PATH) && make test; \
-	fi
+  @if [ -z "$(MODULE_PATH)" ]; then \
+    echo "Error: MODULE_PATH is required"; \
+    exit 1; \
+  fi
+  @echo "Running tests for Terraform module at $(MODULE_PATH)..."
+  @if [ -f "$(MODULE_PATH)/test.config" ]; then \
+    echo "Loading test configuration from $(MODULE_PATH)/test.config"; \
+    cd $(MODULE_PATH) && set -a && . ./test.config && set +a && \
+    echo "Loaded environment variables:" && \
+    VAR_PATTERN=$$(grep -v '^#' test.config | cut -d= -f1 | paste -sd '|' -) && \
+    printenv | grep -E "^($$VAR_PATTERN)=" && \
+    make test; \
+  else \
+    echo "Error: test.config not found. Aborting."; \
+    exit 1; \
+  fi
 	
