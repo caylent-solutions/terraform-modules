@@ -1,8 +1,6 @@
 module github.com/caylent-solutions/terraform-modules/providers/aws/primitives/vpc
 
-go 1.23.0
-
-toolchain go1.23.9
+go 1.24.4
 
 require (
 	github.com/caylent-solutions/terraform-terratest-framework v1.3.0
