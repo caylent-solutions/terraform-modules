@@ -1038,6 +1038,7 @@ jobs:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
           role-session-name: GitHubActions-PostMerge-${{ github.run_id }}
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          audience: sts.amazonaws.com
 
       - name: Configure environment
         run: make configure
