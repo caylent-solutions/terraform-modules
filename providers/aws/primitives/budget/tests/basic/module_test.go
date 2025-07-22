@@ -17,22 +17,18 @@ func TestBudgetResourceExist(t *testing.T) {
 	helpers.AssertResourceExists(t, ctx.Terraform, "aws_budgets_budget")
 }
 
-// TestBudgetResourceCount tests that three budgets are created
-func TestBudgetResourceCount(t *testing.T) {
+// TestBasicBudgetConfiguration tests the basic Budget configuration
+func TestBasicBudgetConfiguration(t *testing.T) {
 	ctx := testctx.RunSingleExample(t, "../../examples", "basic", testctx.TestConfig{
-		Name: "basic-budget-resource-count-test",
+		Name: "basic-budget-config-test",
 	})
 
-	helpers.AssertResourceCountExact(t, ctx.Terraform, "aws_budgets_budget", 3)
-}
+	// Verify basic Budget properties
+	assertions.AssertOutputNotEmpty(t, ctx, "budget_name")
+	assertions.AssertOutputNotEmpty(t, ctx, "budget_arn")
+	assertions.AssertOutputMatches(t, ctx, "budget_arn", "^arn:aws:budgets::[0-9]{12}:budget/[^:\\\\]+$")
 
-// TestBudgetOutputmapKeys test that the budget names match the ones on the example
-func TestBudgetOutputmapKeys(t *testing.T) {
-	ctx := testctx.RunSingleExample(t, "../../examples", "basic", testctx.TestConfig{
-		Name: "basic-budget-monthly-cost-test",
-	})
-
-	assertions.AssertOutputMapContainsKey(t, ctx, "budgets", "monthly-cost-budget-basic")
-	assertions.AssertOutputMapContainsKey(t, ctx, "budgets", "linked-account-budget-basic")
-	assertions.AssertOutputMapContainsKey(t, ctx, "budgets", "all-options-budget-basic")
+	// Verify basic Budget functionalities
+	assertions.AssertOutputNotEmpty(t, ctx, "budget_notifications")
+	assertions.AssertOutputNotEmpty(t, ctx, "budget_cost_filter")
 }

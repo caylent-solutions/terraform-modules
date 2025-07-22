@@ -51,7 +51,7 @@ func TestTerraformFormat(t *testing.T) {
 // This test ensures that all required outputs are present in the module
 func TestRequiredOutputs(t *testing.T) {
 	examples := []string{"basic"}
-	requiredOutputs := []string{"budgets"}
+	requiredOutputs := []string{"budget_name", "budget_arn"}
 
 	for _, example := range examples {
 		t.Run(example, func(t *testing.T) {
@@ -85,7 +85,7 @@ func TestAllAssertionTypes(t *testing.T) {
 
 			// Basic Assertions
 			// Verify that the budgets output is not empty
-			assertions.AssertOutputNotEmpty(t, ctx, "budgets")
+			assertions.AssertOutputNotEmpty(t, ctx, "budget_arn")
 
 			// Environment Assertions
 			// Verify that the Terraform version is at least 1.12.0

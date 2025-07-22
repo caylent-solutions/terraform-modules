@@ -1,21 +1,20 @@
 
 resource "aws_budgets_budget" "this" {
-  for_each = local.budgets
 
-  name         = each.value.name
-  budget_type  = each.value.budget_type
-  limit_amount = each.value.limit_amount
-  time_unit    = each.value.time_unit
+  name         = var.name
+  budget_type  = var.budget_type
+  limit_amount = var.limit_amount
+  time_unit    = var.time_unit
 
   # Optionals
-  account_id        = each.value.account_id
-  limit_unit        = each.value.limit_unit
-  time_period_start = each.value.time_period_start
-  time_period_end   = each.value.time_period_end
+  account_id        = var.account_id
+  limit_unit        = var.limit_unit
+  time_period_start = var.time_period_start
+  time_period_end   = var.time_period_end
 
   dynamic "auto_adjust_data" {
-    for_each = each.value.auto_adjust_data != null ? try(tolist(each.value.auto_adjust_data), [
-      each.value.auto_adjust_data
+    for_each = var.auto_adjust_data != null ? try(tolist(var.auto_adjust_data), [
+      var.auto_adjust_data
     ]) : []
 
     content {
@@ -31,7 +30,7 @@ resource "aws_budgets_budget" "this" {
   }
 
   dynamic "cost_types" {
-    for_each = each.value.cost_types != null ? [each.value.cost_types] : []
+    for_each = var.cost_types != null ? [var.cost_types] : []
 
     content {
       include_credit             = cost_types.value.include_credit
@@ -48,7 +47,7 @@ resource "aws_budgets_budget" "this" {
   }
 
   dynamic "cost_filter" {
-    for_each = each.value.cost_filter != null ? each.value.cost_filter : {}
+    for_each = var.cost_filter != null ? var.cost_filter : {}
 
     content {
       name   = cost_filter.key
@@ -57,8 +56,8 @@ resource "aws_budgets_budget" "this" {
   }
 
   dynamic "notification" {
-    for_each = each.value.notification != null ? try(tolist(each.value.notification), [
-      each.value.notification
+    for_each = var.notification != null ? try(tolist(var.notification), [
+      var.notification
     ]) : []
 
     content {
