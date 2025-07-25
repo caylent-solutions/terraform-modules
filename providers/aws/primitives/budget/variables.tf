@@ -91,12 +91,6 @@ variable "notification" {
   default     = []
 }
 
-variable "enabled" {
-  type        = bool
-  description = "Whether to create the resources."
-  default     = true
-}
-
 variable "tags" {
   type        = map(string)
   default     = {}
