@@ -65,7 +65,6 @@ module "kms" {
 module "budget" {
   source = "../../"
 
-  enabled     = true
   name        = "all-options-budget-basic"
   budget_type = "COST"
   time_unit   = "MONTHLY"
