@@ -8,15 +8,13 @@ This directory contains helper functions that can be used across all tests.
 
 This file contains all helper functions for tests:
 
-#### File Validation
-
-- **VerifyFilePermissions**: Checks if a file has the expected permissions
-- **VerifyFileContent**: Checks if a file has the expected content
-
 #### Input Validation
 
 - **AssertInputMatchesOutput**: Verifies that a specific input variable matches the corresponding output
 - **AssertAllInputsMatchOutputs**: Verifies that all input variables match their corresponding outputs based on a provided mapping
+- **AssertResourceExists**: Verifies that the resource is created in the state
+- **AssertResourceCountExact**: Verifies that the resource exists in the state an exact amount of times
+
 
 ## Usage
 

@@ -71,9 +71,8 @@ func TestRequiredOutputs(t *testing.T) {
 	}
 }
 
-// TestAllAssertionTypes demonstrates all the assertion types available in the framework
-// This test runs on both the basic and advanced examples to verify various aspects of the module
-func TestAllAssertionTypes(t *testing.T) {
+// TestBasicAssertions tests the basic required configuration
+func TestBasicAssertions(t *testing.T) {
 	examples := []string{"basic"}
 
 	for _, example := range examples {

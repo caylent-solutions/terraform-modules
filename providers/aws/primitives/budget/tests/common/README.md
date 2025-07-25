@@ -11,22 +11,8 @@ This file contains tests that should run on all examples:
 1. **TestTerraformValidate**: Verifies that the Terraform code is syntactically valid
 2. **TestTerraformFormat**: Checks if the Terraform code is properly formatted
 3. **TestRequiredOutputs**: Ensures that all required outputs are defined
-4. **TestFileCreation**: Verifies that the module creates the output file as expected
-5. **TestAllAssertionTypes**: Demonstrates all the assertion types available in the framework:
-   - Basic Assertions: `AssertOutputEquals`, `AssertOutputContains`, `AssertOutputMatches`, `AssertOutputNotEmpty`
-   - File Assertions: `AssertFileExists`, `AssertFileContent`
-   - Resource Assertions: `AssertResourceExists`, `AssertResourceCount`, `AssertNoResourcesOfType`
-   - Environment Assertions: `AssertTerraformVersion`
-6. **TestBenchmarking**: Demonstrates how to benchmark Terraform operations
+4. **TestBasicAssertions**: Verifies basic configuration such as the terraform version and that outputs are created
 
-### `input_validation_test.go`
-
-This file contains tests that verify input variables match the provisioned resources:
-
-1. **TestInputsMatchProvisioned**: Verifies that the inputs provided in terraform.tfvars files match what was actually provisioned by Terraform
-   - Reads input values dynamically from terraform.tfvars files
-   - Compares these inputs with the actual outputs from Terraform
-   - Handles both simple string values and complex JSON structures
 
 ## Idempotency Testing
 

@@ -8,12 +8,9 @@ This directory contains tests specific to the basic example of the module.
 
 This file contains all tests specific to the basic example:
 
-1. **TestBasicOutput**: Tests the basic functionality of the module by verifying that the file is created with the correct content
-2. **TestBasicFilePermissions**: Tests that the file created by the basic example has the expected permissions (0644)
-3. **TestBasicContentFormat**: Verifies that the basic example creates a plain text file (not JSON)
-4. **AssertFilePermissions**: A custom assertion that checks if the file has the expected permissions
+1. **TestBudgetResourceExist**: Tests that the budget resource exists in the state
+2. **TestBasicBudgetConfiguration**: Tests that the budget module is created correctly and outputs the required values.  
 
-The custom assertion demonstrates how to extend the testing framework with your own assertions for specific requirements.
 
 ## Example Configuration
 
