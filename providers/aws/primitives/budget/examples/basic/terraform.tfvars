@@ -19,7 +19,7 @@ budgets = {
         threshold_type             = "PERCENTAGE"
         notification_type          = "ACTUAL"
         subscriber_email_addresses = ["your@email.com"]
-        subscriber_sns_topic_arns  = ["arn:aws:sns:us-east-1:131578276461:budget-alerts"]
+        subscriber_sns_topic_arns  = ["PLACEHOLDER_SNS_TOPIC_ARN"]
       }
     ]
   },
@@ -65,7 +65,7 @@ budgets = {
         threshold_type             = "PERCENTAGE"
         notification_type          = "ACTUAL"
         subscriber_email_addresses = ["your@email.com"]
-        subscriber_sns_topic_arns  = ["arn:aws:sns:us-east-1:131578276461:budget-alerts"]
+        subscriber_sns_topic_arns  = ["PLACEHOLDER_SNS_TOPIC_ARN"]
       },
       {
         comparison_operator        = "GREATER_THAN"
@@ -73,7 +73,7 @@ budgets = {
         threshold_type             = "PERCENTAGE"
         notification_type          = "FORECASTED"
         subscriber_email_addresses = ["your@email.com"]
-        subscriber_sns_topic_arns  = ["arn:aws:sns:us-east-1:131578276461:budget-alerts"]
+        subscriber_sns_topic_arns  = ["PLACEHOLDER_SNS_TOPIC_ARN"]
       }
     ]
   }
