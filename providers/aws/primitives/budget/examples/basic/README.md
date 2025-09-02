@@ -8,12 +8,14 @@ This directory contains a basic example of how to use the Budgets module with mi
 module "budget" {
   source = "../../"
 
-  budgets = [
-    name         = "monthly-cost-budget"
-    budget_type  = "COST"
-    limit_amount = 1000
-    time_unit    = "MONTHLY"
-  ]
+  budgets = {
+    monthly-cost-budget = {
+      name         = "monthly-cost-budget"
+      budget_type  = "COST"
+      limit_amount = 1000
+      time_unit    = "MONTHLY"
+    }
+  }
   tags = {
     ManagedBy = "terraform"
   }

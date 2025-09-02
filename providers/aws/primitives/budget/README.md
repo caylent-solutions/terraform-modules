@@ -14,12 +14,14 @@ This module is a simple abstraction on top of the aws_budgets_budget resource. I
 ```hcl
 module "budget" {
   source = "git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/primitives/budget?ref=providers/aws/primitives/vpc/v1.0.0"
-  budgets = [
-    name         = "monthly-cost-budget"
-    budget_type  = "COST"
-    limit_amount = 1000
-    time_unit    = "MONTHLY"
-  ]
+  budgets = {
+    monthly-cost-budget = {
+      name         = "monthly-cost-budget"
+      budget_type  = "COST"
+      limit_amount = 1000
+      time_unit    = "MONTHLY"
+    }
+  }
   tags = {
     ManagedBy = "terraform"
   }
@@ -95,23 +97,26 @@ module "kms" {
 module "budget" {
   source = "git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/primitives/budget?ref=providers/aws/primitives/vpc/v1.0.0"
 
-  budgets = [
-    name         = "monthly-cost-budget"
-    budget_type  = "COST"
-    limit_amount = 1000
-    time_unit    = "MONTHLY"
+  budgets = {
+     monthly-cost-budget = {
+      name         = "monthly-cost-budget"
+      budget_type  = "COST"
+      limit_amount = 1000
+      time_unit    = "MONTHLY"
 
-    notification = [
-      {
-        comparison_operator        = "GREATER_THAN"
-        threshold                  = 80
-        threshold_type             = "PERCENTAGE"
-        notification_type          = "ACTUAL"
-        subscriber_email_addresses = local.subscriber_email_addresses
-        subscriber_sns_topic_arns  = [module.sns_budget.topic_arn]
-      }
-    ]
-  ]
+      notification = [
+        {
+          comparison_operator        = "GREATER_THAN"
+          threshold                  = 80
+          threshold_type             = "PERCENTAGE"
+          notification_type          = "ACTUAL"
+          subscriber_email_addresses = local.subscriber_email_addresses
+          subscriber_sns_topic_arns  = [module.sns_budget.topic_arn]
+        }
+      ]
+
+    }
+  }
   tags = {
     ManagedBy = "terraform"
   }
