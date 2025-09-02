@@ -4,14 +4,14 @@ data "aws_region" "current" {}
 # Local values to construct dynamic SNS topic ARN
 locals {
   sns_topic_arn = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:budget-alerts"
-  
+
   # Transform budgets to replace placeholder SNS ARN with actual ARN
   budgets_with_dynamic_sns = {
     for k, v in var.budgets : k => merge(v, {
       notification = v.notification != null ? [
         for notification in v.notification : merge(notification, {
           subscriber_sns_topic_arns = notification.subscriber_sns_topic_arns != null ? [
-            for arn in notification.subscriber_sns_topic_arns : 
+            for arn in notification.subscriber_sns_topic_arns :
             arn == "PLACEHOLDER_SNS_TOPIC_ARN" ? local.sns_topic_arn : arn
           ] : null
         })
