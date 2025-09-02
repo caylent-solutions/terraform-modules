@@ -1,12 +1,12 @@
 # AWS Budget Terraform Module
 
-This module is a simple abstraction on top of the aws_budgets_budget resource. It allows you to create multiple budgets in a single module call. Take a look at the example for a handy reference and variables.tf for the full list of configurable options as well as some of the available values.
+This module is a simple abstraction on top of the [aws_budgets_budget](https://registry.terraform.io/providers/-/aws/latest/docs/resources/budgets_budget) resource. It allows you to create multiple budgets in a single module call. Take a look at the [example](./examples/basic/main.tf)  for a handy reference and [variables.tf](./variables.tf) for the full list of configurable options as well as some of the available values.
 
-## Key Features
-- Configure Cost or Usage-based budgets.
-- Establish which [cost types](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_budgets_CostTypes.html) the budget track.
-- Create [cost filters](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-create-filters.html) for the budget.
-- Set notification alerts when thresholds are met.
+## References
+
+- [Argument References](https://registry.terraform.io/providers/-/aws/latest/docs/resources/budgets_budget#argument-reference)
+- [Budget API Reference](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_budgets_Budget.html)
+
 
 ## Quick Start
 
@@ -27,7 +27,6 @@ module "budget" {
   }
 }
 ```
-
 
 ### Budget with notification
 ```hcl
