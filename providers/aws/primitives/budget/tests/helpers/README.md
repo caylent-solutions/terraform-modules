@@ -29,7 +29,7 @@ import (
     "github.com/gruntwork-io/terratest/modules/terraform"
 )
 
-// TestBudgetResourceExist tests that the budget exists in the state
+// TestExample tests that the budget exists in the state
 func TestExample(t *testing.T) {
 	ctx := testctx.RunSingleExample(t, "../../examples", "basic", testctx.TestConfig{
 		Name: "basic-test-resource-exist",
