@@ -10,7 +10,7 @@ This file contains all helper functions for tests:
 
 #### Input Validation
 
-- **AssertInputMatchesOutput**: Verifies that a specific input variable matches the corresponding output
+- **AssertInputsMapMatchOutputsMap**: Verifies that a specific input map variable matches the corresponding output map
 - **AssertAllInputsMatchOutputs**: Verifies that all input variables match their corresponding outputs based on a provided mapping
 - **AssertResourceExists**: Verifies that the resource is created in the state
 - **AssertResourceCountExact**: Verifies that the resource exists in the state an exact amount of times
@@ -29,27 +29,16 @@ import (
     "github.com/gruntwork-io/terratest/modules/terraform"
 )
 
+// TestBudgetResourceExist tests that the budget exists in the state
 func TestExample(t *testing.T) {
-    // Run your test
-    ctx := testctx.RunSingleExample(t, "../../examples", "example", testctx.TestConfig{
-        Name: "example-test",
-    })
-    
-    // Use the helpers
-    helpers.VerifyFilePermissions(t, "/path/to/file", 0644)
-    helpers.VerifyFileContent(t, "/path/to/file", "expected content")
-    
-    // Create a TestContext wrapper
-    testCtx := helpers.TestContext{
-        Terraform: ctx.Terraform,
-    }
-    
-    // Validate inputs match outputs
-    inputOutputMap := map[string]string{
-        "input_var1": "output_var1",
-        "input_var2": "output_var2",
-    }
-    helpers.AssertAllInputsMatchOutputs(t, testCtx, inputOutputMap)
+	ctx := testctx.RunSingleExample(t, "../../examples", "basic", testctx.TestConfig{
+		Name: "basic-test-resource-exist",
+	})
+
+	// Verify Budgets are created
+	helpers.AssertResourceExists(t, ctx.Terraform, "aws_budgets_budget")
+	helpers.AssertResourceCountExact(t, ctx.Terraform, "aws_budgets_budget", 2)
+
 }
 ```
 

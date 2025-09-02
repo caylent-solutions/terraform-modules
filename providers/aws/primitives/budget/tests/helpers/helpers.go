@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 
@@ -58,10 +57,6 @@ func AssertInputsMapMatchOutputsMap(t *testing.T, ctx TestContext, varFile strin
 
 			outputAttr, outputAttrExists := outputObj[attr]
 			assert.True(t, outputAttrExists, "Inputs.%q[%q].%q missing", inputOutputName, inputKey, attr)
-
-			if reflect.TypeOf(inputAttr).Kind() == reflect.Float64 {
-
-			}
 
 			assert.Equal(t, inputAttr, outputAttr, "Mismatch in %q.[%q].%q", inputOutputName, inputKey, attr)
 		}

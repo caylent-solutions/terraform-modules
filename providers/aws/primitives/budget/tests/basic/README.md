@@ -8,6 +8,8 @@ This directory contains tests specific to the basic example of the module.
 
 This file contains all tests specific to the basic example:
 
+1. **TestTerraformFormat**: Tests if the Terraform code is properly formatted.
+2. **TestTerraformValidate**: Tests ensures that the Terraform code is syntactically valid.  
 1. **TestBudgetResourceExist**: Tests that the budget resource exists in the state
 2. **TestBasicBudgetConfiguration**: Tests that the budget module is created correctly and outputs the required values.  
 
