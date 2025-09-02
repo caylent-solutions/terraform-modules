@@ -6,9 +6,7 @@ This directory contains tests for the Terraform module using the [Terraform Terr
 
 The tests are organized into the following directories:
 
-- **common/**: Tests that run on all examples
 - **basic/**: Tests for the basic example
-- **advanced/**: Tests for the advanced example
 - **helpers/**: Helper functions for tests
 
 ## Running Tests
