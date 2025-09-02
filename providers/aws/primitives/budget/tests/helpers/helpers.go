@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -15,21 +16,57 @@ type TestContext struct {
 	Terraform *terraform.Options
 }
 
-// AssertInputMatchesOutput verifies that a specific input variable matches the corresponding output
-func AssertInputMatchesOutput(t *testing.T, ctx TestContext, inputName string, outputName string) {
+// LoadTfVarFile returns the .tfvars file passed through the vf variable as a map[string]interface{}
+func LoadTfVarFile(t *testing.T, ctx TestContext, vf string) map[string]interface{} {
+
+	vars := map[string]interface{}{}
+	terraform.GetAllVariablesFromVarFile(t, vf, &vars)
+	return vars
+}
+
+// AssertInputsMapMatchOutputsMap verifies that an input map variables match their corresponding outputs map
+// This assumes that for each input variable, there is an output with the same name
+func AssertInputsMapMatchOutputsMap(t *testing.T, ctx TestContext, varFile string, inputOutputName string, attrList []string) {
 	// Convert our TestContext to the framework's TestContext to use GetVariableAsMap
-	frameworkCtx := testctx.TestContext{
-		Terraform: ctx.Terraform,
+
+	inputs := LoadTfVarFile(t, ctx, varFile)
+
+	inputMap, inputMapExists := inputs[inputOutputName].(map[string]interface{})
+	assert.True(t, inputMapExists, "Input variable '%s' should be of type object (map)", inputOutputName)
+
+	// Get all outputs
+	outputs := terraform.OutputAll(t, ctx.Terraform)
+	// outputMap := outputs[inputOutputName]
+
+	outputMap, outputMapExists := outputs[inputOutputName].(map[string]interface{})
+	assert.True(t, outputMapExists, "Output '%s' should be of type object (map)", inputOutputName)
+
+	// Verify each input-output pair
+	for inputKey, inputValue := range inputMap {
+		inputObj, inputValueExists := inputValue.(map[string]interface{})
+		assert.True(t, inputValueExists, "Inputs.%q[%q] must be an object", inputOutputName, inputKey)
+
+		outputValue, outputKeyExists := outputMap[inputKey]
+		assert.True(t, outputKeyExists, "outputs.%q is missing key %q", inputOutputName, inputKey)
+
+		outputObj, outputValueExists := outputValue.(map[string]interface{})
+		assert.True(t, outputValueExists, "outputs.%q[%q] must be an object", inputOutputName, outputValue)
+
+		for _, attr := range attrList {
+			inputAttr, inputAttrExists := inputObj[attr]
+			assert.True(t, inputAttrExists, "Inputs.%q[%q].%q missing", inputOutputName, inputKey, attr)
+
+			outputAttr, outputAttrExists := outputObj[attr]
+			assert.True(t, outputAttrExists, "Inputs.%q[%q].%q missing", inputOutputName, inputKey, attr)
+
+			if reflect.TypeOf(inputAttr).Kind() == reflect.Float64 {
+
+			}
+
+			assert.Equal(t, inputAttr, outputAttr, "Mismatch in %q.[%q].%q", inputOutputName, inputKey, attr)
+		}
+
 	}
-
-	// Get the input variable value using the framework's GetVariableAsMap method
-	inputValue := frameworkCtx.GetVariableAsMap()[inputName]
-
-	// Get the output value
-	outputValue := terraform.Output(t, ctx.Terraform, outputName)
-
-	// Verify that the input matches the output
-	assert.Equal(t, inputValue, outputValue, "Input '%s' should match output '%s'", inputName, outputName)
 }
 
 // AssertAllInputsMatchOutputs verifies that all input variables match their corresponding outputs

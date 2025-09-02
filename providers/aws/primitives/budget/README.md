@@ -1,7 +1,6 @@
 # AWS Budget Terraform Module
 
-A Terraform module for creating and managing AWS Budgets, in a simple way. 
-The module is basically a wrapper of the [aws_budgets_budget](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/budgets_budget) resource allowing an easy and straight forward usage.
+This module is a simple abstraction on top of the aws_budgets_budget resource. It allows you to create multiple budgets in a single module call. Take a look at the example for a handy reference and variables.tf for the full list of configurable options as well as some of the available values.
 
 ## Key Features
 - Configure Cost or Usage-based budgets.
@@ -15,11 +14,12 @@ The module is basically a wrapper of the [aws_budgets_budget](https://registry.t
 ```hcl
 module "budget" {
   source = "git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/primitives/budget?ref=providers/aws/primitives/vpc/v1.0.0"
-
-  name         = "monthly-cost-budget"
-  budget_type  = "COST"
-  limit_amount = 1000
-  time_unit    = "MONTHLY"
+  budgets = [
+    name         = "monthly-cost-budget"
+    budget_type  = "COST"
+    limit_amount = 1000
+    time_unit    = "MONTHLY"
+  ]
   tags = {
     ManagedBy = "terraform"
   }
@@ -95,20 +95,22 @@ module "kms" {
 module "budget" {
   source = "git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/primitives/budget?ref=providers/aws/primitives/vpc/v1.0.0"
 
-  name         = "monthly-cost-budget"
-  budget_type  = "COST"
-  limit_amount = 1000
-  time_unit    = "MONTHLY"
+  budgets = [
+    name         = "monthly-cost-budget"
+    budget_type  = "COST"
+    limit_amount = 1000
+    time_unit    = "MONTHLY"
 
-  notification = [
-    {
-      comparison_operator        = "GREATER_THAN"
-      threshold                  = 80
-      threshold_type             = "PERCENTAGE"
-      notification_type          = "ACTUAL"
-      subscriber_email_addresses = local.subscriber_email_addresses
-      subscriber_sns_topic_arns  = [module.sns_budget.topic_arn]
-    }
+    notification = [
+      {
+        comparison_operator        = "GREATER_THAN"
+        threshold                  = 80
+        threshold_type             = "PERCENTAGE"
+        notification_type          = "ACTUAL"
+        subscriber_email_addresses = local.subscriber_email_addresses
+        subscriber_sns_topic_arns  = [module.sns_budget.topic_arn]
+      }
+    ]
   ]
   tags = {
     ManagedBy = "terraform"

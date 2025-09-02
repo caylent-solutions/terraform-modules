@@ -28,15 +28,17 @@ module "sns_budget" {
       }
     }
   }
+  tags = var.tags
 }
 
 module "kms" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 1.0"
 
-  aliases     = ["aws-budgets"]
-  description = "KMS key for AWS Budgets"
-  key_usage   = "ENCRYPT_DECRYPT"
+  aliases                 = ["aws-budgets"]
+  description             = "KMS key for AWS Budgets"
+  key_usage               = "ENCRYPT_DECRYPT"
+  deletion_window_in_days = 7
 
   # Key policy
   key_statements = [
@@ -59,63 +61,15 @@ module "kms" {
       resources = ["*"]
     }
   ]
+  tags = var.tags
 }
 
 
 module "budget" {
-  source = "../../"
-
-  name        = "all-options-budget-basic"
-  budget_type = "COST"
-  time_unit   = "MONTHLY"
-  #   account_id   = "111111111111"
-  limit_unit        = "USD"
-  time_period_start = "2025-01-01_00:00"
-  time_period_end   = "2025-12-31_23:59"
-
-  auto_adjust_data = {
-    auto_adjust_type = "HISTORICAL"
-    historical_options = {
-      budget_adjustment_period = 3
-    }
-  }
-
-  cost_types = {
-    include_credit             = true
-    include_discount           = true
-    include_other_subscription = true
-    include_recurring          = true
-    include_refund             = false
-    include_subscription       = true
-    include_support            = true
-    include_tax                = true
-    include_upfront            = true
-    use_blended                = false
-  }
-
-  cost_filter = {
-    # TagKeyValue = ["Environment$Production"]
-    Region = ["us-east-1"]
-  }
-
-  notification = [
-    {
-      comparison_operator        = "GREATER_THAN"
-      threshold                  = 80
-      threshold_type             = "PERCENTAGE"
-      notification_type          = "ACTUAL"
-      subscriber_email_addresses = var.subscriber_email_addresses
-      subscriber_sns_topic_arns  = [module.sns_budget.topic_arn]
-    },
-    {
-      comparison_operator        = "GREATER_THAN"
-      threshold                  = 95
-      threshold_type             = "PERCENTAGE"
-      notification_type          = "FORECASTED"
-      subscriber_email_addresses = var.subscriber_email_addresses
-      subscriber_sns_topic_arns  = [module.sns_budget.topic_arn]
-    }
-  ]
+  source  = "../../"
+  budgets = var.budgets
 
   tags = var.tags
+
+  depends_on = [module.sns_budget]
 }
