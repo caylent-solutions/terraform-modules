@@ -7,7 +7,6 @@ This module is a simple abstraction on top of the [aws_budgets_budget](https://r
 - [Argument References](https://registry.terraform.io/providers/-/aws/latest/docs/resources/budgets_budget#argument-reference)
 - [Budget API Reference](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_budgets_Budget.html)
 
-
 ## Quick Start
 
 ### Basic Budget
