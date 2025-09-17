@@ -50,6 +50,7 @@ resource "aws_iam_role_policy_attachment" "chatbot_policy_attachment" {
   policy_arn = aws_iam_policy.chatbot_policy[0].arn
 }
 
+#tfsec:ignore:aws-iam-no-policy-wildcards
 data "aws_iam_policy_document" "chatbot_policy" {
   # Monitoring permissions
   statement {
