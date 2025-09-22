@@ -1,4 +1,6 @@
+#############################################
 # - Users and Groups -
+#############################################
 locals {
   # Create a new local variable by flattening the complex type given in the variable "sso_users"
   flatten_user_data = flatten([
@@ -61,10 +63,9 @@ locals {
   }
 }
 
-
-
-
+#############################################
 # - Permission Sets and Policies -
+#############################################
 locals {
   # - Fetch SSO Instance ARN and SSO Instance ID -
   ssoadmin_instance_arn = tolist(data.aws_ssoadmin_instances.sso_instance.arns)[0]
@@ -82,8 +83,6 @@ locals {
   inline_policy_permission_sets                         = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index.inline_policy) }
   permissions_boundary_aws_managed_permission_sets      = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index.permissions_boundary.managed_policy_arn) }
   permissions_boundary_customer_managed_permission_sets = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index.permissions_boundary.customer_managed_policy_reference) }
-
-
 
 
   # When using the 'for' expression in Terraform:
@@ -150,8 +149,9 @@ locals {
 
 }
 
-
+#############################################
 # - Account Assignments -
+#############################################
 locals {
 
   accounts_ids_maps = {
@@ -176,7 +176,7 @@ locals {
   ])
 
 
-  #  Convert the flatten_account_assignment_data tuple into a map.
+  # Convert the flatten_account_assignment_data tuple into a map.
   # Since we will be using this local in a for_each, it must either be a map or a set of strings
   principals_and_their_account_assignments = {
     for s in local.flatten_account_assignment_data : format("Type:%s__Principal:%s__Permission:%s__Account:%s", s.principal_type, s.principal_name, s.permission_set, s.account_id) => s
@@ -190,14 +190,4 @@ locals {
   this_users = [
     for user in var.sso_users : user.user_name
   ]
-
-  # List of permission sets, groups, and users that are defined in this module
-  # this_existing_permission_sets = keys(var.existing_permission_sets)
-  # this_existing_groups = [
-  #   for group in var.existing_sso_groups : group.group_name
-  # ]
-  # this_existing_google_sso_users = [
-  #   for user in var.existing_google_sso_users : user.user_name
-  # ]
-
 }
