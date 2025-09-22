@@ -15,7 +15,9 @@
 
 ---
 
-This module lets you apply [Control Tower Controls](https://docs.aws.amazon.com/controltower/latest/controlreference/introduction.html) to OUs. The module call looks like this:
+This module lets you apply [Control Tower Controls](https://docs.aws.amazon.com/controltower/latest/controlreference/introduction.html) to OUs.
+
+## Usage
 
 ```hcl
 locals {
