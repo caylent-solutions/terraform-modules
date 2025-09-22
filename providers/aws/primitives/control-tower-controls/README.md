@@ -138,13 +138,14 @@ This module is loosely based on [aws-samples/aws-control-tower-controls-terrafor
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.34.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.12.1 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.0.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.34.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.0.0 |
 
 ## Modules
 
@@ -158,6 +159,7 @@ No modules.
 | [aws_organizations_organization.org](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/organizations_organization) | data source |
 | [aws_organizations_organizational_units.level_2_children](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/organizations_organizational_units) | data source |
 | [aws_organizations_organizational_units.level_3_children](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/organizations_organizational_units) | data source |
+| [aws_organizations_organizational_units.level_4_children](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/organizations_organizational_units) | data source |
 | [aws_organizations_organizational_units.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/organizations_organizational_units) | data source |
 | [aws_region.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 
@@ -165,19 +167,10 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_map_ous_controls"></a> [map\_ous\_controls](#input\_map\_ous\_controls) | Mapping of OU groups to specific control configurations and OU targets | <pre>map(object({<br><br>    ou_ids = list(string)<br><br>    strongly_recommended_controls = optional(bool, false)<br>    elective_controls             = optional(bool, false)<br>    data_residency_controls       = optional(bool, false)<br><br>    # Controls identified by their NAME or CONTROL_CATALOG_OPAQUE_ID<br>    # Example = "AWS-GR_CT_AUDIT_BUCKET_POLICY_CHANGES_PROHIBITED" or "dmvclaluiuvtsmivvw5t7an1x"<br>    individual_controls = optional(list(string), [])<br>  }))</pre> | n/a | yes |
+| <a name="input_map_ous_controls"></a> [map\_ous\_controls](#input\_map\_ous\_controls) | Mapping of OU groups to specific control configurations and OU targets | <pre>map(object({<br/><br/>    ou_ids = list(string)<br/><br/>    strongly_recommended_controls = optional(bool, false)<br/>    elective_controls             = optional(bool, false)<br/>    data_residency_controls       = optional(bool, false)<br/><br/>    # Controls identified by their NAME or CONTROL_CATALOG_OPAQUE_ID<br/>    # Example = "AWS-GR_CT_AUDIT_BUCKET_POLICY_CHANGES_PROHIBITED" or "dmvclaluiuvtsmivvw5t7an1x"<br/>    individual_controls = optional(list(string), [])<br/>  }))</pre> | n/a | yes |
 
 ## Outputs
 
-No outputs.
-<!-- END_TF_DOCS -->
-
-## Releases
-
-This repository implements a label-based automated release workflow on pushes to the master branch. The full definition of this workflow can be found in the [terraform-ci](https://github.com/caylent/terraform-ci/blob/main/.github/workflows/merge_to_main.yaml) repository. The following labels are used by the workflow to determine the version incrementation, as well as what information is added to the changelog for the release:
-- The `major`, `minor`, and `patch` labels all increment the major, minor, or patch version number on the release.
-- The `internal`, `documentation`, `tests`, `dependencies`, and `performance` labels affect the information in the changelog.
-- __The `skip-release` label causes the Workflow to skip creating the release.__ If you do not intend to create a release when your pull request is merged, __USE THIS LABEL__.
-- If there is no label on the PR, then the resulting release behaviour defaults to `patch`.
-
-Full documentation for Auto can be found [here](https://intuit.github.io/auto/docs).
+| Name | Description |
+|------|-------------|
+| <a name="output_control_reference"></a> [control\_reference](#output\_control\_reference) | List of all available AWS Control Tower controls with descriptions. |
