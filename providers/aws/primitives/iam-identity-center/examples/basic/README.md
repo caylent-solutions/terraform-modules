@@ -2,6 +2,18 @@
 
 This directory contains a basic example of how to use the IAM Identity Center Terraform module.
 
+## Features
+
+- Dynamic User Creation
+- Dynamic Group Creation
+- Dynamic Group Membership Creation
+- Dynamic Permission Set Creation
+- Dynamic Account Assignment Creation
+- Dynamic Reference of Existing Users
+- Dynamic Reference of Existing Groups
+- AWS Managed Policy Support
+- Customer Managed Policy Support
+
 ## Important
 
 The example provided uses tfvars to comply with the test features required in this repository. However, a better strategy would be to use `locals` to define `account_ids` and `account_assignments`. This way you would only need to handle one reference to an account id and you'd be able to set the same local in the different account assignments for the different permission sets, avoiding the repetition of hardcoded values. Check out the Usage block below for a clear example:     

@@ -61,7 +61,7 @@ To resolve this, ensure your object and principal names are the same (case-sensi
 // This is a template file for a basic deployment.
 // Modify the parameters below with actual values
 
-module "aws-iam-identity-center" {
+module "iam_identity_center" {
   source = "../.."
 
   // Create desired GROUPS in IAM Identity Center
