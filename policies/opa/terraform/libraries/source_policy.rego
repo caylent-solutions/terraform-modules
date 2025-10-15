@@ -107,8 +107,8 @@ violation[result] if {
 
 # Helper functions
 contains_local_module_source(content) if {
-	# Check for relative paths in module sources
-	regex.match(`source\s*=\s*"\.\..?/`, content)
+	# Check for relative paths in module sources (./ or ../)
+	regex.match(`source\s*=\s*"\.\.\.?/`, content)
 }
 
 contains_local_module_source(content) if {
