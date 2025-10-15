@@ -48,13 +48,13 @@ The script reads configuration from the monorepo-config.json file:
 {
   "rego_tests": [
     "tests/opa/unit/global",
-    "tests/opa/unit/terraform/module",
+    "tests/opa/unit/terraform/libraries",
     "tests/opa/unit/terraform/module_types",
     "tests/opa/unit/terraform/provider"
   ],
   "rego_policy_dirs": {
     "tests/opa/unit/global": "policies/opa/global",
-    "tests/opa/unit/terraform/module": "policies/opa/terraform/module",
+    "tests/opa/unit/terraform/libraries": "policies/opa/terraform/libraries",
     "tests/opa/unit/terraform/module_types": "policies/opa/terraform/module_types",
     "tests/opa/unit/terraform/provider": "policies/opa/terraform/provider"
   },
@@ -85,7 +85,7 @@ Summary:
 Module                                     Coverage Statements
 ---------------------------------------- ---------- ----------
   tests/opa/unit/global                       79.5%         78
-  tests/opa/unit/terraform/module             99.0%        871
+  tests/opa/unit/terraform/libraries          99.0%        871
   tests/opa/unit/terraform/module_types       96.4%         84
   tests/opa/unit/terraform/provider           96.6%         58
 Total                                         97.3%       1091
@@ -104,7 +104,7 @@ The JSON coverage report provides a machine-readable summary in the following fo
       "statements": 78
     },
     {
-      "name": "tests/opa/unit/terraform/module",
+      "name": "tests/opa/unit/terraform/libraries",
       "coverage": 99.0,
       "statements": 871
     }

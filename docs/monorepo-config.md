@@ -89,7 +89,7 @@ List of rego test directories.
 ```json
 "rego_tests": [
   "tests/opa/unit/global",
-  "tests/opa/unit/terraform/module",
+  "tests/opa/unit/terraform/libraries",
   "tests/opa/unit/terraform/module_types",
   "tests/opa/unit/terraform/provider"
 ]
@@ -102,7 +102,7 @@ Maps test directories to their corresponding policy directories.
 ```json
 "rego_policy_dirs": {
   "tests/opa/unit/global": "policies/opa/global",
-  "tests/opa/unit/terraform/module": "policies/opa/terraform/module",
+  "tests/opa/unit/terraform/libraries": "policies/opa/terraform/libraries",
   "tests/opa/unit/terraform/module_types": "policies/opa/terraform/module_types",
   "tests/opa/unit/terraform/provider": "policies/opa/terraform/provider"
 }
@@ -122,8 +122,8 @@ List of additional policy directories to include when validating modules.
 
 ```json
 "module_validator_additional_policies": [
-  "tests/opa/unit/terraform/module",
-  "tests/opa/unit/terraform/provider"
+  "tests/opa/unit/terraform/provider",
+  "policies/opa/terraform/libraries"
 ]
 ```
 

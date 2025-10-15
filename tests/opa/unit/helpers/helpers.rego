@@ -9,5 +9,6 @@ mock_files_input(files) := {"files": files}
 # Helper function to create a mock input for terraform module tests
 mock_terraform_module_input(module_path, files) := {
 	"module_path": module_path,
+	"repo_path": module_path,
 	"files": files,
 }
