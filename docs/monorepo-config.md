@@ -25,31 +25,63 @@ List of root directories where modules are located.
 ]
 ```
 
-### module_types
+### provider
 
-Defines the different types of modules and their associated policies.
+Defines providers, their module types, and associated policies. The configuration is organized hierarchically: provider → module_types → type configuration.
 
 ```json
-"module_types": {
-  "skeleton": {
-    "path_patterns": ["skeletons/*"],
-    "policy_dir": "policies/opa/terraform/module_types/skeleton"
+"provider": {
+  "aws": {
+    "module_types": {
+      "primitive": {
+        "path_patterns": ["providers/aws/primitives/*"],
+        "policy_dir": "policies/opa/terraform/provider/aws/module_types/primitive"
+      },
+      "collection": {
+        "path_patterns": ["providers/aws/collections/*"],
+        "policy_dir": "policies/opa/terraform/provider/aws/module_types/collection"
+      },
+      "reference": {
+        "path_patterns": ["providers/aws/references/*"],
+        "policy_dir": "policies/opa/terraform/provider/aws/module_types/reference"
+      },
+      "data": {
+        "path_patterns": ["providers/aws/data/*"],
+        "policy_dir": "policies/opa/terraform/provider/aws/module_types/data"
+      }
+    }
   },
-  "utility": {
-    "path_patterns": ["generics/utilities/*"],
-    "policy_dir": "policies/opa/terraform/module_types/utility"
+  "github": {
+    "module_types": {
+      "primitive": {
+        "path_patterns": ["providers/github/primitives/*"],
+        "policy_dir": "policies/opa/terraform/provider/github/module_types/primitive"
+      },
+      "collection": {
+        "path_patterns": ["providers/github/collections/*"],
+        "policy_dir": "policies/opa/terraform/provider/github/module_types/collection"
+      },
+      "reference": {
+        "path_patterns": ["providers/github/references/*"],
+        "policy_dir": "policies/opa/terraform/provider/github/module_types/reference"
+      },
+      "data": {
+        "path_patterns": ["providers/github/data/*"],
+        "policy_dir": "policies/opa/terraform/provider/github/module_types/data"
+      }
+    }
   },
-  "primitive": {
-    "path_patterns": ["providers/*/primitives/*"],
-    "policy_dir": "policies/opa/terraform/module_types/primitive"
-  },
-  "collection": {
-    "path_patterns": ["providers/*/collections/*"],
-    "policy_dir": "policies/opa/terraform/module_types/collection"
-  },
-  "reference": {
-    "path_patterns": ["providers/*/references/*"],
-    "policy_dir": "policies/opa/terraform/module_types/reference"
+  "none": {
+    "module_types": {
+      "skeleton": {
+        "path_patterns": ["skeletons/*"],
+        "policy_dir": "policies/opa/terraform/provider/none/module_types/skeleton"
+      },
+      "utility": {
+        "path_patterns": ["generics/utilities/*"],
+        "policy_dir": "policies/opa/terraform/provider/none/module_types/utilities"
+      }
+    }
   }
 }
 ```
@@ -89,9 +121,7 @@ List of rego test directories.
 ```json
 "rego_tests": [
   "tests/opa/unit/global",
-  "tests/opa/unit/terraform/libraries",
-  "tests/opa/unit/terraform/module_types",
-  "tests/opa/unit/terraform/provider"
+  "tests/opa/unit/terraform/libraries"
 ]
 ```
 
@@ -103,8 +133,8 @@ Maps test directories to their corresponding policy directories.
 "rego_policy_dirs": {
   "tests/opa/unit/global": "policies/opa/global",
   "tests/opa/unit/terraform/libraries": "policies/opa/terraform/libraries",
-  "tests/opa/unit/terraform/module_types": "policies/opa/terraform/module_types",
-  "tests/opa/unit/terraform/provider": "policies/opa/terraform/provider"
+  "policies/opa/terraform/provider": "policies/opa/terraform/provider",
+  "policies/opa/terraform/libraries": "policies/opa/terraform/libraries"
 }
 ```
 
@@ -116,15 +146,12 @@ Directory containing rego helper files.
 "rego_helpers_dir": "tests/opa/unit/helpers"
 ```
 
-### module_validator_additional_policies
+### terraform_module_opa_library_bundle
 
-List of additional policy directories to include when validating modules.
+Path to the OPA library bundle containing shared policy libraries used by module validation.
 
 ```json
-"module_validator_additional_policies": [
-  "tests/opa/unit/terraform/provider",
-  "policies/opa/terraform/libraries"
-]
+"terraform_module_opa_library_bundle": "policies/opa/terraform/libraries"
 ```
 
 ### workflow_tests

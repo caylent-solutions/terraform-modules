@@ -11,6 +11,7 @@ Reusable OPA policies for Terraform module validation. These libraries are impor
 
 ### Module Structure & Organization
 - [File Organization Policy](docs/file_organization_policy.md) - Enforces proper file organization (variables, outputs, locals, etc.)
+- [Data File Organization Policy](docs/data_file_organization_policy.md) - Enforces file organization for data modules (optional files)
 - [Structure Policy](docs/structure_policy.md) - Validates required files and directories
 - [Structure Policy - Examples](docs/structure_policy_examples.md) - Validates example implementations
 - [Nested Modules Policy](docs/nested_modules_policy.md) - Prevents nested module structures
@@ -23,6 +24,15 @@ Reusable OPA policies for Terraform module validation. These libraries are impor
 
 ### Module Dependencies
 - [Source Policy](docs/source_policy.md) - Validates module sources and version constraints
+- [Composition Policy](docs/composition_policy.md) - Enforces composition module rules (no resources, requires modules)
+- [No Resources Policy](docs/no_resources_policy.md) - Prevents resource blocks in non-resource modules
+
+### Cloud Provider Restrictions
+- [AWS Only Provider Restriction Policy](docs/aws_only_provider_restriction_policy.md) - Enforces AWS-only cloud provider usage
+- [GitHub Only Provider Restriction Policy](docs/github_only_provider_restriction_policy.md) - Enforces GitHub-only cloud provider usage
+
+### Module Content Restrictions
+- [Data Sources Only Policy](docs/data_sources_only_policy.md) - Enforces data-only modules (no resources or modules)
 
 ### Testing Requirements
 - [Tests Policy](docs/tests_policy.md) - Enforces comprehensive testing with Terratest Framework
@@ -56,6 +66,11 @@ violation[result] if {
 | Tests Helpers | ✓ | ✓ | ✓ | - | - |
 | Version Constraint | ✓ | ✓ | ✓ | - | - |
 | Hardcoded Values | ✓ | ✓ | ✓ | ✗ | ✗ |
+| Composition | ✓ | - | ✓ | - | - |
+| No Resources | - | - | - | - | ✓ |
+| Data Sources Only | - | - | - | ✓ | - |
+| Data File Organization | - | - | - | ✓ | - |
+| AWS Only | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 **Legend:**
 - ✓ Applied

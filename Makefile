@@ -105,7 +105,7 @@ module-validate:
 		exit 1; \
 	fi
 	@echo "Validating $(MODULE_TYPE) module at $(MODULE_PATH)..."
-	@go run ./scripts/module-validator/main.go --module-path $(MODULE_PATH) --module-type $(MODULE_TYPE) --config ./monorepo-config.json $(if $(VERBOSE),--verbose,)
+	@go run ./scripts/module-validator/main.go --module-path $(MODULE_PATH) --module-type $(MODULE_TYPE) $(if $(PROVIDER),--provider $(PROVIDER),) --config ./monorepo-config.json $(if $(VERBOSE),--verbose,)
 
 # Run all Rego unit tests based on monorepo-config.json
 rego-unit-test:
@@ -162,7 +162,7 @@ rego-integration-test:
 	@echo "✅ Compliant module passed all policies"
 	@echo ""
 	@echo "Testing non-compliant module (should fail all policies)..."
-	make module-validate MODULE_PATH=tests/opa/test-fixture/non-compliant-tf-module MODULE_TYPE=skeleton | tee /tmp/non-compliant-test.log || true
+	make module-validate MODULE_PATH=tests/opa/test-fixture/non-compliant-tf-module MODULE_TYPE=skeleton PROVIDER=none | tee /tmp/non-compliant-test.log || true
 	@echo "Checking validation results..."
 	@grep -q "Passed:.*0 policy files" /tmp/non-compliant-test.log || (echo "❌ Non-compliant module has passing policies" && exit 1)
 	@grep -q "Errors:.*0 policy files" /tmp/non-compliant-test.log || (echo "❌ Non-compliant module has policy errors" && exit 1)
