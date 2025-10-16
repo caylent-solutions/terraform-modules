@@ -22,11 +22,19 @@ The script is primarily used in CI/CD pipelines to validate modules:
 go run scripts/module-validator/main.go --module-path providers/aws/primitives/s3-bucket --module-type primitive --config monorepo-config.json
 ```
 
+With explicit provider override:
+
+```bash
+go run scripts/module-validator/main.go --module-path tests/opa/test-fixture/non-compliant-tf-module --module-type skeleton --provider none --config monorepo-config.json
+```
+
 ## Command Line Options
 
 - `--module-path`: Path to the Terraform module (required)
 - `--module-type`: Type of the Terraform module (required)
+- `--provider`: Provider name (optional, auto-detected from path if not specified)
 - `--config`: Path to the monorepo configuration file (required)
+- `--verbose`: Enable verbose output for debugging
 
 ## Configuration
 
@@ -34,7 +42,12 @@ The script uses the following sections from the `monorepo-config.json` file:
 
 - `scripts.terraform_file_collector`: Path to the Terraform file collector script
 - `scripts.temp_file_pattern`: Pattern for temporary files
-- `module_types.<type>.policy_dir`: Directory containing OPA policies for the module type
+- `provider.<provider>.module_types.<type>.policy_dir`: Directory containing OPA policies for the provider and module type
+- `terraform_module_opa_library_bundle`: Path to the OPA library bundle containing shared policy libraries
+
+## Provider Detection
+
+The script automatically detects the provider from the module path by matching against path patterns in the configuration. If the `--provider` flag is specified, it overrides the auto-detection. This is useful for test fixtures or edge cases where the path doesn't match standard patterns.
 
 ## Policy Evaluation
 

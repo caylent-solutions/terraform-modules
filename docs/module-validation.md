@@ -76,8 +76,14 @@ You can validate your module locally before submitting a PR:
 MODULE_PATH="providers/aws/collections/my-module"
 MODULE_TYPE="collection"
 
-# Run module validation
+# Run module validation (auto-detects provider from path)
 make module-validate MODULE_PATH=$MODULE_PATH MODULE_TYPE=$MODULE_TYPE
+
+# Run module validation with explicit provider (for test fixtures or edge cases)
+make module-validate MODULE_PATH=$MODULE_PATH MODULE_TYPE=$MODULE_TYPE PROVIDER=aws
+
+# Run module validation with verbose output (shows debug info)
+make module-validate MODULE_PATH=$MODULE_PATH MODULE_TYPE=$MODULE_TYPE VERBOSE=1
 
 # Run Terraform checks
 make tf-lint MODULE_PATH=$MODULE_PATH
@@ -92,6 +98,27 @@ make tf-test MODULE_PATH=$MODULE_PATH
 # Run OPA policy integration tests
 make rego-integration-test
 ```
+
+### Module Validation Options
+
+**Required:**
+- `MODULE_PATH` - Path to the module (e.g., `providers/aws/primitives/my-module`)
+- `MODULE_TYPE` - Type of module (e.g., `primitive`, `collection`, `reference`, `data`, `utility`, `skeleton`)
+
+**Optional:**
+- `PROVIDER` - Override provider detection (e.g., `aws`, `github`, `none`). If not set, auto-detected from MODULE_PATH
+- `VERBOSE=1` - Enable debug logging (shows OPA commands, processing details, raw results)
+
+**Output Levels:**
+
+The validation tool outputs different levels of information:
+
+- **ERROR** and **WARN**: Always displayed when issues occur
+- **INFO** (default): Standard output showing matched provider, policy directory, individual policy file names, total count, and validation results (PASS/FAIL)
+  - Usage: `make module-validate MODULE_PATH=... MODULE_TYPE=...` (no additional flags)
+- **DEBUG**: Detailed output including internal operations, OPA command arguments, file processing details, and result parsing logic
+  - Usage: `make module-validate MODULE_PATH=... MODULE_TYPE=... VERBOSE=1`
+- **TRACE**: Internal-only level (not user-accessible) for raw OPA JSON output and complete result structures
 
 ## Repository-Wide Testing
 
@@ -140,17 +167,21 @@ This configuration is automatically loaded when running tests via `make tf-test`
 
 To add validation for a new module type:
 
-1. Update the `monorepo-config.json` file:
+1. Update the `monorepo-config.json` file under the appropriate provider:
    ```json
-   "module_types": {
-     "new-type": {
-       "path_patterns": ["path/to/new/type/*"],
-       "policy_dir": "policies/opa/terraform_module_types/new-type"
+   "provider": {
+     "aws": {
+       "module_types": {
+         "new-type": {
+           "path_patterns": ["providers/aws/new-type/*"],
+           "policy_dir": "policies/opa/terraform/provider/aws/module_types/new-type"
+         }
+       }
      }
    }
    ```
 
-2. Create a new policy directory: `policies/opa/terraform_module_types/new-type/`
+2. Create a new policy directory: `policies/opa/terraform/provider/aws/module_types/new-type/`
 3. Add Rego policies with appropriate rules
 
 ## Documentation

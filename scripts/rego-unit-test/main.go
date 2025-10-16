@@ -18,9 +18,9 @@ import (
 
 // Config holds test directories, policy mapping, and helpers path.
 type Config struct {
-	RegoTests      []string          `json:"rego_tests"`       // List of unit test directories
-	RegoPolicyDirs map[string]string `json:"rego_policy_dirs"` // Mapping of test dir → policy dir
-	RegoHelpersDir string            `json:"rego_helpers_dir"` // Path to helpers.rego
+	RegoTests      []string               `json:"rego_tests"`       // List of unit test directories
+	RegoPolicyDirs map[string]interface{} `json:"rego_policy_dirs"` // Mapping of test dir → policy dir (string or []string)
+	RegoHelpersDir string                 `json:"rego_helpers_dir"` // Path to helpers.rego
 }
 
 // CoverageData represents the root of OPA JSON coverage output.
@@ -143,7 +143,14 @@ func runTests(config *Config, dataPath string, noCoverage, coverageText, coverag
 				args = append(args, "--coverage", "--format=json")
 			}
 		}
-		args = append(args, testPath, policyDir, helpersDir)
+		args = append(args, testPath)
+
+		// Add policy directories (can be string or array)
+		for _, dir := range policyDir {
+			args = append(args, dir)
+		}
+
+		args = append(args, helpersDir)
 
 		// Run the command
 		cmd := exec.Command("opa", args...)
@@ -203,12 +210,21 @@ func runTests(config *Config, dataPath string, noCoverage, coverageText, coverag
 // ---------- Utility Helpers ----------
 //
 
-// getPolicyDir returns the policy dir mapped to a test dir
-func (c *Config) getPolicyDir(testPath string) string {
-	if dir, ok := c.RegoPolicyDirs[testPath]; ok {
-		return dir
+// getPolicyDir returns the policy dirs mapped to a test dir (supports string or []string)
+func (c *Config) getPolicyDir(testPath string) []string {
+	if val, ok := c.RegoPolicyDirs[testPath]; ok {
+		switch v := val.(type) {
+		case string:
+			return []string{v}
+		case []interface{}:
+			dirs := make([]string, len(v))
+			for i, item := range v {
+				dirs[i] = item.(string)
+			}
+			return dirs
+		}
 	}
-	return ""
+	return []string{}
 }
 
 // getFileExtension returns file extension for a coverage format
