@@ -129,15 +129,31 @@ func detectModuleChanges(changedFiles []string, config map[string]interface{}) (
 	providerConfig, ok := config["provider"].(map[string]interface{})
 	if !ok {
 		fmt.Println("Error: provider not found in config")
-		return []string{}, []string{}
+		os.Exit(1)
 	}
 
 	// Maps to track unique modules
 	modulePathMap := make(map[string]string)
 
+	// Get sorted provider names for deterministic ordering
+	providerNames := make([]string, 0, len(providerConfig))
+	for providerName := range providerConfig {
+		providerNames = append(providerNames, providerName)
+	}
+	// Sort to ensure deterministic behavior
+	for i := 0; i < len(providerNames)-1; i++ {
+		for j := i + 1; j < len(providerNames); j++ {
+			if providerNames[i] > providerNames[j] {
+				providerNames[i], providerNames[j] = providerNames[j], providerNames[i]
+			}
+		}
+	}
+
 	// Check each file against module path patterns from all providers
 	for _, file := range changedFiles {
-		for _, providerData := range providerConfig {
+		// Use deterministic provider ordering and stop at first match
+		for _, providerName := range providerNames {
+			providerData := providerConfig[providerName]
 			providerMap, ok := providerData.(map[string]interface{})
 			if !ok {
 				continue
@@ -148,7 +164,12 @@ func detectModuleChanges(changedFiles []string, config map[string]interface{}) (
 				continue
 			}
 
+			matched := false
 			for typeName, typeConfig := range moduleTypes {
+				if matched {
+					break
+				}
+
 				typeConfigMap, ok := typeConfig.(map[string]interface{})
 				if !ok {
 					continue
@@ -166,11 +187,17 @@ func detectModuleChanges(changedFiles []string, config map[string]interface{}) (
 					}
 
 					// Check if file matches the pattern
-					matched, modulePath := matchesPattern(file, patternStr)
-					if matched {
+					isMatch, modulePath := matchesPattern(file, patternStr)
+					if isMatch {
 						modulePathMap[modulePath] = typeName
+						matched = true
+						break
 					}
 				}
+			}
+
+			if matched {
+				break // Stop checking other providers for this file
 			}
 		}
 	}
