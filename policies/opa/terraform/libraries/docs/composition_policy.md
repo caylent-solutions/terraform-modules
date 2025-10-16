@@ -6,30 +6,7 @@ The composition policy enforces rules for Terraform modules that compose functio
 
 ## Rules
 
-### 1. No Resource Blocks
-
-**Rule:** Composition modules cannot contain Terraform resource blocks.
-
-**Rationale:** Composition modules should orchestrate other modules, not define infrastructure directly. This separation ensures clear module boundaries and promotes reusability.
-
-**Example Violation:**
-```hcl
-# ❌ Bad - composition module with resource block
-resource "aws_s3_bucket" "example" {
-  bucket = "my-bucket"
-}
-```
-
-**Example Compliance:**
-```hcl
-# ✅ Good - composition module using other modules
-module "s3_bucket" {
-  source = "git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/primitives/s3?ref=v1.0.0"
-  bucket_name = "my-bucket"
-}
-```
-
-### 2. Require Module Sources
+### 1. Require Module Sources
 
 **Rule:** Composition modules must use at least one source module.
 
@@ -91,6 +68,7 @@ make rego-unit-test
 
 ## Related Policies
 
+- [No Resources Policy](no_resources_policy.md) - Prevents resource blocks in composition modules
 - [Structure Policy](structure_policy.md) - Enforces module directory structure
 - [Nested Modules Policy](nested_modules_policy.md) - Validates nested module usage
 - [Source Policy](source_policy.md) - Validates module source references

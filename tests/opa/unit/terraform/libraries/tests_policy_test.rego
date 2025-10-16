@@ -238,6 +238,38 @@ test_compliant_test_structure_no_violation if {
 	not contains_violation(violations, "Missing TERRATEST_IDEMPOTENCY setting")
 }
 
+# Test invalid idempotency value
+test_invalid_idempotency_value_violation if {
+	module_path := "modules/test-module"
+	files := {
+		"modules/test-module/examples/complete/main.tf": "resource \"aws_s3_bucket\" \"test\" {}",
+		"modules/test-module/tests/README.md": "# Tests",
+		"modules/test-module/tests/complete/module_test.go": "package test\n\nimport \"github.com/caylent-solutions/terraform-terratest-framework/pkg/testctx\"\n\nfunc TestModule(t *testing.T) {}",
+		"modules/test-module/tests/complete/README.md": "# Complete Test",
+		"modules/test-module/go.mod": "module test\n\nrequire github.com/caylent-solutions/terraform-terratest-framework v1.0.0",
+		"modules/test-module/test.config": "TERRATEST_IDEMPOTENCY=invalid",
+	}
+	test_input := helpers.mock_terraform_module_input(module_path, files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+# Test idempotency false value
+test_idempotency_false_value_no_violation if {
+	module_path := "modules/test-module"
+	files := {
+		"modules/test-module/examples/complete/main.tf": "resource \"aws_s3_bucket\" \"test\" {}",
+		"modules/test-module/tests/README.md": "# Tests",
+		"modules/test-module/tests/complete/module_test.go": "package test\n\nimport \"github.com/caylent-solutions/terraform-terratest-framework/pkg/testctx\"\n\nfunc TestModule(t *testing.T) {}",
+		"modules/test-module/tests/complete/README.md": "# Complete Test",
+		"modules/test-module/go.mod": "module test\n\nrequire github.com/caylent-solutions/terraform-terratest-framework v1.0.0",
+		"modules/test-module/test.config": "TERRATEST_IDEMPOTENCY=false",
+	}
+	test_input := helpers.mock_terraform_module_input(module_path, files)
+	violations := policy.violation with input as test_input
+	not contains_violation(violations, "Invalid TERRATEST_IDEMPOTENCY value")
+}
+
 # Helper function to check if violations contain a specific message
 contains_violation(violations, message) if {
 	some violation in violations

@@ -121,3 +121,68 @@ test_hardcoded_values_in_tests_allowed if {
 	# Expect no violations
 	count(violations) == 0
 }
+
+# Test that hardcoded YAML heredocs violate the policy
+test_hardcoded_yaml_violation if {
+	# Mock input with hardcoded YAML heredoc
+	module_path := "modules/test-module"
+	files := {
+		"modules/test-module/main.tf": "resource \"aws_config\" \"test\" {\n  config = <<YAML\nkey: value\nYAML\n}",
+		"modules/test-module/variables.tf": "# Variables should be used instead",
+	}
+	test_input := helpers.mock_terraform_module_input(module_path, files)
+
+	# Check for violations
+	violations := policy.violation with input as test_input
+
+	# Expect at least one violation
+	count(violations) >= 1
+}
+
+# Test YML heredoc
+test_hardcoded_yml_violation if {
+	module_path := "modules/test-module"
+	files := {
+		"modules/test-module/main.tf": "resource \"aws_config\" \"test\" {\n  config = <<YML\nkey: value\nYML\n}",
+		"modules/test-module/variables.tf": "# Variables should be used instead",
+	}
+	test_input := helpers.mock_terraform_module_input(module_path, files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+# Test lifecycle block exemption
+test_lifecycle_block_exemption if {
+	module_path := "modules/test-module"
+	files := {
+		"modules/test-module/main.tf": "resource \"aws_instance\" \"test\" {\n  lifecycle {\n    create_before_destroy = true\n  }\n}",
+		"modules/test-module/variables.tf": "variable \"test\" {}",
+	}
+	test_input := helpers.mock_terraform_module_input(module_path, files)
+	violations := policy.violation with input as test_input
+	count(violations) == 0
+}
+
+# Test resource block with hardcoded values
+test_resource_block_hardcoded_values if {
+	module_path := "modules/test-module"
+	files := {
+		"modules/test-module/main.tf": "resource \"aws_s3_bucket\" \"test\" { bucket = \"hardcoded\" tags = { Name = \"test\" } }",
+		"modules/test-module/variables.tf": "variable \"test\" {}",
+	}
+	test_input := helpers.mock_terraform_module_input(module_path, files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+# Test JSON map hardcoded values
+test_json_map_hardcoded_values if {
+	module_path := "modules/test-module"
+	files := {
+		"modules/test-module/main.tf": "resource \"aws_iam_policy\" \"test\" { policy = { \"Version\": \"2012-10-17\" } }",
+		"modules/test-module/variables.tf": "variable \"test\" {}",
+	}
+	test_input := helpers.mock_terraform_module_input(module_path, files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}

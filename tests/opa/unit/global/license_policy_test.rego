@@ -179,3 +179,36 @@ test_apache_license_in_file_violation if {
 	violations := policy.violation with input as test_input
 	count(violations) >= 1
 }
+
+# Test lowercase license keyword
+test_lowercase_license_keyword if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "license: MIT License",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+# Test uppercase license keyword
+test_uppercase_license_keyword if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "LICENSE: MIT License",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+# Test uppercase copyright keyword
+test_uppercase_copyright_keyword if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "COPYRIGHT 2023 - MIT License",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}

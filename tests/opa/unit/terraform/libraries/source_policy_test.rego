@@ -103,3 +103,17 @@ test_local_sources_in_examples_allowed if {
 	# Expect no violations
 	count(violations) == 0
 }
+
+# Test caylent provider source
+test_caylent_provider_source_exempt if {
+	# Mock input with caylent provider source
+	module_path := "modules/test-module"
+	files := {"modules/test-module/main.tf": "module \"caylent\" {\n  source = \"terraform.provider.solutions.caylent.com/aws/s3\"\n  version = \">= 1.0.0\"\n}"}
+	test_input := helpers.mock_terraform_module_input(module_path, files)
+
+	# Check for violations
+	violations := policy.violation with input as test_input
+
+	# Expect no violations
+	count(violations) == 0
+}

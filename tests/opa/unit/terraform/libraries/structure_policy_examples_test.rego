@@ -7,7 +7,7 @@ import data.tests.opa.unit.helpers as helpers
 test_empty_examples_directory_violation if {
 	# Mock input with empty examples directory
 	module_path := "modules/test-module"
-	files := {"modules/test-module/examples/": ""}
+	files := {"modules/test-module/examples/placeholder.txt": ""}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
 	# Check for violations
@@ -50,6 +50,22 @@ test_empty_required_files_in_example_violation if {
 
 	# Expect at least one violation
 	count(violations) >= 1
+}
+
+# Test complete example with all files
+test_complete_example_no_violation if {
+	module_path := "modules/test-module"
+	files := {
+		"modules/test-module/examples/complete/main.tf": "module \"test\" { source = \"../../\" }",
+		"modules/test-module/examples/complete/terraform.tfvars": "var = \"value\"",
+		"modules/test-module/examples/complete/versions.tf": "terraform { required_version = \">= 1.0\" }",
+		"modules/test-module/examples/complete/variables.tf": "variable \"var\" {}",
+		"modules/test-module/examples/complete/README.md": "# Example",
+		"modules/test-module/examples/complete/TERRAFORM-DOCS.md": "# Docs",
+	}
+	test_input := helpers.mock_terraform_module_input(module_path, files)
+	violations := policy.violation with input as test_input
+	count(violations) == 0
 }
 
 # Skip this test for now

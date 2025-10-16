@@ -13,6 +13,7 @@ Reusable OPA policies for Terraform module validation. These libraries are impor
 - [File Organization Policy](docs/file_organization_policy.md) - Enforces proper file organization (variables, outputs, locals, etc.)
 - [Data File Organization Policy](docs/data_file_organization_policy.md) - Enforces file organization for data modules (optional files)
 - [Structure Policy](docs/structure_policy.md) - Validates required files and directories
+- [Data Structure Policy](docs/data_structure_policy.md) - Validates required files and directories for data modules
 - [Structure Policy - Examples](docs/structure_policy_examples.md) - Validates example implementations
 - [Nested Modules Policy](docs/nested_modules_policy.md) - Prevents nested module structures
 
@@ -25,7 +26,6 @@ Reusable OPA policies for Terraform module validation. These libraries are impor
 ### Module Dependencies
 - [Source Policy](docs/source_policy.md) - Validates module sources and version constraints
 - [Composition Policy](docs/composition_policy.md) - Enforces composition module rules (no resources, requires modules)
-- [Data Composition Policy](docs/data_composition_policy.md) - Enforces data composition rules (no resources only)
 - [No Resources Policy](docs/no_resources_policy.md) - Prevents resource blocks in non-resource modules
 
 ### Cloud Provider Restrictions
@@ -57,19 +57,20 @@ violation[result] if {
 | Policy | Collection | Primitive | Reference | Data | Utility |
 |--------|-----------|-----------|-----------|------|---------|
 | File Organization | ✓ | ✓ | ✓ | - | - |
+| Data File Organization | - | - | - | ✓ | - |
 | Makefile | ✓ | ✓ | ✓ | - | - |
 | Naming | ✓ | ✓ | ✓ | - | - |
 | Nested Modules | ✓ | ✓ | ✓ | - | - |
 | Source | ✓ | ✓ | ✓ | - | - |
 | Structure | ✓ | ✓ | ✓ | - | - |
-| Structure Examples | ✓ | ✓ | ✓ | - | - |
+| Data Structure | - | - | - | ✓ | - |
+| Structure Examples | ✓ | ✓ | ✓ | ✓ | - |
 | Tests | ✓ | ✓ | ✓ | - | - |
 | Tests Helpers | ✓ | ✓ | ✓ | - | - |
 | Version Constraint | ✓ | ✓ | ✓ | - | - |
 | Hardcoded Values | ✓ | ✓ | ✓ | ✗ | ✗ |
 | Composition | ✓ | - | ✓ | - | - |
-| Data Composition | - | - | - | ✓ | - |
-| No Resources | - | - | - | - | ✓ |
+| No Resources | - | - | - | ✓ | ✓ |
 | Data Sources Only | - | - | - | ✓ | - |
 | Data File Organization | - | - | - | ✓ | - |
 | AWS Only | ✓ | ✓ | ✓ | ✓ | ✓ |

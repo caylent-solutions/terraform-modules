@@ -38,15 +38,11 @@ test_makefile_matching_skeleton_no_violation if {
 	count(violations) == 0
 }
 
-# Test that nested modules violate the policy
-test_nested_modules_violation if {
-	# Mock input with nested module structure
+# Test that missing Makefile violates the policy
+test_missing_makefile_violation if {
+	# Mock input without Makefile
 	module_path := "modules/test-module"
-	files := {
-		"modules/test-module/Makefile": "test: echo \"Test command\"",
-		"skeletons/generic-skeleton/Makefile": "test: echo \"Different command\"",
-		"modules/test-module/nested/main.tf": "resource \"aws_s3_bucket\" \"test\" {}",
-	}
+	files := {"skeletons/generic-skeleton/Makefile": "test: echo \"Test command\""}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
 	# Check for violations
@@ -54,21 +50,4 @@ test_nested_modules_violation if {
 
 	# Expect at least one violation
 	count(violations) >= 1
-}
-
-# Test that examples and tests directories are allowed
-test_examples_and_tests_allowed if {
-	# Mock input with examples and tests directories
-	module_path := "modules/test-module"
-	files := {
-		"modules/test-module/Makefile": "test: echo \"Test command\"",
-		"skeletons/generic-skeleton/Makefile": "test: echo \"Test command\"",
-	}
-	test_input := helpers.mock_terraform_module_input(module_path, files)
-
-	# Check for violations
-	violations := policy.violation with input as test_input
-
-	# Expect no violations
-	count(violations) == 0
 }
