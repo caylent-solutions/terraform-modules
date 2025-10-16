@@ -93,4 +93,6 @@ file_violations[result] if {
 }
 
 # Aggregate rule
-violation := [r | r := file_violations[_]]
+violation[result] if {
+	result := file_violations[_]
+}

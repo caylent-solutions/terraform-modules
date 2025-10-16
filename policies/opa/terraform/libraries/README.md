@@ -25,6 +25,7 @@ Reusable OPA policies for Terraform module validation. These libraries are impor
 ### Module Dependencies
 - [Source Policy](docs/source_policy.md) - Validates module sources and version constraints
 - [Composition Policy](docs/composition_policy.md) - Enforces composition module rules (no resources, requires modules)
+- [Data Composition Policy](docs/data_composition_policy.md) - Enforces data composition rules (no resources only)
 - [No Resources Policy](docs/no_resources_policy.md) - Prevents resource blocks in non-resource modules
 
 ### Cloud Provider Restrictions
@@ -67,6 +68,7 @@ violation[result] if {
 | Version Constraint | ✓ | ✓ | ✓ | - | - |
 | Hardcoded Values | ✓ | ✓ | ✓ | ✗ | ✗ |
 | Composition | ✓ | - | ✓ | - | - |
+| Data Composition | - | - | - | ✓ | - |
 | No Resources | - | - | - | - | ✓ |
 | Data Sources Only | - | - | - | ✓ | - |
 | Data File Organization | - | - | - | ✓ | - |
