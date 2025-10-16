@@ -1,2 +1,2 @@
-## monorepo-config/v1.5.0 (2025-10-16)
-* fd900fc feat: reorganize OPA policies to provider-based hierarchy with library system (#142)
+## monorepo-config/v1.5.1 (2025-10-16)
+* e179d42 fix: update module detection script to work with new provider-based config structure (#146)
