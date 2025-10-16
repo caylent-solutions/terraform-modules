@@ -125,39 +125,51 @@ func getChangedFiles(config map[string]interface{}) []string {
 
 // detectModuleChanges determines if changes are in modules and returns the module paths and types
 func detectModuleChanges(changedFiles []string, config map[string]interface{}) ([]string, []string) {
-	// Get module types from config
-	moduleTypes, ok := config["module_types"].(map[string]interface{})
+	// Get provider config from config
+	providerConfig, ok := config["provider"].(map[string]interface{})
 	if !ok {
-		fmt.Println("Error: module_types not found in config")
+		fmt.Println("Error: provider not found in config")
 		return []string{}, []string{}
 	}
 
 	// Maps to track unique modules
 	modulePathMap := make(map[string]string)
 
-	// Check each file against module path patterns
+	// Check each file against module path patterns from all providers
 	for _, file := range changedFiles {
-		for typeName, typeConfig := range moduleTypes {
-			typeConfigMap, ok := typeConfig.(map[string]interface{})
+		for _, providerData := range providerConfig {
+			providerMap, ok := providerData.(map[string]interface{})
 			if !ok {
 				continue
 			}
 
-			pathPatterns, ok := typeConfigMap["path_patterns"].([]interface{})
+			moduleTypes, ok := providerMap["module_types"].(map[string]interface{})
 			if !ok {
 				continue
 			}
 
-			for _, pattern := range pathPatterns {
-				patternStr, ok := pattern.(string)
+			for typeName, typeConfig := range moduleTypes {
+				typeConfigMap, ok := typeConfig.(map[string]interface{})
 				if !ok {
 					continue
 				}
 
-				// Check if file matches the pattern
-				matched, modulePath := matchesPattern(file, patternStr)
-				if matched {
-					modulePathMap[modulePath] = typeName
+				pathPatterns, ok := typeConfigMap["path_patterns"].([]interface{})
+				if !ok {
+					continue
+				}
+
+				for _, pattern := range pathPatterns {
+					patternStr, ok := pattern.(string)
+					if !ok {
+						continue
+					}
+
+					// Check if file matches the pattern
+					matched, modulePath := matchesPattern(file, patternStr)
+					if matched {
+						modulePathMap[modulePath] = typeName
+					}
 				}
 			}
 		}
