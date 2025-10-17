@@ -1,2 +1,2 @@
-## monorepo-config/v1.5.1 (2025-10-16)
-* e179d42 fix: update module detection script to work with new provider-based config structure (#146)
+## monorepo-config/v1.6.0 (2025-10-17)
+* b562e70 feat: improved opa policies (#149)
