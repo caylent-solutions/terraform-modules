@@ -52,7 +52,7 @@ module "account_info" {
 }
 ```
 
-### No Locals in Data Files
+### Missing Locals in Data Files
 **Message:** "Data modules must contain locals blocks in *-data.tf files"
 
 **Details:** Data modules should contain locals blocks for constants in files matching pattern '*-data.tf'
