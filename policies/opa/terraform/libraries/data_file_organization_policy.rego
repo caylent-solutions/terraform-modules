@@ -95,6 +95,6 @@ violation[result] if {
 
 # Helper function to check if a file is a *-data.tf file
 is_data_tf_file(file_path) if {
-	file_name := substring(file_path, count(module_path) + 1, -1)
-	regex.match(`^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*-data\.tf$`, file_name)
+	rel := substring(file_path, count(input.module_path) + 1, -1)
+	regex.match(`^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*-data\.tf$`, rel)
 }

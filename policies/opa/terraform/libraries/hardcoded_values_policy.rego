@@ -49,10 +49,10 @@ contains_hardcoded_value(content) if {
 	regex.match(`\w+\s*=\s*"[^${}][^"]*"`, content)
 	
 	# Exclude module source attribute
-	not regex.match(`module\s+"[^"]+"\s*\{[^}]*source\s*=\s*"[^"]*"[^}]*\}`, content)
+	not regex.match(`(?s)module\s+"[^"]+"\s*\{.*?source\s*=\s*"[^"]*".*?\}`, content)
 	
 	# Exclude module version attribute
-	not regex.match(`module\s+"[^"]+"\s*\{[^}]*version\s*=\s*"[^"]*"[^}]*\}`, content)
+	not regex.match(`(?s)module\s+"[^"]+"\s*\{.*?version\s*=\s*"[^"]*".*?\}`, content)
 }
 
 # Match hardcoded numeric values
