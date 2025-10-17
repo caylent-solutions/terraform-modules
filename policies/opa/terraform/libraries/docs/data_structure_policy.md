@@ -15,6 +15,7 @@ The data structure policy enforces standardized file and directory structure for
 - `TERRAFORM-DOCS.md` - Auto-generated Terraform documentation
 - `CODEOWNERS` - Code ownership definition
 - `Makefile` - Build and test automation
+- `outputs.tf` - Module outputs
 
 **Rationale:** Ensures consistent documentation, ownership, and automation across all data modules.
 
@@ -22,8 +23,7 @@ The data structure policy enforces standardized file and directory structure for
 ```
 module/
 ├── s3-data.tf
-└── outputs.tf
-# ❌ Missing README.md, TERRAFORM-DOCS.md, CODEOWNERS, Makefile
+# ❌ Missing README.md, TERRAFORM-DOCS.md, CODEOWNERS, Makefile, outputs.tf
 ```
 
 **Example Compliance:**
@@ -69,6 +69,7 @@ module/
 - `TERRAFORM-DOCS.md`
 - `CODEOWNERS`
 - `Makefile`
+- `outputs.tf`
 
 **Rationale:** Empty files don't serve their purpose. Each file must have meaningful content.
 

@@ -146,6 +146,26 @@ test_multiple_data_tf_files_allowed if {
 		"files": {
 			"providers/aws/data/test/s3-data.tf": "data \"aws_s3_bucket\" \"test\" {}",
 			"providers/aws/data/test/ec2-data.tf": "data \"aws_instance\" \"test\" {}",
+			"providers/aws/data/test/outputs.tf": "output \"test\" { value = 1 }",
+			"providers/aws/data/test/README.md": "# Test Module",
+			"providers/aws/data/test/TERRAFORM-DOCS.md": "# Terraform Docs",
+			"providers/aws/data/test/CODEOWNERS": "* @team",
+			"providers/aws/data/test/Makefile": "test:\n\techo test",
+			"providers/aws/data/test/examples/basic/main.tf": "module \"test\" {}",
+			"providers/aws/data/test/tests/common/test.go": "package test",
+		},
+	}
+	violations := policy.violation with input as test_input
+	count(violations) == 0
+}
+
+# Test that dash-separated data files are allowed
+test_dash_separated_data_tf_files_allowed if {
+	test_input := {
+		"module_path": "providers/aws/data/test",
+		"files": {
+			"providers/aws/data/test/iam-identity-center-data.tf": "data \"aws_ssoadmin_instances\" \"test\" {}",
+			"providers/aws/data/test/outputs.tf": "output \"test\" { value = 1 }",
 			"providers/aws/data/test/README.md": "# Test Module",
 			"providers/aws/data/test/TERRAFORM-DOCS.md": "# Terraform Docs",
 			"providers/aws/data/test/CODEOWNERS": "* @team",

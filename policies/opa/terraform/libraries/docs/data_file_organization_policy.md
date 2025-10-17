@@ -69,15 +69,29 @@ required_providers {
 ```
 
 ### Locals in Wrong File
-**Message:** "Locals blocks must be in locals.tf"
+**Message:** "Locals blocks must be in locals.tf or *-data.tf files"
 
-**Condition:** IF locals blocks exist, they must only be in `locals.tf`
+**Condition:** IF locals blocks exist, they must only be in `locals.tf` or files matching pattern `*-data.tf`
 
 **Example of violation:**
 ```hcl
 # main.tf
 locals {
   region = "us-east-1"
+}
+```
+
+**Example of compliant usage:**
+```hcl
+# locals.tf
+locals {
+  region = "us-east-1"
+}
+
+# OR in data files:
+# aws-constants-data.tf
+locals {
+  account_id_regex = "[0-9]{12}"
 }
 ```
 
@@ -122,6 +136,15 @@ variable "vpc_name" {
 # locals.tf
 locals {
   vpc_id = data.aws_vpc.selected.id
+}
+
+# OR for data modules with constants:
+# aws-constants-data.tf
+locals {
+  region_codes = {
+    us_east_1 = "us-east-1"
+    us_west_2 = "us-west-2"
+  }
 }
 
 # outputs.tf

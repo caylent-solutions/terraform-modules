@@ -44,8 +44,15 @@ contains_hardcoded_value(content) if {
 }
 
 # Match hardcoded string assignments not using interpolation
+# Exclude module source and version attributes which are allowed to be hardcoded
 contains_hardcoded_value(content) if {
 	regex.match(`\w+\s*=\s*"[^${}][^"]*"`, content)
+	
+	# Exclude module source attribute
+	not regex.match(`module\s+"[^"]+"\s*\{[^}]*source\s*=\s*"[^"]*"[^}]*\}`, content)
+	
+	# Exclude module version attribute
+	not regex.match(`module\s+"[^"]+"\s*\{[^}]*version\s*=\s*"[^"]*"[^}]*\}`, content)
 }
 
 # Match hardcoded numeric values
