@@ -18,7 +18,7 @@ tf_files := [file |
 ]
 
 # If variable blocks exist, they must only be in variables.tf
-file_violations[result] if {
+violation[result] if {
 	some file in tf_files
 	not endswith(file, "/variables.tf")
 	regex.match(`variable\s+"[^"]*"\s*{`, input.files[file])
@@ -33,7 +33,7 @@ file_violations[result] if {
 }
 
 # If output blocks exist, they must only be in outputs.tf
-file_violations[result] if {
+violation[result] if {
 	some file in tf_files
 	not endswith(file, "/outputs.tf")
 	regex.match(`output\s+"[^"]*"\s*{`, input.files[file])
@@ -48,7 +48,7 @@ file_violations[result] if {
 }
 
 # If terraform blocks exist, they must only be in versions.tf
-file_violations[result] if {
+violation[result] if {
 	some file in tf_files
 	not endswith(file, "/versions.tf")
 	regex.match(`terraform\s*{`, input.files[file])
@@ -63,7 +63,7 @@ file_violations[result] if {
 }
 
 # If required_providers blocks exist, they must only be in versions.tf
-file_violations[result] if {
+violation[result] if {
 	some file in tf_files
 	not endswith(file, "/versions.tf")
 	regex.match(`required_providers\s*{`, input.files[file])
@@ -77,22 +77,24 @@ file_violations[result] if {
 	}
 }
 
-# If locals blocks exist, they must only be in locals.tf
-file_violations[result] if {
+# If locals blocks exist, they must only be in locals.tf or *-data.tf files
+violation[result] if {
 	some file in tf_files
 	not endswith(file, "/locals.tf")
+	not is_data_tf_file(file)
 	regex.match(`locals\s*{`, input.files[file])
 
 	result := {
 		"policy": "terraform_data_file_organization_policy",
 		"severity": "error",
-		"message": "Locals blocks must be in locals.tf",
-		"details": sprintf("File '%s' contains locals blocks which should only be in locals.tf", [file]),
-		"resolution": "Move all locals blocks to locals.tf",
+		"message": "Locals blocks must be in locals.tf or *-data.tf files",
+		"details": sprintf("File '%s' contains locals blocks which should only be in locals.tf or files matching pattern '*-data.tf'", [file]),
+		"resolution": "Move locals blocks to locals.tf or to a file matching pattern '<name>-data.tf'",
 	}
 }
 
-# Aggregate rule
-violation[result] if {
-	result := file_violations[_]
+# Helper function to check if a file is a *-data.tf file
+is_data_tf_file(file_path) if {
+	rel := substring(file_path, count(input.module_path) + 1, -1)
+	regex.match(`^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*-data\.tf$`, rel)
 }

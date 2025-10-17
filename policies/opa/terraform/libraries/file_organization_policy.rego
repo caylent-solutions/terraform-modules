@@ -17,8 +17,7 @@ tf_files := [file |
 	file := path
 ]
 
-# Violations container
-file_violations[result] if {
+violation[result] if {
 	some file in tf_files
 	not endswith(file, "/variables.tf")
 	regex.match(`variable\s+"[^"]*"\s*{`, input.files[file])
@@ -32,7 +31,7 @@ file_violations[result] if {
 	}
 }
 
-file_violations[result] if {
+violation[result] if {
 	some file in tf_files
 	not endswith(file, "/outputs.tf")
 	regex.match(`output\s+"[^"]*"\s*{`, input.files[file])
@@ -46,7 +45,7 @@ file_violations[result] if {
 	}
 }
 
-file_violations[result] if {
+violation[result] if {
 	some file in tf_files
 	not endswith(file, "/versions.tf")
 	regex.match(`terraform\s*{`, input.files[file])
@@ -60,7 +59,7 @@ file_violations[result] if {
 	}
 }
 
-file_violations[result] if {
+violation[result] if {
 	some file in tf_files
 	not endswith(file, "/versions.tf")
 	regex.match(`required_providers\s*{`, input.files[file])
@@ -74,7 +73,7 @@ file_violations[result] if {
 	}
 }
 
-file_violations[result] if {
+violation[result] if {
 	some file in tf_files
 	not endswith(file, "/locals.tf")
 	regex.match(`locals\s*{`, input.files[file])
@@ -87,6 +86,3 @@ file_violations[result] if {
 		"resolution": "Move all locals blocks to locals.tf",
 	}
 }
-
-# Aggregate rule
-violation := [r | r := file_violations[_]]

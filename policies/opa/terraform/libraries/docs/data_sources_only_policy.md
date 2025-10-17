@@ -1,7 +1,7 @@
 # Data Sources Only Policy
 
 ## Overview
-Enforces that data modules only contain data source blocks for querying existing AWS resources and constants.
+Enforces that data modules contain locals blocks in *-data.tf files for constants and output blocks in outputs.tf for exposing those constants.
 
 ## Policy Name
 `terraform_module_data_sources_only_policy`
@@ -10,7 +10,7 @@ Enforces that data modules only contain data source blocks for querying existing
 Error
 
 ## Description
-This policy ensures data modules are read-only and only query existing infrastructure. Data modules cannot create resources or compose other modules - they exist solely to fetch information about what already exists in AWS.
+This policy ensures data modules define constants in locals blocks within *-data.tf files and expose them via outputs in outputs.tf. Data modules cannot create resources or compose other modules - they exist to provide reusable constants and optionally query existing infrastructure.
 
 ## Violations
 
@@ -29,12 +29,12 @@ resource "aws_s3_bucket" "example" {
 }
 ```
 
-### Module Blocks Present
-**Message:** "Data modules cannot contain module blocks"
+### Module Blocks Outside Examples
+**Message:** "Data modules cannot contain module blocks outside examples directory"
 
-**Details:** Data modules should only contain data sources for querying existing resources
+**Details:** Data modules should contain locals blocks for constants. Module blocks are only allowed in examples directory for testing
 
-**Resolution:** Remove module blocks or move to collection module type
+**Resolution:** Remove module blocks from module root or move to examples directory
 
 **Example of violation:**
 ```hcl
@@ -44,81 +44,101 @@ module "vpc" {
 }
 ```
 
-### No Data Sources
-**Message:** "Data modules must contain at least one data source"
+**Example of allowed usage:**
+```hcl
+# providers/aws/data/account-info/examples/basic/main.tf
+module "account_info" {
+  source = "../../"
+}
+```
 
-**Details:** Data modules should contain data sources for querying existing resources
+### No Locals in Data Files
+**Message:** "Data modules must contain locals blocks in *-data.tf files"
 
-**Resolution:** Add at least one data source to your data module
+**Details:** Data modules should contain locals blocks for constants in files matching pattern '*-data.tf'
+
+**Resolution:** Add locals blocks to your *-data.tf files
 
 **Example of violation:**
 ```hcl
-# providers/aws/data/account-info/main.tf
-locals {
-  account_id = "123456789012"
-}
+# providers/aws/data/constants/aws-data.tf
+# Empty file or no locals block
+data "aws_caller_identity" "current" {}
+```
+
+### No Outputs in outputs.tf
+**Message:** "Data modules must contain at least one output block in outputs.tf"
+
+**Details:** Data modules should expose constants via output blocks in outputs.tf
+
+**Resolution:** Add at least one output block to outputs.tf
+
+**Example of violation:**
+```hcl
+# providers/aws/data/constants/outputs.tf
+# Empty file or no output blocks
 ```
 
 ## Compliant Examples
 
-### Account Information Data Module
+### Constants Data Module
 ```hcl
-# providers/aws/data/account-info/main.tf
-data "aws_caller_identity" "current" {}
+# providers/aws/data/constants/aws-constants-data.tf
+locals {
+  account_id_regex = "[0-9]{12}"
+  region_codes = {
+    us_east_1 = "us-east-1"
+    us_west_2 = "us-west-2"
+  }
+}
 
-data "aws_region" "current" {}
+# providers/aws/data/constants/outputs.tf
+output "account_id_regex" {
+  description = "AWS Account ID validation regex"
+  value       = local.account_id_regex
+}
+
+output "region_codes" {
+  description = "AWS region code constants"
+  value       = local.region_codes
+}
+```
+
+### IAM Identity Center Constants
+```hcl
+# providers/aws/data/iam-constants/iam-identity-center-data.tf
+data "aws_ssoadmin_instances" "current" {}
 
 locals {
-  account_id = data.aws_caller_identity.current.account_id
-  region     = data.aws_region.current.name
-}
-```
-
-### VPC Lookup Data Module
-```hcl
-# providers/aws/data/vpc-lookup/main.tf
-data "aws_vpc" "selected" {
-  filter {
-    name   = "tag:Name"
-    values = [var.vpc_name]
+  principal_types = {
+    group = "GROUP"
+    user  = "USER"
+  }
+  provider_types = {
+    internal = "INTERNAL"
+    external = "EXTERNAL"
   }
 }
 
-data "aws_subnets" "private" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.selected.id]
-  }
-  
-  filter {
-    name   = "tag:Type"
-    values = ["private"]
-  }
+# providers/aws/data/iam-constants/outputs.tf
+output "principal_types" {
+  description = "IAM Identity Center principal types"
+  value       = local.principal_types
 }
-```
 
-### AMI Lookup Data Module
-```hcl
-# providers/aws/data/ami-lookup/main.tf
-data "aws_ami" "amazon_linux_2" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
-  }
+output "provider_types" {
+  description = "IAM Identity Center provider types"
+  value       = local.provider_types
 }
 ```
 
 ## Use Cases
 Data modules are ideal for:
-- Querying AWS account information (account ID, region, availability zones)
-- Looking up existing VPCs, subnets, security groups
-- Finding AMI IDs based on filters
-- Retrieving SSM parameters
-- Getting AWS service constants and limits
-- Fetching existing resource attributes by tags or filters
+- Defining reusable constants (regex patterns, service limits, API values)
+- Providing standardized naming conventions
+- Exposing AWS service constants and configuration values
+- Optionally validating constants against live AWS services via data sources
+- Creating centralized constant libraries for other modules
 
 ## Module Types Using This Policy
 - Data modules

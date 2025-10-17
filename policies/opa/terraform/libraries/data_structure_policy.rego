@@ -15,6 +15,7 @@ violation[result] if {
 		"TERRAFORM-DOCS.md",
 		"CODEOWNERS",
 		"Makefile",
+		"outputs.tf",
 	}
 
 	# Check if any required file is missing
@@ -57,6 +58,7 @@ violation[result] if {
 		"TERRAFORM-DOCS.md",
 		"CODEOWNERS",
 		"Makefile",
+		"outputs.tf",
 	}
 
 	# Check if any required file is empty
@@ -82,7 +84,7 @@ violation[result] if {
 
 	# Check if any *-data.tf file is empty
 	some file in tf_files
-	regex.match(`^[a-zA-Z0-9]+-data\.tf$`, file)
+	regex.match(`^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*-data\.tf$`, file)
 	file_is_empty(module_path, file)
 
 	result := {
@@ -177,7 +179,7 @@ list_files(dir) := files if {
 has_data_tf_file(module_path) if {
 	tf_files := list_files(module_path)
 	some file in tf_files
-	regex.match(`^[a-zA-Z0-9]+-data\.tf$`, file)
+	regex.match(`^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*-data\.tf$`, file)
 }
 
 is_allowed_tf_file(file) if {
@@ -201,5 +203,5 @@ is_allowed_tf_file(file) if {
 }
 
 is_allowed_tf_file(file) if {
-	regex.match(`^[a-zA-Z0-9]+-data\.tf$`, file)
+	regex.match(`^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*-data\.tf$`, file)
 }
