@@ -119,5 +119,5 @@ has_ref_parameter(content) if {
 	# Check if source has ?ref= parameter with valid tag format
 	# Valid format: <module-path>/v<semver>
 	# Example: providers/aws/primitives/s3/v1.0.0
-	regex.match(`source\s*=\s*"git::https://github\.com/caylent-solutions/terraform-modules\.git//[^?]+\?ref=.+/v[0-9]+\.[0-9]+\.[0-9]+`, content)
+	regex.match(`source\s*=\s*"git::https://github\.com/caylent-solutions/terraform-modules\.git//[^?]+\?ref=.+/v[0-9]+\.[0-9]+\.[0-9]+"`, content)
 }
