@@ -31,11 +31,11 @@ test_absolute_path_module_source_violation if {
 	count(violations) >= 1
 }
 
-# Test that module sources without version constraints violate the policy
-test_missing_version_constraint_violation if {
-	# Mock input with module source but no version
+# Test that external modules violate the policy (monorepo-only enforcement)
+test_external_module_violation if {
+	# Mock input with external module
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "module \"remote\" {\n  source = \"terraform-aws-modules/s3-bucket/aws\"\n}"}
+	files := {"modules/test-module/main.tf": "module \"remote\" {\n  source = \"terraform-aws-modules/s3-bucket/aws\"\n  version = \"3.0.0\"\n}"}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
 	# Check for violations
@@ -45,11 +45,11 @@ test_missing_version_constraint_violation if {
 	count(violations) >= 1
 }
 
-# Test that external modules with non-pinned versions violate the policy
-test_non_pinned_version_violation if {
-	# Mock input with external module and non-pinned version
+# Test that monorepo modules without ref violate the policy
+test_monorepo_module_missing_ref_violation if {
+	# Mock input with monorepo module but no ref
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "module \"remote\" {\n  source = \"terraform-aws-modules/s3-bucket/aws\"\n  version = \">= 3.0.0\"\n}"}
+	files := {"modules/test-module/main.tf": "module \"caylent\" {\n  source = \"git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/primitives/s3\"\n}"}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
 	# Check for violations
@@ -59,11 +59,11 @@ test_non_pinned_version_violation if {
 	count(violations) >= 1
 }
 
-# Test that caylent modules are exempt from pinned version requirement
-test_caylent_module_exempt_from_pinned_version if {
-	# Mock input with caylent module and non-pinned version
+# Test that monorepo modules with ref pass
+test_monorepo_module_with_ref_passes if {
+	# Mock input with monorepo module and ref
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "module \"caylent\" {\n  source = \"github.com/caylent-solutions/terraform-modules/aws/s3\"\n  version = \">= 1.0.0\"\n}"}
+	files := {"modules/test-module/main.tf": "module \"caylent\" {\n  source = \"git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/primitives/s3?ref=providers/aws/primitives/s3/v1.0.0\"\n}"}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
 	# Check for violations
@@ -73,11 +73,11 @@ test_caylent_module_exempt_from_pinned_version if {
 	count(violations) == 0
 }
 
-# Test that remote modules with pinned versions pass the policy
+# Test that monorepo modules pass the policy
 test_pinned_version_no_violation if {
-	# Mock input with external module and pinned version
+	# Mock input with monorepo module
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "module \"remote\" {\n  source = \"terraform-aws-modules/s3-bucket/aws\"\n  version = \"3.0.0\"\n}"}
+	files := {"modules/test-module/main.tf": "module \"remote\" {\n  source = \"git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/collections/vpc?ref=providers/aws/collections/vpc/v2.1.0\"\n}"}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
 	# Check for violations
@@ -104,11 +104,11 @@ test_local_sources_in_examples_allowed if {
 	count(violations) == 0
 }
 
-# Test caylent provider source
+# Test monorepo source with ref parameter
 test_caylent_provider_source_exempt if {
-	# Mock input with caylent provider source
+	# Mock input with monorepo source
 	module_path := "modules/test-module"
-	files := {"modules/test-module/main.tf": "module \"caylent\" {\n  source = \"terraform.provider.solutions.caylent.com/aws/s3\"\n  version = \">= 1.0.0\"\n}"}
+	files := {"modules/test-module/main.tf": "module \"caylent\" {\n  source = \"git::https://github.com/caylent-solutions/terraform-modules.git//providers/github/primitives/repository?ref=providers/github/primitives/repository/v1.2.3\"\n}"}
 	test_input := helpers.mock_terraform_module_input(module_path, files)
 
 	# Check for violations
