@@ -11,9 +11,13 @@ import (
 func TestLoadConfig(t *testing.T) {
 	// Create a temporary config file
 	content := `{
-		"module_types": {
-			"service": {
-				"path_patterns": ["modules/service/*"]
+		"provider": {
+			"test": {
+				"module_types": {
+					"service": {
+						"path_patterns": ["modules/service/*"]
+					}
+				}
 			}
 		}
 	}`
@@ -38,7 +42,17 @@ func TestLoadConfig(t *testing.T) {
 	}
 
 	// Verify the config was loaded correctly
-	moduleTypes, ok := config["module_types"].(map[string]interface{})
+	providerConfig, ok := config["provider"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected provider to be a map")
+	}
+
+	testProvider, ok := providerConfig["test"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected test provider to be a map")
+	}
+
+	moduleTypes, ok := testProvider["module_types"].(map[string]interface{})
 	if !ok {
 		t.Fatalf("Expected module_types to be a map")
 	}
@@ -140,15 +154,19 @@ func TestMatchesPattern(t *testing.T) {
 
 func TestDetectModuleChanges(t *testing.T) {
 	config := map[string]interface{}{
-		"module_types": map[string]interface{}{
-			"service": map[string]interface{}{
-				"path_patterns": []interface{}{
-					"modules/service/*",
-				},
-			},
-			"data": map[string]interface{}{
-				"path_patterns": []interface{}{
-					"modules/data/*",
+		"provider": map[string]interface{}{
+			"test": map[string]interface{}{
+				"module_types": map[string]interface{}{
+					"service": map[string]interface{}{
+						"path_patterns": []interface{}{
+							"modules/service/*",
+						},
+					},
+					"data": map[string]interface{}{
+						"path_patterns": []interface{}{
+							"modules/data/*",
+						},
+					},
 				},
 			},
 		},

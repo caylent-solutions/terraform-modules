@@ -56,3 +56,159 @@ test_compliant_files_no_violation if {
 	# Expect no violations
 	count(violations) == 0
 }
+
+# Test various license file name patterns
+test_license_file_patterns_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/License": "MIT",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+test_lowercase_license_file_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/license": "MIT",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+# Test various license keywords
+test_copyright_keyword_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "Copyright 2023 - MIT License",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+test_all_rights_reserved_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "All rights reserved. MIT License.",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+test_permission_granted_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "Permission is hereby granted. MIT License.",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+# Test various license types
+test_gnu_license_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "Licensed under GNU license",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+test_gpl_license_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "Licensed under GPL license",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+test_lgpl_license_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "Licensed under LGPL license",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+test_bsd_license_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "Licensed under BSD license",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+test_mozilla_license_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "Licensed under Mozilla license",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+test_mpl_license_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "Licensed under MPL license",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+test_apache_license_in_file_violation if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "Licensed under Apache License 2.0",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+# Test lowercase license keyword
+test_lowercase_license_keyword if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "license: MIT License",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+# Test uppercase license keyword
+test_uppercase_license_keyword if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "LICENSE: MIT License",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}
+
+# Test uppercase copyright keyword
+test_uppercase_copyright_keyword if {
+	files := {
+		"LICENSE": "Apache 2.0",
+		"src/file.js": "COPYRIGHT 2023 - MIT License",
+	}
+	test_input := helpers.mock_files_input(files)
+	violations := policy.violation with input as test_input
+	count(violations) >= 1
+}

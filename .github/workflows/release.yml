@@ -123,10 +123,17 @@ jobs:
             COMMITS=$(git log --oneline -- "$MODULE" || echo "")
           else
             CURRENT="${LATEST_TAG#${PREFIX}}"
-            COMMITS=$(git log --oneline "${LATEST_TAG}..HEAD" -- "$MODULE" || echo "")
+            # Get commits since last tag for this module, excluding commits already released in OTHER module tags
+            OTHER_TAGS=$(git tag | grep -v "^${PREFIX}" | xargs -r git rev-parse 2>/dev/null || echo "")
+            if [[ -n "$OTHER_TAGS" ]]; then
+              COMMITS=$(git log --oneline "${LATEST_TAG}..HEAD" --not $OTHER_TAGS -- "$MODULE" 2>/dev/null || echo "")
+            else
+              COMMITS=$(git log --oneline "${LATEST_TAG}..HEAD" -- "$MODULE" || echo "")
+            fi
           fi
       
-          echo "🔍 Commits since last tag:"
+          echo "🔍 Latest tag: $LATEST_TAG"
+          echo "🔍 Commits since last tag (unreleased only):"
           echo "$COMMITS"
       
           # Debug: print each commit line
@@ -250,44 +257,107 @@ jobs:
           echo "✅ Terraform release complete"
 
         else
-          echo "🚀 Non-terraform release with semantic-release v10.1.0"
+          echo "🚀 Non-terraform release"
           git fetch --tags --force
           git fetch origin
 
-          echo "--- DEBUG: Commits since last tag ---"
           LATEST_TAG=$(git tag --list "monorepo-config/v[0-9]*" --sort=-v:refname | head -n 1)
-          echo "Latest tag: $LATEST_TAG"
-          git log --oneline "$LATEST_TAG"..HEAD || echo "No commits since last tag."
+          
+          if [[ -z "$LATEST_TAG" ]]; then
+            CURRENT="0.0.0"
+            # For first release, get all commits excluding terraform module paths
+            COMMITS=$(git log --oneline -- . ':(exclude)providers/' ':(exclude)generics/' ':(exclude)skeletons/' || echo "")
+          else
+            CURRENT="${LATEST_TAG#monorepo-config/v}"
+            # Get commits since last tag, excluding commits already released in OTHER module tags
+            OTHER_TAGS=$(git tag | grep -v "^monorepo-config/" | xargs -r git rev-parse 2>/dev/null || echo "")
+            if [[ -n "$OTHER_TAGS" ]]; then
+              COMMITS=$(git log --oneline "${LATEST_TAG}..HEAD" --not $OTHER_TAGS -- . ':(exclude)providers/' ':(exclude)generics/' ':(exclude)skeletons/' 2>/dev/null || echo "")
+            else
+              COMMITS=$(git log --oneline "${LATEST_TAG}..HEAD" -- . ':(exclude)providers/' ':(exclude)generics/' ':(exclude)skeletons/' || echo "")
+            fi
+          fi
+
+          echo "🔍 Latest tag: $LATEST_TAG"
+          echo "🔍 Commits since last tag (unreleased only):"
+          echo "$COMMITS"
+
+          echo "--- DEBUG: Commits lines ---"
+          echo "$COMMITS" | while read -r line; do echo "> $line"; done
           echo "--- END DEBUG ---"
 
-          # Compute next version using semantic-release
-          CURRENT_VERSION=$(cat VERSION 2>/dev/null)
-          [[ -z "$CURRENT_VERSION" ]] && CURRENT_VERSION="0.0.0"
-          RAW_VERSION=$(python -m semantic_release version --print || echo "")
+          # Manual version bump calculation (same logic as terraform modules)
+          BUMP_TYPE="${{ github.event.inputs.bump_type }}"
           
-          NEW_VERSION="monorepo-config/v$RAW_VERSION"
+          if [[ "$BUMP_TYPE" == "major" ]]; then
+            IS_MAJOR=1
+            IS_MINOR=0
+            IS_PATCH=0
+          elif [[ "$BUMP_TYPE" == "minor" ]]; then
+            IS_MAJOR=0
+            IS_MINOR=1
+            IS_PATCH=0
+          elif [[ "$BUMP_TYPE" == "patch" ]]; then
+            IS_MAJOR=0
+            IS_MINOR=0
+            IS_PATCH=1
+          else
+            IS_MAJOR=0
+            IS_MINOR=0
+            IS_PATCH=0
+            
+            if echo "$COMMITS" | grep -Eq '\b(feat|fix|perf|build|ci|chore|docs|style|refactor|test|release|module|meta|revert)!:'; then
+              IS_MAJOR=1
+            elif echo "$COMMITS" | grep -q 'BREAKING CHANGE'; then
+              IS_MAJOR=1
+            fi
+            
+            if [[ $IS_MAJOR -ne 1 ]]; then
+              if echo "$COMMITS" | grep -Eq '\b(feat|perf|build|revert|release|module|meta|ci):'; then
+                IS_MINOR=1
+              fi
+              if echo "$COMMITS" | grep -Eq '\b(fix|chore|docs|style|refactor|test):'; then
+                IS_PATCH=1
+              fi
+            fi
+          fi
           
-          echo "Computed new version: $NEW_VERSION (from $CURRENT_VERSION)"
-
-          # Only proceed if we have a new version
-          if [[ "$NEW_VERSION" == "$CURRENT_VERSION" ]]; then
-            echo "ℹ️ Version unchanged, no release needed"
+          if [[ $IS_MAJOR -eq 1 ]]; then
+            MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+            NEXT="$((MAJOR + 1)).0.0"
+          elif [[ $IS_MINOR -eq 1 ]]; then
+            MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+            MINOR=$(echo "$CURRENT" | cut -d. -f2)
+            NEXT="$MAJOR.$((MINOR + 1)).0"
+          elif [[ $IS_PATCH -eq 1 ]]; then
+            MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+            MINOR=$(echo "$CURRENT" | cut -d. -f2)
+            PATCH=$(echo "$CURRENT" | cut -d. -f3)
+            NEXT="$MAJOR.$MINOR.$((PATCH + 1))"
+          else
+            echo "ℹ️ No bump needed."
             exit 0
           fi
+          
+          NEW_VERSION="monorepo-config/v$NEXT"
+          echo "Computed new version: $NEW_VERSION (from $CURRENT)"
 
           if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
             echo "🔍 DRY RUN: Would create tag $NEW_VERSION"
-            echo "🔍 DRY RUN: Current version: $CURRENT_VERSION"
-            echo "🔍 DRY RUN: Next version: $NEW_VERSION"
+            echo "🔍 DRY RUN: Current version: $CURRENT"
+            echo "🔍 DRY RUN: Next version: $NEXT"
+            echo "🔍 DRY RUN: Commits that would be included:"
+            echo "$COMMITS"
             exit 0
           fi
 
+          # Update VERSION file
+          echo "$NEXT" > VERSION
+          
           # Generate changelog
           echo "📝 Generating changelog..."
-          python -m semantic_release changelog
-
-          # Update VERSION file
-          echo "$RAW_VERSION" > VERSION
+          echo "## $NEW_VERSION ($(date +'%Y-%m-%d'))" > CHANGELOG.md
+          echo "$COMMITS" | sed 's/^/* /' >> CHANGELOG.md
 
           # Create release branch and commit changes
           BRANCH_NAME="release-$NEW_VERSION"

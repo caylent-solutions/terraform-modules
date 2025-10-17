@@ -59,6 +59,7 @@ func logMessage(level int, format string, args ...interface{}) {
 func main() {
 	modulePath := flag.String("module-path", "", "Path to the Terraform module")
 	moduleType := flag.String("module-type", "", "Type of the Terraform module (utility, collection, reference, etc.)")
+	provider := flag.String("provider", "", "Provider name (optional, auto-detected from path if not specified)")
 	configPath := flag.String("config", "", "Path to the monorepo configuration file")
 	verbose := flag.Bool("verbose", false, "Enable verbose output")
 	flag.Parse()
@@ -162,49 +163,98 @@ func main() {
 	// Determine policy directories to evaluate
 	var policyDirs []string
 
-	// Get module type specific policy directory
-	moduleTypes, ok := config["module_types"].(map[string]interface{})
+	// Navigate nested config structure: provider -> {provider} -> module_types -> {type}
+	providers, ok := config["provider"].(map[string]interface{})
 	if !ok {
-		logMessage(LevelError, "module_types not found in config")
+		logMessage(LevelError, "provider not found in config")
 		os.Exit(1)
 	}
 
-	typeConfig, ok := moduleTypes[*moduleType].(map[string]interface{})
-	if !ok {
-		logMessage(LevelWarn, "No specific policies for module type: %s", *moduleType)
-	} else {
-		policyDir, ok := typeConfig["policy_dir"].(string)
-		if ok {
-			policyDirs = append(policyDirs, policyDir)
-			logMessage(LevelInfo, "Added module type specific policy directory: %s", policyDir)
-		} else {
-			logMessage(LevelWarn, "No policy directory defined for module type: %s", *moduleType)
-		}
-	}
+	var matchedProvider string
+	var matchedTypeConfig map[string]interface{}
 
-	// Get additional policy directories from config
-	additionalPolicyDirs, ok := config["module_validator_additional_policies"].([]interface{})
-	if ok {
-		logMessage(LevelDebug, "Found additional policy directories configuration")
-		for _, dirKey := range additionalPolicyDirs {
-			if dirKeyStr, ok := dirKey.(string); ok {
-				// Look up the policy directory in rego_policy_dirs
-				regoPolicyDirs, ok := config["rego_policy_dirs"].(map[string]interface{})
-				if ok {
-					if policyDir, ok := regoPolicyDirs[dirKeyStr].(string); ok {
-						policyDirs = append(policyDirs, policyDir)
-						logMessage(LevelInfo, "Added additional policy directory: %s", policyDir)
-					} else {
-						logMessage(LevelWarn, "Policy directory not found for key: %s", dirKeyStr)
-					}
-				} else {
-					logMessage(LevelWarn, "rego_policy_dirs not found in config")
+	// If provider flag is set, use it directly
+	if *provider != "" {
+		logMessage(LevelInfo, "Using provider from flag: %s", *provider)
+		matchedProvider = *provider
+
+		providerConfig, ok := providers[matchedProvider].(map[string]interface{})
+		if !ok {
+			logMessage(LevelError, "Provider '%s' not found in config", matchedProvider)
+			os.Exit(1)
+		}
+
+		moduleTypes, ok := providerConfig["module_types"].(map[string]interface{})
+		if !ok {
+			logMessage(LevelError, "module_types not found for provider '%s'", matchedProvider)
+			os.Exit(1)
+		}
+
+		matchedTypeConfig, ok = moduleTypes[*moduleType].(map[string]interface{})
+		if !ok {
+			logMessage(LevelError, "Module type '%s' not found for provider '%s'", *moduleType, matchedProvider)
+			os.Exit(1)
+		}
+	} else {
+		// Auto-detect provider from module path by checking all providers in config
+		for providerName, providerData := range providers {
+			providerConfig, ok := providerData.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			moduleTypes, ok := providerConfig["module_types"].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			typeConfig, ok := moduleTypes[*moduleType].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			// Check if module path matches any path pattern for this provider/type
+			pathPatterns, ok := typeConfig["path_patterns"].([]interface{})
+			if !ok {
+				continue
+			}
+
+			for _, pattern := range pathPatterns {
+				patternStr, ok := pattern.(string)
+				if !ok {
+					continue
+				}
+
+				// Convert glob pattern to simple prefix match
+				prefix := strings.TrimSuffix(patternStr, "/*")
+				if strings.HasPrefix(*modulePath, prefix) {
+					matchedProvider = providerName
+					matchedTypeConfig = typeConfig
+					break
 				}
 			}
+
+			if matchedProvider != "" {
+				break
+			}
 		}
-	} else {
-		logMessage(LevelWarn, "No additional policy directories configured")
+
+		if matchedProvider == "" {
+			logMessage(LevelError, "No provider configuration found matching module path: %s", *modulePath)
+			os.Exit(1)
+		}
+
+		logMessage(LevelInfo, "Matched provider: %s", matchedProvider)
 	}
+
+	policyDir, ok := matchedTypeConfig["policy_dir"].(string)
+	if !ok {
+		logMessage(LevelError, "No policy directory defined for provider '%s', module type '%s'", matchedProvider, *moduleType)
+		os.Exit(1)
+	}
+
+	policyDirs = append(policyDirs, policyDir)
+	logMessage(LevelInfo, "Added module type specific policy directory: %s", policyDir)
 
 	if len(policyDirs) == 0 {
 		logMessage(LevelWarn, "No policy directories found to evaluate")
@@ -226,7 +276,7 @@ func main() {
 		}
 		logMessage(LevelDebug, "Found %d policy files in %s", len(policyFiles), dir)
 		for _, file := range policyFiles {
-			logMessage(LevelTrace, "Found policy file: %s", file)
+			logMessage(LevelInfo, "Found policy file: %s", file)
 		}
 		allPolicyFiles = append(allPolicyFiles, policyFiles...)
 	}
@@ -401,11 +451,21 @@ func main() {
 				ruleName = "main"
 			}
 
+			// Get library bundle path from config
+			libraryPath, ok := config["terraform_module_opa_library_bundle"].(string)
+			if !ok {
+				logMessage(LevelError, "terraform_module_opa_library_bundle not found in config")
+				violations = true
+				policyFileErrors[policyName] = true
+				continue
+			}
+
 			// Run OPA evaluation for this rule
 			opaArgs := []string{
 				"eval",
 				"--format", "json",
 				"--data", policyFile,
+				"--bundle", libraryPath,
 				"data." + packageName + "." + rule,
 				"--input", modifiedInputFile.Name(),
 			}
