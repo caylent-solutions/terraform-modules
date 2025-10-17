@@ -1,3 +1,8 @@
+# Import AWS constants from centralized data module
+module "aws_constants" {
+  source = "git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/data/aws-constants?ref=providers/aws/data/aws-constants/v1.0.0"
+}
+
 # Fetch existing SSO Instance
 data "aws_ssoadmin_instances" "sso_instance" {}
 
@@ -10,7 +15,7 @@ data "aws_identitystore_group" "existing_sso_groups" {
   identity_store_id = local.sso_instance_id
   alternate_identifier {
     unique_attribute {
-      attribute_path  = "DisplayName"
+      attribute_path  = var.identity_store_display_name_attribute
       attribute_value = each.value.group_name
     }
   }
@@ -24,7 +29,7 @@ data "aws_identitystore_user" "existing_sso_users" {
   alternate_identifier {
     # Filter users by user_name (nuzumaki, suchiha, dovis, etc.)
     unique_attribute {
-      attribute_path  = "UserName"
+      attribute_path  = var.identity_store_username_attribute
       attribute_value = each.value.user_name
     }
   }
@@ -38,7 +43,7 @@ data "aws_identitystore_user" "existing_google_sso_users" {
   alternate_identifier {
     # Filter users by user_name (nuzumaki, suchiha, dovis, etc.)
     unique_attribute {
-      attribute_path  = "UserName"
+      attribute_path  = var.identity_store_username_attribute
       attribute_value = each.value.user_name
     }
   }
@@ -70,7 +75,7 @@ resource "aws_identitystore_user" "sso_users" {
   # - Primary Information -
   // The default is the provided given name and family name.
   # display_name = lookup(each.value, "display_name", join(" ", [each.value.given_name, each.value.family_name]))
-  display_name = each.value.display_name != null ? each.value.display_name : join(" ", [each.value.given_name, each.value.family_name])
+  display_name = each.value.display_name != null ? each.value.display_name : join(var.name_field_separator, [each.value.given_name, each.value.family_name])
 
   //(Required, Forces new resource) A unique string used to identify the user. This value can consist of letters, accented characters, symbols, numbers, and punctuation. This value is specified at the time the user is created and stored as an attribute of the user object in the identity store. The limit is 128 characters
   user_name = each.value.user_name
@@ -86,7 +91,7 @@ resource "aws_identitystore_user" "sso_users" {
     family_name = each.value.family_name
     // (Optional) The name that is typically displayed when the name is shown for display.
     // Default value is the provided given name and family name.
-    formatted = each.value.name_formatted != null ? each.value.name_formatted : join(" ", [each.value.given_name, each.value.family_name])
+    formatted = each.value.name_formatted != null ? each.value.name_formatted : join(var.name_field_separator, [each.value.given_name, each.value.family_name])
     // (Optional) The honorific prefix of the user.
     // Default value is null.
     honorific_prefix = each.value.honorific_prefix
@@ -132,7 +137,7 @@ resource "aws_identitystore_user" "sso_users" {
     locality = each.value.locality
     //(Optional) The name that is typically displayed when the address is shown for display.
     // Default value is the provided street address, locality, region, postal code, and country.
-    formatted = each.value.address_formatted != null ? each.value.address_formatted : join(" ", [lookup(each.value, "street_address", ""), lookup(each.value, "locality", ""), lookup(each.value, "region", ""), lookup(each.value, "postal_code", ""), lookup(each.value, "country", "")])
+    formatted = each.value.address_formatted != null ? each.value.address_formatted : join(var.address_field_separator, [coalesce(each.value.street_address, var.empty_string_default), coalesce(each.value.locality, var.empty_string_default), coalesce(each.value.region, var.empty_string_default), coalesce(each.value.postal_code, var.empty_string_default), coalesce(each.value.country, var.empty_string_default)])
     // Default value is null.
     postal_code = each.value.postal_code
     // (Optional) When true, this is the primary address associated with the user.
@@ -226,10 +231,10 @@ resource "aws_ssoadmin_permission_set" "pset" {
   # if the given key does not exist, the default value (null) is returned instead
 
   instance_arn     = local.ssoadmin_instance_arn
-  description      = lookup(each.value, "description", null)
-  relay_state      = lookup(each.value, "relay_state", null)      // (Optional) URL used to redirect users within the application during the federation authentication process
-  session_duration = lookup(each.value, "session_duration", null) // The length of time that the application user sessions are valid in the ISO-8601 standard
-  tags             = lookup(each.value, "tags", {})
+  description      = lookup(each.value, module.aws_constants.iam_identity_center_permission_set_keys.description, null)
+  relay_state      = lookup(each.value, module.aws_constants.iam_identity_center_permission_set_keys.relay_state, null)      // (Optional) URL used to redirect users within the application during the federation authentication process
+  session_duration = lookup(each.value, module.aws_constants.iam_identity_center_permission_set_keys.session_duration, null) // The length of time that the application user sessions are valid in the ISO-8601 standard
+  tags             = lookup(each.value, module.aws_constants.iam_identity_center_permission_set_keys.tags, module.aws_constants.defaults.empty_map)
 }
 
 
@@ -255,7 +260,7 @@ resource "aws_ssoadmin_customer_managed_policy_attachment" "pset_customer_manage
   permission_set_arn = aws_ssoadmin_permission_set.pset[each.value.pset_name].arn
   customer_managed_policy_reference {
     name = each.value.policy_name
-    path = "/"
+    path = var.customer_managed_policy_path
   }
 
 }
@@ -289,7 +294,7 @@ resource "aws_ssoadmin_permissions_boundary_attachment" "pset_permissions_bounda
   permissions_boundary {
     customer_managed_policy_reference {
       name = each.value.boundary.customer_managed_policy_reference.name
-      path = can(each.value.boundary.customer_managed_policy_reference.path) ? each.value.boundary.customer_managed_policy_reference.path : "/"
+      path = can(each.value.boundary.customer_managed_policy_reference.path) ? each.value.boundary.customer_managed_policy_reference.path : var.customer_managed_policy_path
     }
 
   }
@@ -305,8 +310,8 @@ resource "aws_ssoadmin_account_assignment" "account_assignment" {
 
   # Conditional use of resource or data source to reference the principal_id depending on if the principal_type is "GROUP" or "USER" and if the principal_idp is "INTERNAL" or "EXTERNAL". "INTERNAL" aligns with users or groups that were created with this module and use the default IAM Identity Store as the IdP. "EXTERNAL" aligns with users or groups that were created outside of this module (e.g. via external IdP such as EntraID, Okta, Google, etc.) and were synced via SCIM to IAM Identity Center.
 
-  principal_id = each.value.principal_type == "GROUP" && each.value.principal_idp == "INTERNAL" ? aws_identitystore_group.sso_groups[each.value.principal_name].group_id : (each.value.principal_type == "USER" && each.value.principal_idp == "INTERNAL" ? aws_identitystore_user.sso_users[each.value.principal_name].user_id : (each.value.principal_type == "GROUP" && each.value.principal_idp == "EXTERNAL" ? data.aws_identitystore_group.existing_sso_groups[each.value.principal_name].group_id : (each.value.principal_type == "USER" && each.value.principal_idp == "EXTERNAL" ? data.aws_identitystore_user.existing_sso_users[each.value.principal_name].user_id : (each.value.principal_type == "USER" && each.value.principal_idp == "GOOGLE") ? data.aws_identitystore_user.existing_google_sso_users[each.value.principal_name].user_id : null)))
+  principal_id = each.value.principal_type == module.aws_constants.iam_identity_center_principal_types.group && each.value.principal_idp == module.aws_constants.iam_identity_center_identity_provider_types.internal ? aws_identitystore_group.sso_groups[each.value.principal_name].group_id : (each.value.principal_type == module.aws_constants.iam_identity_center_principal_types.user && each.value.principal_idp == module.aws_constants.iam_identity_center_identity_provider_types.internal ? aws_identitystore_user.sso_users[each.value.principal_name].user_id : (each.value.principal_type == module.aws_constants.iam_identity_center_principal_types.group && each.value.principal_idp == module.aws_constants.iam_identity_center_identity_provider_types.external ? data.aws_identitystore_group.existing_sso_groups[each.value.principal_name].group_id : (each.value.principal_type == module.aws_constants.iam_identity_center_principal_types.user && each.value.principal_idp == module.aws_constants.iam_identity_center_identity_provider_types.external ? data.aws_identitystore_user.existing_sso_users[each.value.principal_name].user_id : (each.value.principal_type == module.aws_constants.iam_identity_center_principal_types.user && each.value.principal_idp == module.aws_constants.iam_identity_center_identity_provider_types.google) ? data.aws_identitystore_user.existing_google_sso_users[each.value.principal_name].user_id : null)))
 
   target_id   = each.value.account_id
-  target_type = "AWS_ACCOUNT"
+  target_type = var.target_type
 }

@@ -17,21 +17,13 @@ locals {
   # This map is then fed into the 'identitystore_group' and 'identitystore_user' data sources with the 'for_each'
   # meta argument to fetch necessary information (group_id, user_id) for each user. These values are needed
   # to assign the sso users to groups.
-  # Ex: steve_Admin = {
-  #       group_name = "Admin"
-  #       user_name = "steve.caylent"
-  #     }
-  #     steve_Dev = {
-  #       group_name = "Dev"
-  #       user_name = "steve.caylent"
-  #     }
-  #     steve_Qa = {
-  #       group_name = "QA"
-  #       user_name = "steve.caylent"
+  # Ex: user_group = {
+  #       group_name = group_name_value
+  #       user_name = user_name_value
   #     }
 
   users_and_their_groups = {
-    for s in local.flatten_user_data : format("%s_%s", s.user_name, s.group_name) => s
+    for s in local.flatten_user_data : format(module.aws_constants.format_strings.user_group_mapping, s.user_name, s.group_name) => s
   }
 
   # Create a new local variable by flattening the complex type given in the variable "existing_sso_users"
@@ -45,7 +37,7 @@ locals {
   ])
 
   users_and_their_groups_existing_users = {
-    for s in local.flatten_user_data_existing_users : format("%s_%s", s.user_name, s.group_name) => s
+    for s in local.flatten_user_data_existing_users : format(module.aws_constants.format_strings.user_group_mapping, s.user_name, s.group_name) => s
   }
 
   # Create a new local variable by flattening the complex type given in the variable "existing_google_sso_users"
@@ -59,7 +51,7 @@ locals {
   ])
 
   users_and_their_groups_existing_google_sso_users = {
-    for s in local.flatten_user_data_existing_google_sso_users : format("%s_%s", s.user_name, s.group_name) => s
+    for s in local.flatten_user_data_existing_google_sso_users : format(module.aws_constants.format_strings.user_group_mapping, s.user_name, s.group_name) => s
   }
 }
 
@@ -68,8 +60,8 @@ locals {
 #############################################
 locals {
   # - Fetch SSO Instance ARN and SSO Instance ID -
-  ssoadmin_instance_arn = tolist(data.aws_ssoadmin_instances.sso_instance.arns)[0]
-  sso_instance_id       = tolist(data.aws_ssoadmin_instances.sso_instance.identity_store_ids)[0]
+  ssoadmin_instance_arn = tolist(data.aws_ssoadmin_instances.sso_instance.arns)[module.aws_constants.array_indices.first]
+  sso_instance_id       = tolist(data.aws_ssoadmin_instances.sso_instance.identity_store_ids)[module.aws_constants.array_indices.first]
 
   # Iterate over the objects in var.permission sets, then evaluate the expression's 'pset_name'
   # and 'pset_index' with 'pset_name' and 'pset_index' only if the pset_index.managed_policies (AWS Managed Policy ARN)
@@ -78,11 +70,11 @@ locals {
 
   # pset_name is the attribute name for each permission set map/object
   # pset_index is the corresponding index of the map of maps (which is the variable permission_sets)
-  aws_managed_permission_sets                           = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index.aws_managed_policies) }
-  customer_managed_permission_sets                      = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index.customer_managed_policies) }
-  inline_policy_permission_sets                         = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index.inline_policy) }
-  permissions_boundary_aws_managed_permission_sets      = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index.permissions_boundary.managed_policy_arn) }
-  permissions_boundary_customer_managed_permission_sets = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index.permissions_boundary.customer_managed_policy_reference) }
+  aws_managed_permission_sets                           = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index[module.aws_constants.iam_identity_center_policy_properties.aws_managed_policies]) }
+  customer_managed_permission_sets                      = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index[module.aws_constants.iam_identity_center_policy_properties.customer_managed_policies]) }
+  inline_policy_permission_sets                         = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index[module.aws_constants.iam_identity_center_policy_properties.inline_policy]) }
+  permissions_boundary_aws_managed_permission_sets      = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index[module.aws_constants.iam_identity_center_policy_properties.permissions_boundary][module.aws_constants.iam_identity_center_policy_properties.managed_policy_arn]) }
+  permissions_boundary_customer_managed_permission_sets = { for pset_name, pset_index in var.permission_sets : pset_name => pset_index if can(pset_index[module.aws_constants.iam_identity_center_policy_properties.permissions_boundary][module.aws_constants.iam_identity_center_policy_properties.customer_managed_policy_reference]) }
 
 
   # When using the 'for' expression in Terraform:
@@ -96,21 +88,21 @@ locals {
   # - AWS Managed Policies -
   pset_aws_managed_policy_maps = flatten([
     for pset_name, pset_index in local.aws_managed_permission_sets : [
-      for policy in pset_index.aws_managed_policies : {
+      for policy in pset_index[module.aws_constants.iam_identity_center_policy_properties.aws_managed_policies] : {
         pset_name  = pset_name
         policy_arn = policy
-      } if pset_index.aws_managed_policies != null && can(pset_index.aws_managed_policies)
+      } if pset_index[module.aws_constants.iam_identity_center_policy_properties.aws_managed_policies] != null && can(pset_index[module.aws_constants.iam_identity_center_policy_properties.aws_managed_policies])
     ]
   ])
 
   # - Customer Managed Policies -
   pset_customer_managed_policy_maps = flatten([
     for pset_name, pset_index in local.customer_managed_permission_sets : [
-      for policy in pset_index.customer_managed_policies : {
+      for policy in pset_index[module.aws_constants.iam_identity_center_policy_properties.customer_managed_policies] : {
         pset_name   = pset_name
         policy_name = policy
         # path = path
-      } if pset_index.customer_managed_policies != null && can(pset_index.customer_managed_policies)
+      } if pset_index[module.aws_constants.iam_identity_center_policy_properties.customer_managed_policies] != null && can(pset_index[module.aws_constants.iam_identity_center_policy_properties.customer_managed_policies])
     ]
   ])
 
@@ -119,7 +111,7 @@ locals {
     for pset_name, pset_index in local.inline_policy_permission_sets : [
       {
         pset_name     = pset_name
-        inline_policy = pset_index.inline_policy
+        inline_policy = pset_index[module.aws_constants.iam_identity_center_policy_properties.inline_policy]
       }
     ]
   ])
@@ -130,7 +122,7 @@ locals {
       {
         pset_name = pset_name
         boundary = {
-          managed_policy_arn = pset_index.permissions_boundary.managed_policy_arn
+          managed_policy_arn = pset_index[module.aws_constants.iam_identity_center_policy_properties.permissions_boundary][module.aws_constants.iam_identity_center_policy_properties.managed_policy_arn]
         }
       }
     ]
@@ -141,7 +133,7 @@ locals {
       {
         pset_name = pset_name
         boundary = {
-          customer_managed_policy_reference = pset_index.permissions_boundary.customer_managed_policy_reference
+          customer_managed_policy_reference = pset_index[module.aws_constants.iam_identity_center_policy_properties.permissions_boundary][module.aws_constants.iam_identity_center_policy_properties.customer_managed_policy_reference]
         }
       }
     ]
@@ -155,8 +147,8 @@ locals {
 locals {
 
   accounts_ids_maps = {
-    for idx, account in data.aws_organizations_organization.organization.accounts : account.name => account.id
-    if account.status == "ACTIVE" && can(data.aws_organizations_organization.organization.accounts)
+    for idx, account in coalesce(data.aws_organizations_organization.organization.accounts, []) : account.name => account.id
+    if account.status == var.account_status_filter
   }
 
   # Create a new local variable by flattening the complex type given in the variable "account_assignments"
@@ -169,7 +161,7 @@ locals {
           principal_name = var.account_assignments[this_assignment].principal_name
           principal_type = var.account_assignments[this_assignment].principal_type
           principal_idp  = var.account_assignments[this_assignment].principal_idp
-          account_id     = length(regexall("[0-9]{12}", account)) > 0 ? account : lookup(local.accounts_ids_maps, account, null)
+          account_id     = length(regexall(module.aws_constants.aws_account_id_regex, account)) > 0 ? account : lookup(local.accounts_ids_maps, account, null)
         }
       ]
     ]
@@ -179,7 +171,7 @@ locals {
   # Convert the flatten_account_assignment_data tuple into a map.
   # Since we will be using this local in a for_each, it must either be a map or a set of strings
   principals_and_their_account_assignments = {
-    for s in local.flatten_account_assignment_data : format("Type:%s__Principal:%s__Permission:%s__Account:%s", s.principal_type, s.principal_name, s.permission_set, s.account_id) => s
+    for s in local.flatten_account_assignment_data : format(module.aws_constants.format_strings.assignment_key_format, s.principal_type, s.principal_name, s.permission_set, s.account_id) => s
   }
 
   # List of permission sets, groups, and users that are defined in this module

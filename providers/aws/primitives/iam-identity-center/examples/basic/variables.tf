@@ -38,13 +38,13 @@ variable "sso_users" {
     phone_number_type       = optional(string, null)
     is_primary_phone_number = optional(bool, true)
     # Address
-    country            = optional(string, " ")
-    locality           = optional(string, " ")
+    country            = optional(string, null)
+    locality           = optional(string, null)
     address_formatted  = optional(string)
-    postal_code        = optional(string, " ")
+    postal_code        = optional(string, null)
     is_primary_address = optional(bool, true)
-    region             = optional(string, " ")
-    street_address     = optional(string, " ")
+    region             = optional(string, null)
+    street_address     = optional(string, null)
     address_type       = optional(string, null)
     # Additional
     user_type          = optional(string, null)

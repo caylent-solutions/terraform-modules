@@ -38,13 +38,13 @@ variable "sso_users" {
     phone_number_type       = optional(string, null)
     is_primary_phone_number = optional(bool, true)
     # Address
-    country            = optional(string, " ")
-    locality           = optional(string, " ")
+    country            = optional(string, null)
+    locality           = optional(string, null)
     address_formatted  = optional(string)
-    postal_code        = optional(string, " ")
+    postal_code        = optional(string, null)
     is_primary_address = optional(bool, true)
-    region             = optional(string, " ")
-    street_address     = optional(string, " ")
+    region             = optional(string, null)
+    street_address     = optional(string, null)
     address_type       = optional(string, null)
     # Additional
     user_type          = optional(string, null)
@@ -106,4 +106,53 @@ variable "account_assignments" {
   }))
 
   default = {}
+}
+
+# Configuration variables to replace hard-coded values
+variable "identity_store_display_name_attribute" {
+  description = "The attribute path for display name in identity store"
+  type        = string
+  default     = "DisplayName"
+}
+
+variable "identity_store_username_attribute" {
+  description = "The attribute path for username in identity store"
+  type        = string
+  default     = "UserName"
+}
+
+variable "customer_managed_policy_path" {
+  description = "The path for customer managed policies"
+  type        = string
+  default     = "/"
+}
+
+variable "target_type" {
+  description = "The target type for account assignments"
+  type        = string
+  default     = "AWS_ACCOUNT"
+}
+
+variable "address_field_separator" {
+  description = "The separator used to join address fields"
+  type        = string
+  default     = " "
+}
+
+variable "name_field_separator" {
+  description = "The separator used to join name fields"
+  type        = string
+  default     = " "
+}
+
+variable "empty_string_default" {
+  description = "Default empty string value for address fields"
+  type        = string
+  default     = ""
+}
+
+variable "account_status_filter" {
+  description = "The account status to filter for in organization accounts"
+  type        = string
+  default     = "ACTIVE"
 }

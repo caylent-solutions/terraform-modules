@@ -1,4 +1,4 @@
-package basic_test
+package common_test
 
 import (
 	"path/filepath"
@@ -8,6 +8,23 @@ import (
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestTerraformValidate(t *testing.T) {
+	examples := []string{"basic"}
+
+	for _, example := range examples {
+		t.Run(example, func(t *testing.T) {
+			exampleDir := filepath.Join("../../examples", example)
+			terraformOptions := &terraform.Options{
+				TerraformDir: exampleDir,
+				NoColor:      true,
+			}
+
+			terraform.Init(t, terraformOptions)
+			terraform.Validate(t, terraformOptions)
+		})
+	}
+}
 
 func TestTerraformFormat(t *testing.T) {
 	examples := []string{"basic"}
@@ -27,7 +44,7 @@ func TestTerraformFormat(t *testing.T) {
 	}
 }
 
-func TestTerraformValidate(t *testing.T) {
+func TestTerraformPlan(t *testing.T) {
 	examples := []string{"basic"}
 
 	for _, example := range examples {
@@ -39,7 +56,8 @@ func TestTerraformValidate(t *testing.T) {
 			}
 
 			terraform.Init(t, terraformOptions)
-			terraform.Validate(t, terraformOptions)
+			_, err := terraform.PlanE(t, terraformOptions)
+			assert.NoError(t, err, "Terraform plan should succeed")
 		})
 	}
 }
