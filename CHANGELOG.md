@@ -1,2 +1,2 @@
-## monorepo-config/v1.6.1 (2025-10-17)
-* fc116a1 fix: update source policy to enforce monorepo sources with valid vers… (#151)
+## monorepo-config/v1.7.0 (2025-11-06)
+* c2cf9f7 feat: update caylent-devcontainer to 1.14.0 (#156)
