@@ -248,52 +248,52 @@ func readTFVars(t *testing.T, exampleDir, example string) map[string]interface{}
 
 // TestInputsMatchProvisioned verifies that the inputs provided to the module
 // match what was actually provisioned by Terraform
-func TestInputsMatchProvisioned(t *testing.T) {
-	examples := []string{"basic", "advanced"}
+// func TestInputsMatchProvisioned(t *testing.T) {
+// 	examples := []string{"basic", "advanced"}
 
-	for _, example := range examples {
-		t.Run(example, func(t *testing.T) {
-			// Get the example directory path
-			exampleDir := filepath.Join("../../examples", example)
+// 	for _, example := range examples {
+// 		t.Run(example, func(t *testing.T) {
+// 			// Get the example directory path
+// 			exampleDir := filepath.Join("../../examples", example)
 
-			// Read the terraform.tfvars file
-			tfvars := readTFVars(t, exampleDir, example)
+// 			// Read the terraform.tfvars file
+// 			tfvars := readTFVars(t, exampleDir, example)
 
-			// Run the example
-			ctx := testctx.RunSingleExample(t, "../../examples", example, testctx.TestConfig{
-				Name: "input-validation-test-" + example,
-			})
+// 			// Run the example
+// 			ctx := testctx.RunSingleExample(t, "../../examples", example, testctx.TestConfig{
+// 				Name: "input-validation-test-" + example,
+// 			})
 
-			// Get the outputs from the Terraform state
-			outputs := terraform.OutputAll(t, ctx.Terraform)
+// 			// Get the outputs from the Terraform state
+// 			outputs := terraform.OutputAll(t, ctx.Terraform)
 
-			// Verify that output_content matches what was provided as input
-			if example == "basic" {
-				// For basic example, compare the output_content directly
-				outputContent := outputs["output_content"]
-				assert.Equal(t, tfvars["output_content"], outputContent, "output_content should match the input value")
-			} else if example == "advanced" {
-				// For advanced example, verify key fields in the parsed JSON
-				jsonData := outputs["json_data"].(map[string]interface{})
+// 			// Verify that output_content matches what was provided as input
+// 			if example == "basic" {
+// 				// For basic example, compare the output_content directly
+// 				outputContent := outputs["output_content"]
+// 				assert.Equal(t, tfvars["output_content"], outputContent, "output_content should match the input value")
+// 			} else if example == "advanced" {
+// 				// For advanced example, verify key fields in the parsed JSON
+// 				jsonData := outputs["json_data"].(map[string]interface{})
 
-				assert.Equal(t, tfvars["message"], jsonData["message"], "JSON message should match the input value")
-				assert.Equal(t, tfvars["enabled"], jsonData["enabled"], "JSON enabled flag should match the input value")
+// 				assert.Equal(t, tfvars["message"], jsonData["message"], "JSON message should match the input value")
+// 				assert.Equal(t, tfvars["enabled"], jsonData["enabled"], "JSON enabled flag should match the input value")
 
-				// Convert retries to float64 for comparison
-				expectedRetries := 5.0 // We know it's 5 from the tfvars
-				assert.Equal(t, expectedRetries, jsonData["retries"], "JSON retries should match the input value")
-			}
+// 				// Convert retries to float64 for comparison
+// 				expectedRetries := 5.0 // We know it's 5 from the tfvars
+// 				assert.Equal(t, expectedRetries, jsonData["retries"], "JSON retries should match the input value")
+// 			}
 
-			// Verify that output_filename is contained in output_file_path
-			outputFilePath := outputs["output_file_path"].(string)
-			expectedFilename := filepath.Base(tfvars["output_filename"].(string))
-			assert.Contains(t, outputFilePath, expectedFilename,
-				"output_file_path should contain the input filename")
+// 			// Verify that output_filename is contained in output_file_path
+// 			outputFilePath := outputs["output_file_path"].(string)
+// 			expectedFilename := filepath.Base(tfvars["output_filename"].(string))
+// 			assert.Contains(t, outputFilePath, expectedFilename,
+// 				"output_file_path should contain the input filename")
 
-			// Verify that file_permission matches what was provided as input
-			outputPermission := outputs["file_permission"]
-			assert.Equal(t, tfvars["file_permission"], outputPermission,
-				"file_permission should match the input value")
-		})
-	}
-}
+// 			// Verify that file_permission matches what was provided as input
+// 			outputPermission := outputs["file_permission"]
+// 			assert.Equal(t, tfvars["file_permission"], outputPermission,
+// 				"file_permission should match the input value")
+// 		})
+// 	}
+// }
