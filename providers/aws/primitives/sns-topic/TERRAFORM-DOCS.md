@@ -10,8 +10,7 @@
 
 | Name | Version |
 |------|---------|
-| <a name="provider_local"></a> [local](#provider\_local) | >= 2.0.0 |
-| <a name="provider_time"></a> [time](#provider\_time) | >= 0.7.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | n/a |
 
 ## Modules
 
@@ -21,22 +20,17 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [local_file.output](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
-| [time_static.creation_time](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/static) | resource |
+| [aws_sns_topic.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_file_permission"></a> [file\_permission](#input\_file\_permission) | Permissions to set for the output file | `string` | `"0644"` | no |
-| <a name="input_output_content"></a> [output\_content](#input\_output\_content) | Content to be written to the output file | `any` | n/a | yes |
-| <a name="input_output_filename"></a> [output\_filename](#input\_output\_filename) | Path to the output file | `string` | n/a | yes |
+| <a name="input_name"></a> [name](#input\_name) | The name of the SNS topic. | `string` | n/a | yes |
+| <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to assign to the topic. | `map(string)` | `{}` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| <a name="output_creation_timestamp"></a> [creation\_timestamp](#output\_creation\_timestamp) | The timestamp when the file was created |
-| <a name="output_file_permission"></a> [file\_permission](#output\_file\_permission) | The permissions of the output file |
-| <a name="output_output_content"></a> [output\_content](#output\_output\_content) | The content written to the file |
-| <a name="output_output_file_path"></a> [output\_file\_path](#output\_output\_file\_path) | The path of the output file |
+| <a name="output_topic_arn"></a> [topic\_arn](#output\_topic\_arn) | ARN of the SNS topic |
