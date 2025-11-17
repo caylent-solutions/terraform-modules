@@ -40,20 +40,15 @@ help: ## Show available make targets
 
 .PHONY: cpm-clean
 cpm-clean:
-	@ASDF_DIR=$(ASDF_DIR) && . $$ASDF_DIR/asdf.sh && \
-	repo list | awk '{ print $$1; }' | cut -d '/' -f1 | uniq | xargs rm -rf; \
-	find . -type l ! -exec test -e {} \; -print | xargs rm -rf
+	@if [ -f .repo/manifest.xml ]; then \
+		ASDF_DIR=$(ASDF_DIR) && . $$ASDF_DIR/asdf.sh && \
+		repo list | awk '{ print $$1; }' | cut -d '/' -f1 | uniq | xargs rm -rf; \
+		find . -type l ! -exec test -e {} \; -print | xargs rm -rf; \
+	fi; \
+	rm -rf $(PACKAGES_DIR) .repo
 
 .PHONY: cpm-configure
-cpm-configure: cpm-install-asdf cpm-install-tools cpm-install-repo
-	@if [ ! -f .gitignore ] || ! grep -q "^$(PACKAGES_DIR)/$$" .gitignore; then \
-		echo "Adding $(PACKAGES_DIR)/ to .gitignore..."; \
-		echo "$(PACKAGES_DIR)/" >> .gitignore; \
-	fi
-	@if [ ! -f .gitignore ] || ! grep -q "^\.repo/$$" .gitignore; then \
-		echo "Adding .repo/ to .gitignore..."; \
-		echo ".repo/" >> .gitignore; \
-	fi
+cpm-configure: cpm-install-repo
 	@ASDF_DIR=$(ASDF_DIR) && . $$ASDF_DIR/asdf.sh && \
 	if ! which repo > /dev/null 2>&1; then \
 		echo "Error: repo tool not found after installation"; \
@@ -67,25 +62,6 @@ cpm-configure: cpm-install-asdf cpm-install-tools cpm-install-repo
 		--repo-rev="$(REPO_REV)" || { echo "Error: repo init failed"; exit 1; } && \
 	repo sync || { echo "Error: repo sync failed"; exit 1; }
 
-.PHONY: cpm-install-asdf
-cpm-install-asdf:
-	@if [ -d "$(ASDF_DIR)" ]; then \
-		echo "asdf already installed at $(ASDF_DIR)"; \
-	else \
-		echo "Installing asdf $(ASDF_VERSION)..."; \
-		git clone $(ASDF_URL) $(ASDF_DIR) --branch $(ASDF_VERSION) || { echo "Error: Failed to clone asdf"; exit 1; }; \
-		echo "asdf installed successfully"; \
-	fi
-	@if [ ! -f "$(TOOL_VERSIONS_FILE)" ]; then \
-		echo "Creating $(TOOL_VERSIONS_FILE) with python $(DEFAULT_PYTHON_VERSION)..."; \
-		echo "python $(DEFAULT_PYTHON_VERSION)" > $(TOOL_VERSIONS_FILE); \
-	else \
-		if ! grep -q "^python" $(TOOL_VERSIONS_FILE); then \
-			echo "Adding python $(DEFAULT_PYTHON_VERSION) to $(TOOL_VERSIONS_FILE)..."; \
-			echo "python $(DEFAULT_PYTHON_VERSION)" >> $(TOOL_VERSIONS_FILE); \
-		fi; \
-	fi
-
 .PHONY: cpm-install-repo
 cpm-install-repo:
 	@if [ -z "$(REPO_REV)" ]; then \
@@ -97,24 +73,3 @@ cpm-install-repo:
 	pip install "git+$(REPO_URL)@$(REPO_REV)" || { echo "Error: Failed to install repo tool"; exit 1; } && \
 	asdf reshim python && \
 	echo "Repo tool installed successfully"
-
-.PHONY: cpm-install-tools
-cpm-install-tools:
-	@if [ ! -d "$(ASDF_DIR)" ]; then \
-		echo "Error: asdf not installed. Run 'make cpm-install-asdf' first."; \
-		exit 1; \
-	fi
-	@if [ ! -f "$(TOOL_VERSIONS_FILE)" ]; then \
-		echo "Error: $(TOOL_VERSIONS_FILE) not found. Run 'make cpm-install-asdf' first."; \
-		exit 1; \
-	fi
-	@ASDF_DIR=$(ASDF_DIR) && . $$ASDF_DIR/asdf.sh && \
-	awk '{print $$1}' $(TOOL_VERSIONS_FILE) | sort -u | while read plugin; do \
-		if ! asdf plugin list | grep -q "^$$plugin$$"; then \
-			echo "Installing asdf plugin: $$plugin"; \
-			asdf plugin add $$plugin || { echo "Error: Failed to add plugin $$plugin"; exit 1; }; \
-		fi; \
-	done && \
-	echo "Installing tools from $(TOOL_VERSIONS_FILE)..." && \
-	asdf install || { echo "Error: Failed to install tools"; exit 1; } && \
-	echo "Tools installed successfully"
