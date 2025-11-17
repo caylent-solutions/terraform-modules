@@ -33,12 +33,6 @@ test:
 	@echo "GO_TEST_TIMEOUT=$${GO_TEST_TIMEOUT:-not set}"
 	@$(call set_goarch); tftest run --parallel-fixtures=false --parallel-tests=false GOFLAGS="-count=1"
 
-test-basic:
-	@echo "Cleaning Go test cache..."
-	@$(call set_goarch); go clean -cache -testcache
-	@echo "Running basic tests with clean cache..."
-	@$(call set_goarch); TERRATEST_DISABLE_PARALLEL_TESTS=true go test ./tests/basic -v -count=1
-
 # Run common tests with clean cache
 test-common:
 	@echo "Cleaning Go test cache..."
