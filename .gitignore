@@ -159,3 +159,11 @@ override.tf.json
 # Terragrunt cache and temporary files
 .terragrunt-cache/
 terragrunt-debug.tf.json
+
+# ===============================
+# REPOSITORY-SPECIFIC
+# ===============================
+
+# Package and repo directories
+.packages/
+.repo/
