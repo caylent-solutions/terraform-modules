@@ -62,11 +62,11 @@ make install
 ```
 terraform-module/
 ├── examples/                # Example implementations of the module
-│   ├── basic/              # Basic example with minimal configuration
+│   ├── basic/               # Basic example with minimal configuration
 │   │   ├── main.tf
 │   │   ├── variables.tf
 │   │   └── terraform.tfvars
-│   └── advanced/           # Advanced example with more complex configuration
+│   └── advanced/            # Advanced example with more complex configuration
 │       ├── main.tf
 │       ├── variables.tf
 │       └── terraform.tfvars
