@@ -196,6 +196,8 @@ See [Module Testing](docs/terraform-module-testing.md) for detailed testing requ
 
 ## Configuration
 
+### Monorepo Configuration
+
 All monorepo automation is configured through a single centralized file:
 
 ```bash
@@ -203,6 +205,27 @@ monorepo-config.json
 ```
 
 This file defines module types, path patterns, policy directories, and other configuration used by all automation scripts. See [Monorepo Configuration](docs/monorepo-config.md) for details.
+
+### Module Automation with CPM
+
+Individual Terraform modules use the [Caylent Package Manager (CPM)](https://github.com/caylent-solutions/cpm) for standardized automation tasks. CPM provides:
+
+- **Versioned Automation**: Pin exact versions of testing, linting, and validation tasks
+- **Consistent Tooling**: Same automation across all modules without code duplication
+- **Single Source of Truth**: Centralized Make targets managed via the [cpm-terraform-modules-monorepo](https://github.com/caylent-solutions/cpm-terraform-modules-monorepo) package
+- **Ephemeral Dependencies**: All CPM packages are synced to `.packages/` and `.repo/` (git-ignored, never committed)
+
+Each module contains:
+- `Makefile` - CPM orchestration with `cpm-configure` target (static, rarely changes)
+- `.cpmenv` - CPM configuration (versions, URLs, settings)
+
+**How it works:**
+1. The base CPM Makefile provides the `cpm-configure` target
+2. Running `make cpm-configure` syncs the [cpm-terraform-modules-monorepo](https://github.com/caylent-solutions/cpm-terraform-modules-monorepo) package to `.packages/`
+3. This package provides all module automation tasks (test, lint, format, docs, security)
+4. Tasks are only available after `make cpm-configure` has been run
+
+See [CPM Documentation](https://github.com/caylent-solutions/cpm) for complete details on how CPM works.
 
 ## 🚀 Getting Started
 
@@ -223,24 +246,27 @@ make install-tools
 2. Install required tools: `make install-tools`
 3. Configure the environment: `make configure`
 4. Create a new module from the skeleton: `cp -r skeletons/generic-skeleton your/new/module`
-5. Enter your module directory and install module dependencies: `cd your/new/module && make install`
-6. Implement your module following the [structure requirements](docs/terraform-module-structure.md)
-7. Format and lint your code:
-   - For Go code in the monorepo: `make go-format` and `make go-lint`
-   - For Go code in a module: `make go-format` and `make go-lint` (from the module directory)
-8. Generate and check Terraform documentation in a module:
-   - `make tf-docs` (generate docs)
-   - `make tf-docs-check` (verify docs are up to date)
-9. Validate your module:
-   - From the repo root: `make module-validate MODULE_PATH=your/new/module MODULE_TYPE=module_type`
-10. Test your module:
-    - From the module directory: `make test` (runs all tests)
-    - `make test-common` (runs only common tests)
-11. Clean up module files:
-    - `make clean` (removes Terraform and state files)
-    - `make clean-all` (also cleans Go cache)
-12. Test all non-Terraform code: `make test-all-non-tf-module-code` (from repo root)
-13. Submit a PR
+5. Enter your module directory and configure CPM: `cd your/new/module && make cpm-configure`
+   - This syncs the automation package to `.packages/` and makes CPM tasks available
+6. Install module dependencies: `make install`
+   - This installs Go modules and the tftest CLI tool
+7. Implement your module following the [structure requirements](docs/terraform-module-structure.md)
+8. Use CPM-provided automation tasks (from the module directory):
+   - `make test` - Run all Terratest tests
+   - `make test-common` - Run common tests only
+   - `make tf-format` - Check Terraform formatting
+   - `make tf-lint` - Lint Terraform files
+   - `make tf-docs` - Generate documentation
+   - `make tf-security` - Run security scans
+   - `make go-lint` - Lint Go test files
+   - `make go-format` - Format Go test files
+   - `make clean` - Clean Terraform state
+9. Validate your module from repo root:
+   - `make module-validate MODULE_PATH=your/new/module MODULE_TYPE=module_type`
+10. Test all non-Terraform code: `make test-all-non-tf-module-code` (from repo root)
+11. Submit a PR
+
+**Note:** Module automation tasks are provided by the [cpm-terraform-modules-monorepo](https://github.com/caylent-solutions/cpm-terraform-modules-monorepo) package and are only available after running `make cpm-configure` followed by `make install`. The base CPM Makefile only provides `cpm-configure` and related CPM management targets.
 
 ## 🧪 Workflow Development and Testing
 

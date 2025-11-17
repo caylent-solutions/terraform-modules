@@ -1,0 +1,2 @@
+# Git repo dependency - automatically uses latest tag matching pattern
+git+https://github.com/caylent-solutions/git-repo.git@caylent-1.0.0
