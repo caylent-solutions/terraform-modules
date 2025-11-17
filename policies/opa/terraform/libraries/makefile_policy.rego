@@ -37,6 +37,39 @@ violation[result] if {
 	}
 }
 
+# 🔴 Violation if .cpmenv is missing
+violation[result] if {
+	module_path := input.module_path
+	not file_exists(module_path, ".cpmenv")
+
+	result := {
+		"policy": "terraform_module_makefile_policy",
+		"severity": "error",
+		"message": ".cpmenv is missing from the module",
+		"details": sprintf("Module '%s' does not contain a .cpmenv", [module_path]),
+		"resolution": "Add a .cpmenv to your module that matches the skeleton",
+	}
+}
+
+# 🔴 Violation if .cpmenv exists but doesn't match skeleton
+violation[result] if {
+	module_path := input.module_path
+	file_exists(module_path, ".cpmenv")
+
+	module_cpmenv := input.files[sprintf("%s/.cpmenv", [module_path])]
+	skeleton_cpmenv := input.files["skeletons/generic-skeleton/.cpmenv"]
+
+	module_cpmenv != skeleton_cpmenv
+
+	result := {
+		"policy": "terraform_module_makefile_policy",
+		"severity": "error",
+		"message": ".cpmenv does not match the skeleton .cpmenv",
+		"details": sprintf("Module '%s' contains a .cpmenv that does not match the skeleton", [module_path]),
+		"resolution": "Copy the .cpmenv from skeletons/generic-skeleton/.cpmenv",
+	}
+}
+
 # ✅ Helper: Checks if a file exists in the input
 file_exists(module_path, file) if {
 	input.files[sprintf("%s/%s", [module_path, file])]

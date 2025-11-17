@@ -1,4 +1,4 @@
-.PHONY: build-main-validation build-terraform-file-collector configure detect-module-changes github-actions-security go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate rego-format rego-integration-test rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies test-all-non-tf-module-code test-all-terraform-modules test-main-validation-workflow tf-clean tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
+.PHONY: build-main-validation build-terraform-file-collector configure detect-module-changes github-actions-security go-format go-install go-lint go-unit-test go-unit-test-coverage go-unit-test-coverage-json help install-tools module-validate python-install rego-format rego-integration-test rego-lint rego-unit-test rego-unit-test-coverage rego-unit-test-coverage-json run-opa-policies test-all-non-tf-module-code test-all-terraform-modules test-main-validation-workflow tf-clean tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test
 
 # Build and install terraform-file-collector binary
 build-terraform-file-collector:
@@ -16,7 +16,7 @@ build-main-validation:
 	@chmod +x ./bin/main-validation
 
 # Configure environment with required tools
-configure: go-install build-terraform-file-collector
+configure: python-install go-install build-terraform-file-collector
 
 # Detect if changes are in a module
 # Used by CI pipeline to determine module path and type
@@ -91,6 +91,11 @@ install-tools:
 	@go build -o ./bin/install-tools ./scripts/install-tools/main.go
 	@./bin/install-tools --asdf-version=v0.15.0
 	@rm -f ./bin/install-tools
+
+# Install Python dependencies
+python-install:
+	@echo "Installing Python dependencies..."
+	@pip install -r requirements.txt
 
 # Validate a specific module against its type-specific policies
 # Usage: make module-validate MODULE_PATH=path/to/module MODULE_TYPE=module_type

@@ -70,7 +70,7 @@
     "temp_file_pattern": "terraform-files-*.json",
     "go_unit_test": "./scripts/go-unit-test/main.go",
     "rego_unit_test": "./scripts/rego-unit-test/main.go",
-    "excluded_dirs": [".terraform", ".git", "node_modules", ".terragrunt-cache"],
+    "excluded_dirs": [".terraform", ".git", "node_modules", ".terragrunt-cache", ".packages", ".repo"],
     "important_dirs": ["examples", "tests"],
     "directory_marker": "directory",
     "lint_directories": [
