@@ -20,12 +20,9 @@ source "$(dirname "$0")/devcontainer-functions.sh"
 
 log_info "Running project-specific setup..."
 
-# Add your project setup commands below this line
-# Example:
-# if [ -f "Makefile" ]; then
-#   log_info "Running make configure..."
-#   make configure
-# fi
-log_info "Add project specific setup commands here!"
+if [ -f "Makefile" ]; then
+  log_info "Running make configure..."
+  make configure
+fi
 
 log_info "Project-specific setup complete"
