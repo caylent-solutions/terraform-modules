@@ -358,7 +358,6 @@ See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed instructions.
 
 ### Scripts Documentation
 - [Scripts Documentation Index](docs/scripts/README.md) - Complete index of all scripts
-
 - [GitHub Actions Security Scripts](security-scripts/README.md) - Secure GitHub Actions management
 - [Detect Proposed Git Repo Changes](docs/scripts/detect-proposed-git-repo-changes.md)
 - [Go Format](docs/scripts/go-format.md)
