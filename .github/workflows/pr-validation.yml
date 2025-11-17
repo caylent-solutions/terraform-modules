@@ -613,9 +613,10 @@ jobs:
       - name: Run Terraform plan
         run: make tf-plan MODULE_PATH=${{ needs.validate.outputs.module_path }}
 
-      - name: Install go dependencies for module tests
+      - name: Configure CPM and install go dependencies for module tests
         run: |
           cd ${{ needs.validate.outputs.module_path }}
+          make cpm-configure
           make install
 
       - name: Run Go linting on module tests
@@ -784,9 +785,11 @@ jobs:
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
           audience: sts.amazonaws.com
           
-      - name: Configure environment
+      - name: Configure CPM and install dependencies
         run: |
-          (cd ${{ needs.validate.outputs.module_path }} && make install)
+          cd ${{ needs.validate.outputs.module_path }}
+          make cpm-configure
+          make install
 
       - name: Run module tests with configuration
         run: |
@@ -850,9 +853,11 @@ jobs:
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
           audience: sts.amazonaws.com
           
-      - name: Configure environment
+      - name: Configure CPM and install dependencies
         run: |
-          (cd ${{ needs.validate.outputs.module_path }} && make install)
+          cd ${{ needs.validate.outputs.module_path }}
+          make cpm-configure
+          make install
 
       - name: Run module tests with configuration
         run: |
