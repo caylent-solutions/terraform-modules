@@ -179,8 +179,8 @@ For each scenario:
 
 ### Merge Strategy
 - **Squash merge into main** (required)
-- **Never use CLI merge** - always use GitHub UI to ensure hooks and protections run
-- **Merge commit message** must be descriptive and include issue/ticket references
+- **Never manually merge PRs** - the pipeline automatically handles all merges after approval
+- **PR title** becomes the merge commit message and determines version bump
 
 ### Post-Merge Actions
 - Monitor first few real workflow executions
@@ -219,8 +219,8 @@ Merges to `main` that modify `main-validation.yml` will:
 - **Git history** serves as version control
 - **Tag major changes** with descriptive Git tags: `workflow-v1.2.0`
 
-### Commit Message Standards
-Use [Conventional Commits](https://www.conventionalcommits.org/) format:
+### PR Title Standards
+Use [Conventional Commits](https://www.conventionalcommits.org/) format for PR titles:
 
 ```bash
 feat(validation): add dry run mode for safe testing
@@ -229,13 +229,16 @@ refactor(validation): improve merge routing logic
 docs(validation): update SDLC process documentation
 ```
 
-### Change Categories
-- **feat**: New features or capabilities
-- **fix**: Bug fixes and corrections
-- **refactor**: Code improvements without functional changes
-- **docs**: Documentation updates
-- **perf**: Performance improvements
-- **security**: Security-related changes
+**IMPORTANT**: The PR title determines the version bump type, not individual commit messages.
+
+### Change Categories (for PR titles)
+- **feat**: New features or capabilities (minor version bump)
+- **fix**: Bug fixes and corrections (patch version bump)
+- **refactor**: Code improvements without functional changes (patch version bump)
+- **docs**: Documentation updates (patch version bump)
+- **perf**: Performance improvements (minor version bump)
+- **security**: Security-related changes (patch version bump)
+- **feat!**, **fix!**, etc.: Breaking changes (major version bump)
 
 ---
 

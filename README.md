@@ -316,8 +316,8 @@ This repository uses a multi-stage, automated CI/CD pipeline to ensure code qual
 2. **Change Detection**: Determines if the PR changes a Terraform module or only non-module files.
 3. **Validation**: Runs comprehensive policy, linting, formatting, documentation, and security checks.
 4. **Testing**: Executes full test suite (automatic for internal, manual approval for external contributors).
-5. **Approval & Merge**: Maintainers review and approve. PRs are auto-merged after approval.
-6. **Release**: Automated versioning and changelog for both Terraform and non-Terraform code.
+5. **Approval & Merge**: Maintainers review and approve. PRs are auto-merged after approval (never merge manually).
+6. **Release**: Automated versioning (based on PR title) and changelog for both Terraform and non-Terraform code.
 
 See [Workflow Logic](docs/WORKFLOW_LOGIC.md) and [Main Validation SDLC Guide](docs/main-validation-sdlc.md) for full details.
 
@@ -327,11 +327,14 @@ See [Workflow Logic](docs/WORKFLOW_LOGIC.md) and [Main Validation SDLC Guide](do
 - Follow [module structure requirements](docs/terraform-module-structure.md) and [module policies](docs/terraform-module-policies.md).
 - Implement comprehensive tests using [Terraform Terratest Framework](https://github.com/caylent-solutions/terraform-terratest-framework).
 - Validate and test locally before submitting a PR.
-- Use conventional commit messages (`feat:`, `fix:`, etc.).
+- **Format your PR title** with conventional commit prefix (`feat:`, `fix:`, etc.) - this determines the version bump.
+- **Never manually merge PRs** - the pipeline automatically merges after approval.
 - Automated validation, testing, and release via CI/CD.
 
 ### For Non-Terraform Code
 - Linting, tests, and policy checks as appropriate.
+- **Format your PR title** with conventional commit prefix (`feat:`, `fix:`, etc.) - this determines the version bump.
+- **Never manually merge PRs** - the pipeline automatically merges after approval.
 - Uses `python-semantic-release` for versioning and changelog.
 - Automated validation and release via CI/CD.
 
@@ -345,6 +348,7 @@ See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed instructions.
 
 ### Contributor Guides
 - [Contributing Guidelines](docs/CONTRIBUTING.md) - How to contribute and SDLC process
+- [PR Title-Based Versioning](docs/pr-title-versioning.md) - How PR titles determine version bumps
 - [Workflow Logic Documentation](docs/WORKFLOW_LOGIC.md) - Detailed CI/CD flow explanation
 - [Main Validation SDLC Guide](docs/main-validation-sdlc.md) - SDLC process for workflow maintenance
 - [AWS Authentication Integration](docs/aws-authentication-integration.md) - How AWS authentication works with GitHub Actions for module testing
