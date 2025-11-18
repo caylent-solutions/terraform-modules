@@ -46,14 +46,6 @@ cpm-clean:
 
 .PHONY: cpm-configure
 cpm-configure: cpm-install-asdf cpm-install-tools cpm-install-repo
-	@if [ ! -f .gitignore ] || ! grep -q "^$(PACKAGES_DIR)/$$" .gitignore; then \
-		echo "Adding $(PACKAGES_DIR)/ to .gitignore..."; \
-		echo "$(PACKAGES_DIR)/" >> .gitignore; \
-	fi
-	@if [ ! -f .gitignore ] || ! grep -q "^\.repo/$$" .gitignore; then \
-		echo "Adding .repo/ to .gitignore..."; \
-		echo ".repo/" >> .gitignore; \
-	fi
 	@ASDF_DIR=$(ASDF_DIR) && . $$ASDF_DIR/asdf.sh && \
 	if ! which repo > /dev/null 2>&1; then \
 		echo "Error: repo tool not found after installation"; \
