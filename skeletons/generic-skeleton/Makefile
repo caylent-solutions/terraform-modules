@@ -40,9 +40,8 @@ help: ## Show available make targets
 
 .PHONY: cpm-clean
 cpm-clean:
-	@ASDF_DIR=$(ASDF_DIR) && . $$ASDF_DIR/asdf.sh && \
-	repo list | awk '{ print $$1; }' | cut -d '/' -f1 | uniq | xargs rm -rf; \
-	find . -type l ! -exec test -e {} \; -print | xargs rm -rf
+	@rm -rf $(PACKAGES_DIR) .repo
+	@echo "Cleaned $(PACKAGES_DIR) and .repo directories"
 
 .PHONY: cpm-configure
 cpm-configure: cpm-install-asdf cpm-install-tools cpm-install-repo
