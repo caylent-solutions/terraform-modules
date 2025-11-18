@@ -1,2 +1,3 @@
-## providers/aws/primitives/vpc/v0.3.0 (2025-11-17)
-* 393f056 feat: add cpm to aws vpc primitive module (#166)
+## providers/aws/primitives/vpc/v1.0.0 (2025-11-18)
+* 37ae769 feat!: bump test from PR title (#184)
+* 35e5aa4 Feat/vpc (#181)
