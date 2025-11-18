@@ -1,2 +1,2 @@
-## providers/aws/primitives/vpc/v0.2.0 (2025-07-02)
-* 905d278 feat: 1st major release (#126)
+## providers/aws/primitives/vpc/v0.3.0 (2025-11-17)
+* 393f056 feat: add cpm to aws vpc primitive module (#166)
