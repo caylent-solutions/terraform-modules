@@ -1080,10 +1080,12 @@ jobs:
       - name: Run Terraform plan
         run: make tf-plan MODULE_PATH=${{ needs.merge-approval-routing.outputs.module_path }}
 
-      - name: Configure CPM and install Go dependencies for module tests
+      - name: Cache and configure CPM
+        uses: ./.github/actions/cache-cpm
+
+      - name: Install Go dependencies for module tests
         run: |
           cd ${{ needs.merge-approval-routing.outputs.module_path }}
-          make cpm-configure
           make install
 
       - name: Show module validation context

@@ -613,10 +613,12 @@ jobs:
       - name: Run Terraform plan
         run: make tf-plan MODULE_PATH=${{ needs.validate.outputs.module_path }}
 
-      - name: Configure CPM and install go dependencies for module tests
+      - name: Cache and configure CPM
+        uses: ./.github/actions/cache-cpm
+
+      - name: Install go dependencies for module tests
         run: |
           cd ${{ needs.validate.outputs.module_path }}
-          make cpm-configure
           make install
 
       - name: Run Go linting on module tests
@@ -784,11 +786,13 @@ jobs:
           role-session-name: GitHubActions-PR-Internal-${{ github.run_id }}
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
           audience: sts.amazonaws.com
-          
-      - name: Configure CPM and install dependencies
+
+      - name: Cache and configure CPM
+        uses: ./.github/actions/cache-cpm
+
+      - name: Install dependencies
         run: |
           cd ${{ needs.validate.outputs.module_path }}
-          make cpm-configure
           make install
 
       - name: Run module tests with configuration
@@ -852,11 +856,13 @@ jobs:
           role-session-name: GitHubActions-PR-External-${{ github.run_id }}
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
           audience: sts.amazonaws.com
-          
-      - name: Configure CPM and install dependencies
+
+      - name: Cache and configure CPM
+        uses: ./.github/actions/cache-cpm
+
+      - name: Install dependencies
         run: |
           cd ${{ needs.validate.outputs.module_path }}
-          make cpm-configure
           make install
 
       - name: Run module tests with configuration

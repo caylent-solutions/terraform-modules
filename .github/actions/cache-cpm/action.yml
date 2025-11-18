@@ -1,0 +1,18 @@
+name: 'Cache CPM Configure'
+description: 'Cache CPM packages to speed up workflow execution'
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache CPM packages
+      uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4
+      with:
+        path: |
+          .packages
+          .repo
+        key: cpm-${{ hashFiles('**/.cpmenv', 'Makefile') }}
+        restore-keys: |
+          cpm-
+    
+    - name: Run CPM configure
+      shell: bash
+      run: make cpm-configure
