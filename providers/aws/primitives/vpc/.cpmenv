@@ -3,7 +3,7 @@
 # Environment variables override these defaults.
 
 REPO_MANIFESTS_URL ?= https://github.com/caylent-solutions/cpm.git
-REPO_MANIFESTS_REVISION ?= refs/tags/1.0.0
+REPO_MANIFESTS_REVISION ?= refs/tags/1.1.0
 REPO_MANIFESTS_PATH ?= repo-specs/terraform/caylent-terraform-modules-monorepo/modules/meta.xml
 
 REPO_URL ?= https://github.com/caylent-solutions/git-repo.git
