@@ -1,0 +1,24 @@
+# CPM Configuration
+# All variables are set here. Modify as needed for your project.
+# Environment variables override these defaults.
+
+REPO_MANIFESTS_URL ?= https://github.com/caylent-solutions/cpm.git
+REPO_MANIFESTS_REVISION ?= refs/tags/1.0.0
+REPO_MANIFESTS_PATH ?= repo-specs/terraform/caylent-terraform-modules-monorepo/modules/meta.xml
+
+REPO_URL ?= https://github.com/caylent-solutions/git-repo.git
+REPO_REV ?= caylent-1.0.0
+
+GITBASE ?= https://github.com/caylent-solutions/
+
+IS_PIPELINE ?= false
+JOB_NAME ?= job
+JOB_EMAIL ?= job@job.job
+
+ASDF_URL ?= https://github.com/asdf-vm/asdf.git
+ASDF_VERSION ?= v0.15.0
+ASDF_DIR ?= $$HOME/.asdf
+TOOL_VERSIONS_FILE ?= .tool-versions
+DEFAULT_PYTHON_VERSION ?= 3.12.9
+
+PACKAGES_DIR ?= .packages

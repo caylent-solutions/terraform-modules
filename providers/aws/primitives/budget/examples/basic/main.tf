@@ -41,11 +41,11 @@ module "sns_budget" {
           "costalerts.amazonaws.com"
         ]
       }]
-      condition = {
+      condition = [{
         test     = "StringEquals"
         variable = "aws:SourceAccount"
         values   = [data.aws_caller_identity.current.account_id]
-      }
+      }]
     }
   }
   tags = var.tags
