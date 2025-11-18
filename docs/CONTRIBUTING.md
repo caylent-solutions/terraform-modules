@@ -62,37 +62,52 @@ git push origin feature/my-module
 ### 1. Development Phase
 - Follow [module structure requirements](terraform-module-structure.md)
 - Implement comprehensive tests using [Terraform Terratest Framework](https://github.com/caylent-solutions/terraform-terratest-framework)
-- Use conventional commit messages (`feat:`, `fix:`, `docs:`, etc.)
+- Use conventional commit messages for your local commits (optional - only PR title matters for versioning)
+- **Format your PR title** with conventional commit prefix (`feat:`, `fix:`, `docs:`, etc.) - this determines the version bump
 - Validate locally before submitting
 
 ### 2. Pull Request Submission
+- **Format PR title** with conventional commit prefix (`feat:`, `fix:`, etc.) - this determines the version bump
+- **Never manually merge PRs** - the pipeline handles all merges automatically
 - **PR Detection**: System detects Terraform module vs non-Terraform changes
 - **Security Scanning**: CodeQL analysis starts immediately (parallel to validation)
 - **Validation**: Comprehensive policy and quality checks
 
 ### 3. Testing Phase
 - **Internal Contributors**: Tests execute automatically after validation
-- **External Contributors**: Tests require manual approval from Caylent maintainer for security
+- **External Contributors**: Tests require approval via `external-contributor-test-approval` environment
 
-### 4. Review and Approval
+### 4. Main Validation Workflow
+- PR validation triggers main-validation workflow
+- Routes to appropriate merge approval job based on contributor type
+
+### 5. Merge Approval Gate
+- Requires approval via GitHub Environment:
+  - Internal (non-self-approve): `merge-approval` environment
+  - Internal (self-approve): `merge-approval` environment (manual approval still required)
+  - External: `external-contributor-merge-approval` environment
 - Slack notifications sent to code owners
-- Code owners review and must explicitly approve before merge
 
-### 5. Merge Process
-- System automatically merges PR after approval (squash merge)
+### 6. Merge Process
+- **System automatically merges PR after approval** (squash merge using PR title as commit message)
+- **Never manually merge PRs through GitHub UI** - the pipeline handles all merges
 - Feature branch deleted automatically
 
-### 6. Post-Merge Validation
+### 7. Post-Merge Validation
 - All validation checks re-run on merged code
 - Additional security scanning on main branch
 
-### 7. Release Preparation
-- Manual QA certification required from code owners
-- Authorizes semantic version release
+### 8. QA Certification Gate
+- Requires approval via `qa-certification` environment
+- Slack notification sent after post-merge validation passes
 
-### 8. Automated Release
-- **Terraform Modules**: Individual semantic versioning per module
-- **Non-Terraform**: Repository-wide semantic versioning
+### 9. Release Approval Gate
+- Requires approval via `qa-certification` environment
+- Triggers release workflow upon approval
+
+### 10. Automated Release
+- **Terraform Modules**: Individual semantic versioning per module (based on PR title)
+- **Non-Terraform**: Repository-wide semantic versioning (based on PR title)
 - Automatic changelog generation and GitHub release creation
 
 ---
@@ -132,8 +147,13 @@ This repository uses a multi-stage, automated CI/CD pipeline to ensure code qual
 2. **Change Detection**: Determines if the PR changes a Terraform module or only non-module files.
 3. **Validation**: Runs comprehensive policy, linting, formatting, documentation, and security checks.
 4. **Testing**: Executes full test suite (automatic for internal, manual approval for external contributors).
-5. **Approval & Merge**: Maintainers review and approve. PRs are auto-merged after approval.
-6. **Release**: Automated versioning and changelog for both Terraform and non-Terraform code.
+5. **Main Validation**: Triggers main-validation workflow with merge approval routing.
+6. **Merge Approval**: Requires environment approval (varies by contributor type).
+7. **Auto-Merge**: Pipeline merges PR using squash merge with PR title as commit message.
+8. **Post-Merge Validation**: Re-runs all tests on merged code.
+9. **QA Certification**: Requires environment approval before release.
+10. **Release Approval**: Requires environment approval to trigger release.
+11. **Release**: Automated versioning (based on PR title) and changelog.
 
 See [WORKFLOW_LOGIC.md](WORKFLOW_LOGIC.md) and [main-validation-sdlc.md](main-validation-sdlc.md) for full details.
 
@@ -260,6 +280,7 @@ All modules must follow the [required structure](terraform-module-structure.md) 
 - [Module Structure](terraform-module-structure.md)
 - [Module Policies](terraform-module-policies.md)
 - [Testing Requirements](terraform-module-testing.md)
+- [PR Title-Based Versioning](pr-title-versioning.md)
 - [Complete Workflow Logic](WORKFLOW_LOGIC.md)
 - [Main Validation SDLC Guide](main-validation-sdlc.md)
 
@@ -345,11 +366,13 @@ Internal contributors have direct repository access with streamlined workflow:
    - Run validation (from repo root): `make module-validate MODULE_PATH=providers/aws/primitives/your-module-name MODULE_TYPE=primitive`
    - Run tests (from module dir): `make test` (all tests), `make test-common` (common tests)
 
-### Conventional Commit Message Prefixes and Version Bumps
+### PR Title Format and Version Bumps
 
-The following commit prefixes and version bump rules apply to both Terraform module changes and non-Terraform changes in this repository.
+**IMPORTANT**: Version bumps are determined by the **PR title**, not individual commit messages. When the pipeline auto-merges your PR, it creates a squash commit using the PR title as the commit message. This commit message is what determines the version bump type.
 
-This repository uses [Conventional Commits](https://www.conventionalcommits.org/) for automated versioning and changelog generation. The type of version bump is determined by the commit message prefix:
+The following PR title prefixes and version bump rules apply to both Terraform module changes and non-Terraform changes in this repository.
+
+This repository uses [Conventional Commits](https://www.conventionalcommits.org/) for automated versioning and changelog generation. The type of version bump is determined by the **PR title prefix**:
 
 | Prefix Example      | Version Bump | Description                                 |
 |--------------------|--------------|---------------------------------------------|
@@ -372,5 +395,7 @@ This repository uses [Conventional Commits](https://www.conventionalcommits.org/
 | `refactor:`        | Patch        | Refactoring (non-breaking)                  |
 | `test:`            | Patch        | Test-related change                         |
 
-- Use the appropriate prefix for your commit messages to ensure correct versioning.
+- **Use the appropriate prefix for your PR title** to ensure correct versioning.
+- Individual commit messages within the PR do not affect versioning.
+- The pipeline automatically merges approved PRs - **never merge PRs manually through the GitHub UI**.
 - See `.github/SEMANTIC_RELEASE_IMPLEMENTATION.md` for full details.

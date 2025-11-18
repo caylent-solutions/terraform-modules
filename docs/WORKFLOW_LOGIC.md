@@ -262,6 +262,12 @@ See [Main Validation Script Documentation](scripts/main-validation.md) for compl
 
 ## Key Decision Points
 
+### PR Title Requirements:
+- Must follow conventional commit format (`feat:`, `fix:`, etc.)
+- Determines version bump type during release
+- Becomes the squash commit message when auto-merged
+- Individual commit messages within PR do not affect versioning
+
 ### Module Detection Logic:
 - Analyzes changed files in PR
 - Determines if changes affect Terraform modules
@@ -288,6 +294,7 @@ See [Main Validation Script Documentation](scripts/main-validation.md) for compl
 - Security scans complete
 - Environment approval received (via GitHub Environment protection rules)
 - Contributor type verified
+- **PR title** used as squash commit message (determines version bump)
 
 ### GitHub Environment Protection Rules:
 The workflows use GitHub Environments for approval gates instead of issue-based manual approvals:

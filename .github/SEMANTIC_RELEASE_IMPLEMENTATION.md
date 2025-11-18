@@ -58,7 +58,11 @@ Updated `release.yml` with the following semantic-release steps for non-Terrafor
 
 ## Configuration Details
 
-### Commit Patterns
+### Version Bump Determination
+
+**IMPORTANT**: Version bumps are determined by the **PR title**, not individual commit messages. When the pipeline auto-merges a PR, it creates a squash commit using the PR title as the commit message. This commit message is analyzed to determine the version bump type.
+
+### PR Title Patterns
 
 - **Major**: `feat!:`, `fix!:`, `refactor!:`, etc. (with breaking change indicator)
 - **Minor**: `feat:` (new features)
