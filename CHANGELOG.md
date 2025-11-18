@@ -1,3 +1,2 @@
-## monorepo-config/v1.8.1 (2025-11-17)
-* af81785 fix: test ci (#163)
-* 28be36e fix: add cpm-configure before make install in CI workflows (#162)
+## monorepo-config/v1.8.2 (2025-11-18)
+* 7826127 docs: clarify PR title-based versioning and pipeline approval gates (#189)
