@@ -1,2 +1,2 @@
-## skeletons/generic-skeleton/v1.1.3 (2025-11-18)
-* 8ef67f0 fix: cpm-clean (#174)
+## skeletons/generic-skeleton/v1.2.0 (2025-11-18)
+* 0cbf5b1 feat: bump version of CPM repo-specs/terraform/caylent-terraform-modu… (#178)
