@@ -1,4 +1,4 @@
-name                    = "advanced-cost-anomaly-detector"
+name                   = "advanced-cost-anomaly-detector"
 monitor_type           = "DIMENSIONAL"
 subscription_frequency = "IMMEDIATE"
 threshold_amount       = 200
