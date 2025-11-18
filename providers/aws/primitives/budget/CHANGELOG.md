@@ -1,3 +1,2 @@
-## providers/aws/primitives/budget/v1.0.0 (2025-09-03)
-* 48935b3 docs!: Major version bump for aws/budget (#131)
-* 1541f9d Add budget module (#129)
+## providers/aws/primitives/budget/v1.1.0 (2025-11-18)
+* 36db2d0 feat: migrate budget module to CPM and fix configuration issues (#177)
