@@ -1,11 +1,16 @@
 package basic_test
 
 import (
+	"context"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/caylent-solutions/terraform-terratest-framework/pkg/testctx"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBasicSNS(t *testing.T) {
@@ -18,7 +23,50 @@ func TestBasicSNS(t *testing.T) {
 	topicArn := terraform.Output(t, ctx.Terraform, "topic_arn")
 	topicName := terraform.Output(t, ctx.Terraform, "topic_name")
 
+	// Basic output validation
 	assert.NotEmpty(t, topicArn)
 	assert.Contains(t, topicArn, "arn:aws:sns")
 	assert.NotEmpty(t, topicName)
+
+	// Initialize AWS SDK client
+	awsCtx := context.Background()
+	cfg, err := config.LoadDefaultConfig(awsCtx)
+	require.NoError(t, err)
+	snsClient := sns.NewFromConfig(cfg)
+
+	// Verify topic exists and is accessible
+	attrs, err := snsClient.GetTopicAttributes(awsCtx, &sns.GetTopicAttributesInput{
+		TopicArn: aws.String(topicArn),
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, attrs)
+
+	// Verify encryption is enabled (default AWS managed key)
+	assert.Contains(t, attrs.Attributes, "KmsMasterKeyId")
+	assert.Equal(t, "alias/aws/sns", attrs.Attributes["KmsMasterKeyId"])
+
+	// Verify tags applied correctly
+	tags, err := snsClient.ListTagsForResource(awsCtx, &sns.ListTagsForResourceInput{
+		ResourceArn: aws.String(topicArn),
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, tags.Tags)
+	tagMap := make(map[string]string)
+	for _, tag := range tags.Tags {
+		tagMap[*tag.Key] = *tag.Value
+	}
+	assert.Equal(t, "dev", tagMap["Environment"])
+	assert.Equal(t, "sns-example", tagMap["Project"])
+
+	// Verify can publish message
+	publishOutput, err := snsClient.Publish(awsCtx, &sns.PublishInput{
+		TopicArn: aws.String(topicArn),
+		Message:  aws.String("Test message from Terratest"),
+	})
+	require.NoError(t, err)
+	assert.NotEmpty(t, publishOutput.MessageId)
+
+	// Verify input name matches output
+	inputName := terraform.GetVariableAsStringFromVarFile(t, ctx.Terraform.TerraformDir, "name")
+	assert.Equal(t, inputName, topicName)
 }
