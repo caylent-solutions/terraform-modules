@@ -25,6 +25,8 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_enable_default_encryption"></a> [enable\_default\_encryption](#input\_enable\_default\_encryption) | Enable default encryption using AWS managed keys | `bool` | `true` | no |
+| <a name="input_kms_master_key_id"></a> [kms\_master\_key\_id](#input\_kms\_master\_key\_id) | The ID of an AWS-managed customer master key (CMK) for Amazon SNS or a custom CMK | `string` | `null` | no |
 | <a name="input_name"></a> [name](#input\_name) | The name of the SNS topic. | `string` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to assign to the topic. | `map(string)` | `{}` | no |
 
