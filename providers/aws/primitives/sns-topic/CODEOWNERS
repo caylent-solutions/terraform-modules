@@ -1,0 +1,11 @@
+# This file defines ownership for files in this module
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the module
+* @lvalor-caylent @matt-dresden-caylent
+
+# Terraform files
+*.tf @lvalor-caylent @matt-dresden-caylent
+
+# Test files
+/tests/ @lvalor-caylent @matt-dresden-caylent
