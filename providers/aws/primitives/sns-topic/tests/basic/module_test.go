@@ -67,6 +67,7 @@ func TestBasicSNS(t *testing.T) {
 	assert.NotEmpty(t, publishOutput.MessageId)
 
 	// Verify input name matches output
-	inputName := terraform.GetVariableAsStringFromVarFile(t, ctx.Terraform.TerraformDir, "name")
+	varFilePath := ctx.Terraform.TerraformDir + "/terraform.tfvars"
+	inputName := terraform.GetVariableAsStringFromVarFile(t, varFilePath, "name")
 	assert.Equal(t, inputName, topicName)
 }
