@@ -10,9 +10,9 @@ variable "tags" {
 }
 
 variable "kms_master_key_id" {
-  description = "The ID of an AWS-managed customer master key (CMK) for Amazon SNS or a custom CMK. Set to empty string to disable encryption."
+  description = "The ID or ARN of a customer-managed KMS key for SNS encryption. Required for security compliance."
   type        = string
-  default     = "alias/aws/sns"
+  default     = null
 }
 
 variable "policy" {
