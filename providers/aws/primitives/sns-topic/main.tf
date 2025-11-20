@@ -54,7 +54,7 @@ data "aws_iam_policy_document" "default" {
 
 resource "aws_sns_topic" "this" {
   name              = var.name
-  kms_master_key_id = var.kms_master_key_id != null ? var.kms_master_key_id : (var.enable_default_encryption ? local.default_kms_key : null)
+  kms_master_key_id = var.kms_master_key_id != "" ? var.kms_master_key_id : null
   delivery_policy   = var.delivery_policy
 
   http_success_feedback_role_arn           = var.enable_delivery_status_logging ? var.http_success_feedback_role_arn : null
