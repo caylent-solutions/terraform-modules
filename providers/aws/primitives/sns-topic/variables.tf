@@ -16,27 +16,9 @@ variable "kms_master_key_id" {
 }
 
 variable "policy" {
-  description = "The fully-formed AWS policy as JSON. If not set, allows all AWS accounts to publish"
+  description = "The fully-formed AWS policy as JSON for the SNS topic"
   type        = string
   default     = null
-}
-
-variable "create_default_policy" {
-  description = "Create a default policy that allows only the account owner to publish/subscribe"
-  type        = bool
-  default     = true
-}
-
-variable "allowed_aws_principals" {
-  description = "List of AWS principal ARNs allowed to publish to this topic"
-  type        = list(string)
-  default     = []
-}
-
-variable "allowed_service_principals" {
-  description = "List of AWS service principals allowed to publish (e.g., 's3.amazonaws.com')"
-  type        = list(string)
-  default     = []
 }
 
 variable "delivery_policy" {
