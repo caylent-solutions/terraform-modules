@@ -44,3 +44,87 @@ variable "allowed_service_principals" {
   type        = list(string)
   default     = []
 }
+
+variable "delivery_policy" {
+  description = "The SNS delivery policy as JSON"
+  type        = string
+  default     = null
+}
+
+variable "enable_delivery_status_logging" {
+  description = "Enable delivery status logging for all subscription types"
+  type        = bool
+  default     = false
+}
+
+variable "http_success_feedback_role_arn" {
+  description = "IAM role ARN for successful HTTP deliveries"
+  type        = string
+  default     = null
+}
+
+variable "http_failure_feedback_role_arn" {
+  description = "IAM role ARN for failed HTTP deliveries"
+  type        = string
+  default     = null
+}
+
+variable "lambda_success_feedback_role_arn" {
+  description = "IAM role ARN for successful Lambda deliveries"
+  type        = string
+  default     = null
+}
+
+variable "lambda_failure_feedback_role_arn" {
+  description = "IAM role ARN for failed Lambda deliveries"
+  type        = string
+  default     = null
+}
+
+variable "sqs_success_feedback_role_arn" {
+  description = "IAM role ARN for successful SQS deliveries"
+  type        = string
+  default     = null
+}
+
+variable "sqs_failure_feedback_role_arn" {
+  description = "IAM role ARN for failed SQS deliveries"
+  type        = string
+  default     = null
+}
+
+variable "application_success_feedback_role_arn" {
+  description = "IAM role ARN for successful application deliveries"
+  type        = string
+  default     = null
+}
+
+variable "application_failure_feedback_role_arn" {
+  description = "IAM role ARN for failed application deliveries"
+  type        = string
+  default     = null
+}
+
+variable "http_success_feedback_sample_rate" {
+  description = "Percentage of successful HTTP deliveries to log (0-100)"
+  type        = number
+  default     = null
+}
+
+variable "lambda_success_feedback_sample_rate" {
+  description = "Percentage of successful Lambda deliveries to log (0-100)"
+  type        = number
+  default     = null
+}
+
+variable "sqs_success_feedback_sample_rate" {
+  description = "Percentage of successful SQS deliveries to log (0-100)"
+  type        = number
+  default     = null
+}
+
+variable "application_success_feedback_sample_rate" {
+  description = "Percentage of successful application deliveries to log (0-100)"
+  type        = number
+  default     = null
+}
