@@ -20,14 +20,21 @@ No modules.
 | Name | Type |
 |------|------|
 | [aws_sns_topic.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic) | resource |
+| [aws_sns_topic_policy.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_policy) | resource |
+| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_iam_policy_document.default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_allowed_aws_principals"></a> [allowed\_aws\_principals](#input\_allowed\_aws\_principals) | List of AWS principal ARNs allowed to publish to this topic | `list(string)` | `[]` | no |
+| <a name="input_allowed_service_principals"></a> [allowed\_service\_principals](#input\_allowed\_service\_principals) | List of AWS service principals allowed to publish (e.g., 's3.amazonaws.com') | `list(string)` | `[]` | no |
+| <a name="input_create_default_policy"></a> [create\_default\_policy](#input\_create\_default\_policy) | Create a default policy that allows only the account owner to publish/subscribe | `bool` | `true` | no |
 | <a name="input_enable_default_encryption"></a> [enable\_default\_encryption](#input\_enable\_default\_encryption) | Enable default encryption using AWS managed keys | `bool` | `true` | no |
 | <a name="input_kms_master_key_id"></a> [kms\_master\_key\_id](#input\_kms\_master\_key\_id) | The ID of an AWS-managed customer master key (CMK) for Amazon SNS or a custom CMK | `string` | `null` | no |
 | <a name="input_name"></a> [name](#input\_name) | The name of the SNS topic. | `string` | n/a | yes |
+| <a name="input_policy"></a> [policy](#input\_policy) | The fully-formed AWS policy as JSON. If not set, allows all AWS accounts to publish | `string` | `null` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to assign to the topic. | `map(string)` | `{}` | no |
 
 ## Outputs
