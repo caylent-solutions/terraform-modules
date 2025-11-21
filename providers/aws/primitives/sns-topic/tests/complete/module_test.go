@@ -1,4 +1,4 @@
-package advanced_test
+package complete_test
 
 import (
 	"context"
@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAdvancedSNS(t *testing.T) {
+func TestCompleteSNS(t *testing.T) {
 	t.Parallel()
 
-	ctx := testctx.RunSingleExample(t, "../../examples", "advanced", testctx.TestConfig{
-		Name: "sns-advanced-test",
+	ctx := testctx.RunSingleExample(t, "../../examples", "complete", testctx.TestConfig{
+		Name: "sns-complete-test",
 	})
 
 	topicArn := terraform.Output(t, ctx.Terraform, "topic_arn")
@@ -27,7 +27,6 @@ func TestAdvancedSNS(t *testing.T) {
 	assert.NotEmpty(t, topicArn)
 	assert.Contains(t, topicArn, "arn:aws:sns")
 	assert.NotEmpty(t, topicName)
-	assert.Contains(t, topicName, ".fifo")
 
 	// Initialize AWS SDK client
 	awsCtx := context.Background()
@@ -42,9 +41,11 @@ func TestAdvancedSNS(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, attrs)
 
-	// Verify FIFO topic configuration
-	assert.Equal(t, "true", attrs.Attributes["FifoTopic"])
-	assert.Equal(t, "true", attrs.Attributes["ContentBasedDeduplication"])
+	// Verify display name
+	assert.Equal(t, "Complete SNS Topic Example", attrs.Attributes["DisplayName"])
+
+	// Verify signature version
+	assert.Equal(t, "2", attrs.Attributes["SignatureVersion"])
 
 	// Verify tracing configuration
 	assert.Equal(t, "Active", attrs.Attributes["TracingConfig"])
@@ -52,6 +53,11 @@ func TestAdvancedSNS(t *testing.T) {
 	// Verify encryption is enabled
 	assert.Contains(t, attrs.Attributes, "KmsMasterKeyId")
 	assert.Equal(t, "alias/aws/sns", attrs.Attributes["KmsMasterKeyId"])
+
+	// Verify delivery status logging
+	assert.NotEmpty(t, attrs.Attributes["LambdaSuccessFeedbackRoleArn"])
+	assert.NotEmpty(t, attrs.Attributes["LambdaFailureFeedbackRoleArn"])
+	assert.Equal(t, "100", attrs.Attributes["LambdaSuccessFeedbackSampleRate"])
 
 	// Verify tags applied correctly
 	tags, err := snsClient.ListTagsForResource(awsCtx, &sns.ListTagsForResourceInput{
@@ -64,13 +70,12 @@ func TestAdvancedSNS(t *testing.T) {
 		tagMap[*tag.Key] = *tag.Value
 	}
 	assert.Equal(t, "dev", tagMap["Environment"])
-	assert.Equal(t, "sns-advanced-example", tagMap["Project"])
+	assert.Equal(t, "sns-complete-example", tagMap["Project"])
 
-	// Verify can publish message with MessageGroupId (required for FIFO)
+	// Verify can publish message
 	publishOutput, err := snsClient.Publish(awsCtx, &sns.PublishInput{
-		TopicArn:       aws.String(topicArn),
-		Message:        aws.String("Test message from Terratest"),
-		MessageGroupId: aws.String("test-group"),
+		TopicArn: aws.String(topicArn),
+		Message:  aws.String("Test message from Terratest"),
 	})
 	require.NoError(t, err)
 	assert.NotEmpty(t, publishOutput.MessageId)

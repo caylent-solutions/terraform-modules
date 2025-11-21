@@ -5,6 +5,6 @@ tracing_config              = "Active"
 kms_master_key_id           = "alias/aws/sns"
 tags = {
   Environment     = "dev"
-  Project         = "sns-advanced-example"
+  Project         = "sns-fifo-example"
   "caylent:owner" = "lucas.valor@caylent.com"
 }

@@ -1,6 +1,6 @@
-# Advanced SNS Topic Example
+# FIFO SNS Topic Example
 
-This example demonstrates advanced SNS topic features including FIFO configuration, content-based deduplication, and distributed tracing.
+This example demonstrates FIFO (First-In-First-Out) SNS topic configuration with content-based deduplication and tracing.
 
 ## Features
 
@@ -18,9 +18,7 @@ terraform plan
 terraform apply
 ```
 
-## Advanced Features
-
-### FIFO Topic
+## FIFO Topic Features
 - Messages are delivered in the exact order they are sent
 - Exactly-once message delivery
 - Message deduplication based on content
