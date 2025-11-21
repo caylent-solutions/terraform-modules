@@ -57,18 +57,11 @@ func TestCrossAccountSNS(t *testing.T) {
 	require.True(t, ok, "Policy should have Statement array")
 	assert.GreaterOrEqual(t, len(statements), 2, "Policy should have at least 2 statements")
 
-	// Verify cross-account statement exists
-	foundCrossAccount := false
+	// Verify service principal statement exists
 	foundServicePrincipal := false
 	for _, stmt := range statements {
 		statement := stmt.(map[string]interface{})
 		if sid, ok := statement["Sid"].(string); ok {
-			if sid == "AllowExternalAccountPublish" {
-				foundCrossAccount = true
-				// Verify it allows Publish action
-				action := statement["Action"].(string)
-				assert.Equal(t, "SNS:Publish", action)
-			}
 			if sid == "AllowS3ServicePublish" {
 				foundServicePrincipal = true
 				// Verify service principal
@@ -77,7 +70,6 @@ func TestCrossAccountSNS(t *testing.T) {
 			}
 		}
 	}
-	assert.True(t, foundCrossAccount, "Policy should contain cross-account statement")
 	assert.True(t, foundServicePrincipal, "Policy should contain service principal statement")
 
 	// Verify encryption is enabled

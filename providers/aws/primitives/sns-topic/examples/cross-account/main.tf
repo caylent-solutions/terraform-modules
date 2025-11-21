@@ -25,15 +25,7 @@ locals {
         ]
         Resource = "arn:aws:sns:*:${local.account_id}:${var.name}"
       },
-      {
-        Sid    = "AllowExternalAccountPublish"
-        Effect = "Allow"
-        Principal = {
-          AWS = var.allowed_aws_accounts
-        }
-        Action   = "SNS:Publish"
-        Resource = "arn:aws:sns:*:${local.account_id}:${var.name}"
-      },
+
       {
         Sid    = "AllowS3ServicePublish"
         Effect = "Allow"

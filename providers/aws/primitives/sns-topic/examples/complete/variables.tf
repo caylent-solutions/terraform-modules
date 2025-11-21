@@ -33,30 +33,6 @@ variable "policy" {
   default     = null
 }
 
-variable "enable_delivery_status_logging" {
-  description = "Enable delivery status logging for all subscription types"
-  type        = bool
-  default     = false
-}
-
-variable "lambda_success_feedback_role_arn" {
-  description = "IAM role ARN for successful Lambda deliveries"
-  type        = string
-  default     = null
-}
-
-variable "lambda_failure_feedback_role_arn" {
-  description = "IAM role ARN for failed Lambda deliveries"
-  type        = string
-  default     = null
-}
-
-variable "lambda_success_feedback_sample_rate" {
-  description = "Percentage of successful Lambda deliveries to log (0-100)"
-  type        = number
-  default     = null
-}
-
 variable "tags" {
   description = "A map of tags to assign to the topic."
   type        = map(string)

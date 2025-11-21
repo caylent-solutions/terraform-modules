@@ -54,11 +54,6 @@ func TestCompleteSNS(t *testing.T) {
 	assert.Contains(t, attrs.Attributes, "KmsMasterKeyId")
 	assert.Equal(t, "alias/aws/sns", attrs.Attributes["KmsMasterKeyId"])
 
-	// Verify delivery status logging
-	assert.NotEmpty(t, attrs.Attributes["LambdaSuccessFeedbackRoleArn"])
-	assert.NotEmpty(t, attrs.Attributes["LambdaFailureFeedbackRoleArn"])
-	assert.Equal(t, "100", attrs.Attributes["LambdaSuccessFeedbackSampleRate"])
-
 	// Verify tags applied correctly
 	tags, err := snsClient.ListTagsForResource(awsCtx, &sns.ListTagsForResourceInput{
 		ResourceArn: aws.String(topicArn),

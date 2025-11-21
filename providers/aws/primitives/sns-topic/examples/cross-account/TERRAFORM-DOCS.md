@@ -27,7 +27,6 @@
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_allowed_aws_accounts"></a> [allowed\_aws\_accounts](#input\_allowed\_aws\_accounts) | List of AWS account IDs allowed to publish to this topic | `list(string)` | `[]` | no |
 | <a name="input_kms_master_key_id"></a> [kms\_master\_key\_id](#input\_kms\_master\_key\_id) | The ID or ARN of a customer-managed KMS key for SNS encryption. | `string` | `null` | no |
 | <a name="input_name"></a> [name](#input\_name) | The name of the SNS topic. | `string` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to assign to the topic. | `map(string)` | `{}` | no |

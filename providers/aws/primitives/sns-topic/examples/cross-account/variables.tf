@@ -3,12 +3,6 @@ variable "name" {
   type        = string
 }
 
-variable "allowed_aws_accounts" {
-  description = "List of AWS account IDs allowed to publish to this topic"
-  type        = list(string)
-  default     = []
-}
-
 variable "kms_master_key_id" {
   description = "The ID or ARN of a customer-managed KMS key for SNS encryption."
   type        = string
