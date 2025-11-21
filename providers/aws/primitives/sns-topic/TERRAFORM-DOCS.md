@@ -48,6 +48,7 @@ No modules.
 | <a name="input_sqs_success_feedback_role_arn"></a> [sqs\_success\_feedback\_role\_arn](#input\_sqs\_success\_feedback\_role\_arn) | IAM role ARN for successful SQS deliveries | `string` | `null` | no |
 | <a name="input_sqs_success_feedback_sample_rate"></a> [sqs\_success\_feedback\_sample\_rate](#input\_sqs\_success\_feedback\_sample\_rate) | Percentage of successful SQS deliveries to log (0-100) | `number` | `null` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to assign to the topic. | `map(string)` | `{}` | no |
+| <a name="input_tracing_config"></a> [tracing\_config](#input\_tracing\_config) | Tracing mode for the topic (PassThrough or Active) | `string` | `null` | no |
 
 ## Outputs
 

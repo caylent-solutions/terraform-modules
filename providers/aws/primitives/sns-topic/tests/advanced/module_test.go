@@ -1,4 +1,4 @@
-package fifo_test
+package advanced_test
 
 import (
 	"context"
@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFIFOSNS(t *testing.T) {
+func TestAdvancedSNS(t *testing.T) {
 	t.Parallel()
 
-	ctx := testctx.RunSingleExample(t, "../../examples", "fifo", testctx.TestConfig{
-		Name: "sns-fifo-test",
+	ctx := testctx.RunSingleExample(t, "../../examples", "advanced", testctx.TestConfig{
+		Name: "sns-advanced-test",
 	})
 
 	topicArn := terraform.Output(t, ctx.Terraform, "topic_arn")
@@ -46,6 +46,9 @@ func TestFIFOSNS(t *testing.T) {
 	assert.Equal(t, "true", attrs.Attributes["FifoTopic"])
 	assert.Equal(t, "true", attrs.Attributes["ContentBasedDeduplication"])
 
+	// Verify tracing configuration
+	assert.Equal(t, "Active", attrs.Attributes["TracingConfig"])
+
 	// Verify encryption is enabled
 	assert.Contains(t, attrs.Attributes, "KmsMasterKeyId")
 	assert.Equal(t, "alias/aws/sns", attrs.Attributes["KmsMasterKeyId"])
@@ -61,7 +64,7 @@ func TestFIFOSNS(t *testing.T) {
 		tagMap[*tag.Key] = *tag.Value
 	}
 	assert.Equal(t, "dev", tagMap["Environment"])
-	assert.Equal(t, "sns-fifo-example", tagMap["Project"])
+	assert.Equal(t, "sns-advanced-example", tagMap["Project"])
 
 	// Verify can publish message with MessageGroupId (required for FIFO)
 	publishOutput, err := snsClient.Publish(awsCtx, &sns.PublishInput{

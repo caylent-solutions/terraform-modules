@@ -132,3 +132,13 @@ variable "signature_version" {
     error_message = "Signature version must be 1 or 2"
   }
 }
+
+variable "tracing_config" {
+  description = "Tracing mode for the topic (PassThrough or Active)"
+  type        = string
+  default     = null
+  validation {
+    condition     = var.tracing_config == null || contains(["PassThrough", "Active"], var.tracing_config)
+    error_message = "Tracing config must be PassThrough or Active"
+  }
+}

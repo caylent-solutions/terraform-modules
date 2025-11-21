@@ -20,6 +20,8 @@ resource "aws_sns_topic" "this" {
   application_failure_feedback_role_arn    = var.enable_delivery_status_logging ? var.application_failure_feedback_role_arn : null
   application_success_feedback_sample_rate = var.enable_delivery_status_logging ? var.application_success_feedback_sample_rate : null
 
+  tracing_config = var.tracing_config
+
   tags = var.tags
 }
 

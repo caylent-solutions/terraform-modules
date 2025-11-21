@@ -1,11 +1,12 @@
-# FIFO SNS Topic Example
+# Advanced SNS Topic Example
 
-This example demonstrates how to create a FIFO (First-In-First-Out) SNS topic with content-based deduplication enabled.
+This example demonstrates advanced SNS topic features including FIFO configuration, content-based deduplication, and distributed tracing.
 
 ## Features
 
 - FIFO topic with `.fifo` suffix
 - Content-based deduplication enabled
+- Active tracing for distributed tracing with AWS X-Ray
 - KMS encryption using AWS managed key
 - Standard tagging
 
@@ -17,9 +18,15 @@ terraform plan
 terraform apply
 ```
 
-## FIFO Topic Characteristics
+## Advanced Features
 
+### FIFO Topic
 - Messages are delivered in the exact order they are sent
 - Exactly-once message delivery
 - Message deduplication based on content
 - Requires MessageGroupId when publishing
+
+### Tracing
+- Active tracing mode enables AWS X-Ray integration
+- Provides end-to-end visibility of message flow
+- Helps identify performance bottlenecks

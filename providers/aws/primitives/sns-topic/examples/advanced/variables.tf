@@ -15,6 +15,12 @@ variable "content_based_deduplication" {
   default     = false
 }
 
+variable "tracing_config" {
+  description = "Tracing mode for the topic (PassThrough or Active)"
+  type        = string
+  default     = null
+}
+
 variable "kms_master_key_id" {
   description = "The ID or ARN of a customer-managed KMS key for SNS encryption."
   type        = string

@@ -1,9 +1,10 @@
 name                        = "testing-terraform-monorepo.fifo"
 fifo_topic                  = true
 content_based_deduplication = true
+tracing_config              = "Active"
 kms_master_key_id           = "alias/aws/sns"
 tags = {
   Environment     = "dev"
-  Project         = "sns-fifo-example"
+  Project         = "sns-advanced-example"
   "caylent:owner" = "lucas.valor@caylent.com"
 }

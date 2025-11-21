@@ -11,7 +11,7 @@ import (
 func TestCommonOutputs(t *testing.T) {
 	t.Parallel()
 
-	examples := []string{"basic", "fifo"}
+	examples := []string{"basic", "advanced"}
 
 	for _, example := range examples {
 		example := example
