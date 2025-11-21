@@ -104,3 +104,15 @@ variable "application_success_feedback_sample_rate" {
   type        = number
   default     = null
 }
+
+variable "fifo_topic" {
+  description = "Boolean indicating whether or not to create a FIFO topic"
+  type        = bool
+  default     = false
+}
+
+variable "content_based_deduplication" {
+  description = "Enables content-based deduplication for FIFO topics"
+  type        = bool
+  default     = false
+}

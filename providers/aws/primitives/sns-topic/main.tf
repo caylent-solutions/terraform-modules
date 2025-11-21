@@ -1,7 +1,9 @@
 resource "aws_sns_topic" "this" {
-  name              = var.name
-  kms_master_key_id = var.kms_master_key_id
-  delivery_policy   = var.delivery_policy
+  name                        = var.name
+  fifo_topic                  = var.fifo_topic
+  content_based_deduplication = var.content_based_deduplication
+  kms_master_key_id           = var.kms_master_key_id
+  delivery_policy             = var.delivery_policy
 
   http_success_feedback_role_arn           = var.enable_delivery_status_logging ? var.http_success_feedback_role_arn : null
   http_failure_feedback_role_arn           = var.enable_delivery_status_logging ? var.http_failure_feedback_role_arn : null
