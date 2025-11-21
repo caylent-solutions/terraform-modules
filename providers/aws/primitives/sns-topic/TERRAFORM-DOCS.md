@@ -31,6 +31,7 @@ No modules.
 | <a name="input_application_success_feedback_sample_rate"></a> [application\_success\_feedback\_sample\_rate](#input\_application\_success\_feedback\_sample\_rate) | Percentage of successful application deliveries to log (0-100) | `number` | `null` | no |
 | <a name="input_content_based_deduplication"></a> [content\_based\_deduplication](#input\_content\_based\_deduplication) | Enables content-based deduplication for FIFO topics | `bool` | `false` | no |
 | <a name="input_delivery_policy"></a> [delivery\_policy](#input\_delivery\_policy) | The SNS delivery policy as JSON | `string` | `null` | no |
+| <a name="input_display_name"></a> [display\_name](#input\_display\_name) | The display name for the topic | `string` | `null` | no |
 | <a name="input_enable_delivery_status_logging"></a> [enable\_delivery\_status\_logging](#input\_enable\_delivery\_status\_logging) | Enable delivery status logging for all subscription types | `bool` | `false` | no |
 | <a name="input_fifo_topic"></a> [fifo\_topic](#input\_fifo\_topic) | Boolean indicating whether or not to create a FIFO topic | `bool` | `false` | no |
 | <a name="input_http_failure_feedback_role_arn"></a> [http\_failure\_feedback\_role\_arn](#input\_http\_failure\_feedback\_role\_arn) | IAM role ARN for failed HTTP deliveries | `string` | `null` | no |
@@ -42,6 +43,7 @@ No modules.
 | <a name="input_lambda_success_feedback_sample_rate"></a> [lambda\_success\_feedback\_sample\_rate](#input\_lambda\_success\_feedback\_sample\_rate) | Percentage of successful Lambda deliveries to log (0-100) | `number` | `null` | no |
 | <a name="input_name"></a> [name](#input\_name) | The name of the SNS topic. | `string` | n/a | yes |
 | <a name="input_policy"></a> [policy](#input\_policy) | The fully-formed AWS policy as JSON for the SNS topic | `string` | `null` | no |
+| <a name="input_signature_version"></a> [signature\_version](#input\_signature\_version) | The signature version corresponds to the hashing algorithm used (1 or 2) | `string` | `"1"` | no |
 | <a name="input_sqs_failure_feedback_role_arn"></a> [sqs\_failure\_feedback\_role\_arn](#input\_sqs\_failure\_feedback\_role\_arn) | IAM role ARN for failed SQS deliveries | `string` | `null` | no |
 | <a name="input_sqs_success_feedback_role_arn"></a> [sqs\_success\_feedback\_role\_arn](#input\_sqs\_success\_feedback\_role\_arn) | IAM role ARN for successful SQS deliveries | `string` | `null` | no |
 | <a name="input_sqs_success_feedback_sample_rate"></a> [sqs\_success\_feedback\_sample\_rate](#input\_sqs\_success\_feedback\_sample\_rate) | Percentage of successful SQS deliveries to log (0-100) | `number` | `null` | no |

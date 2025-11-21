@@ -116,3 +116,19 @@ variable "content_based_deduplication" {
   type        = bool
   default     = false
 }
+
+variable "display_name" {
+  description = "The display name for the topic"
+  type        = string
+  default     = null
+}
+
+variable "signature_version" {
+  description = "The signature version corresponds to the hashing algorithm used (1 or 2)"
+  type        = string
+  default     = "1"
+  validation {
+    condition     = contains(["1", "2"], var.signature_version)
+    error_message = "Signature version must be 1 or 2"
+  }
+}
