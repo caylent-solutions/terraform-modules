@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 locals {
   account_id = data.aws_caller_identity.current.account_id
-  
+
   # Cross-account policy allowing specific accounts and service principals
   topic_policy = jsonencode({
     Version = "2012-10-17"
