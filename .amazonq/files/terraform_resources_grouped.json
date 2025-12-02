@@ -1,0 +1,3610 @@
+{
+  "ACM (Certificate Manager)": {
+    "aws_acm_certificate": {
+      "general_configuration": {
+        "required_inputs": [
+          "private_key",
+          "certificate_body"
+        ],
+        "optional_inputs": [
+          "certificate_chain",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "domain_name",
+          "status"
+        ],
+        "dependencies": [
+          "tls_private_key",
+          "tls_self_signed_cert",
+          "tls_locally_signed_cert"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Self-signed CA certificates",
+          "Locally signed client certificates",
+          "Locally signed server certificates",
+          "Certificate chains",
+          "Custom validity periods (87600 hours)",
+          "Custom subject fields (common_name, organization)",
+          "Multiple certificate types (CA, client, server)",
+          "RSA algorithm for private keys"
+        ],
+        "use_cases": [
+          "Client VPN mutual authentication",
+          "Certificate authority management"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "ca",
+            "file": "terraform/modules/client_vpn/acm-ca.tf",
+            "purpose": "VPN CA Certificate",
+            "config": {
+              "private_key": "tls_private_key.ca.private_key_pem",
+              "certificate_body": "tls_self_signed_cert.ca.cert_pem",
+              "certificate_chain": null,
+              "certificate_type": "self_signed_ca",
+              "validity_hours": 87600,
+              "subject_common_name": "${var.project_id}.vpn.ca",
+              "subject_organization": "var.organization_name",
+              "allowed_uses": [
+                "cert_signing",
+                "crl_signing"
+              ],
+              "is_ca_certificate": true
+            }
+          },
+          {
+            "name": "root",
+            "file": "terraform/modules/client_vpn/acm-root.tf",
+            "purpose": "VPN Client Certificate",
+            "config": {
+              "private_key": "tls_private_key.root.private_key_pem",
+              "certificate_body": "tls_locally_signed_cert.root.cert_pem",
+              "certificate_chain": "tls_self_signed_cert.ca.cert_pem",
+              "certificate_type": "locally_signed_client",
+              "validity_hours": 87600,
+              "subject_common_name": "${var.project_id}.vpn.client",
+              "subject_organization": "var.organization_name",
+              "allowed_uses": [
+                "key_encipherment",
+                "digital_signature",
+                "client_auth"
+              ],
+              "is_ca_certificate": false
+            }
+          },
+          {
+            "name": "server",
+            "file": "terraform/modules/client_vpn/acm-server.tf",
+            "purpose": "VPN Server Certificate",
+            "config": {
+              "private_key": "tls_private_key.server.private_key_pem",
+              "certificate_body": "tls_locally_signed_cert.server.cert_pem",
+              "certificate_chain": "tls_self_signed_cert.ca.cert_pem",
+              "certificate_type": "locally_signed_server",
+              "validity_hours": 87600,
+              "subject_common_name": "${var.project_id}.vpn.server",
+              "subject_organization": "var.organization_name",
+              "allowed_uses": [
+                "key_encipherment",
+                "digital_signature",
+                "server_auth"
+              ],
+              "is_ca_certificate": false
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "Athena": {
+    "aws_athena_workgroup": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "output_location"
+        ],
+        "optional_inputs": [
+          "description",
+          "force_destroy",
+          "enforce_workgroup_configuration",
+          "publish_cloudwatch_metrics_enabled",
+          "bytes_scanned_cutoff_per_query",
+          "encryption_configuration",
+          "engine_version",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "state"
+        ],
+        "dependencies": [
+          "S3 bucket for query results"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Workgroup naming with validation (1-128 chars, alphanumeric, hyphens, underscores)",
+          "S3 output location configuration",
+          "Optional encryption (SSE_S3, SSE_KMS, CSE_KMS)",
+          "CloudWatch metrics enablement",
+          "Workgroup configuration enforcement",
+          "Query cost controls (bytes_scanned_cutoff_per_query)",
+          "Force destroy option",
+          "Dynamic encryption configuration",
+          "Tags support"
+        ],
+        "use_cases": [
+          "Analytics query execution",
+          "Data lake querying",
+          "Glue catalog integration"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "workgroup",
+            "file": "terraform/modules/athena/main.tf",
+            "purpose": "Analytics Pipeline Query Workgroup",
+            "module_usage": "terraform/modules/analytics_pipeline/main.tf",
+            "config": {
+              "workgroup_name": "var.project_id",
+              "output_location": "s3://${module.analytics_bucket.id}/athena/output/",
+              "description": "var.description (default: null)",
+              "force_destroy": "var.force_destroy (default: false)",
+              "enforce_workgroup_configuration": "var.enforce_workgroup_configuration (default: true)",
+              "enable_cloudwatch_metrics": "var.enable_cloudwatch_metrics (default: true)",
+              "bytes_scanned_cutoff_per_query": "var.bytes_scanned_cutoff_per_query (default: null)",
+              "enable_encryption": "var.enable_encryption (default: false)",
+              "encryption_option": "var.encryption_option (default: SSE_S3)",
+              "kms_key_arn": "var.kms_key_arn (default: null)",
+              "tags": "merge({Name = var.workgroup_name}, var.tags)"
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "CloudWatch": {
+    "aws_cloudwatch_dashboard": {
+      "general_configuration": {
+        "required_inputs": [
+          "dashboard_name",
+          "dashboard_body"
+        ],
+        "optional_inputs": [],
+        "computed_outputs": [
+          "dashboard_arn"
+        ],
+        "dependencies": [
+          "SQS queues",
+          "Lambda functions"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "JSON-encoded dashboard body",
+          "Multiple widget types (metric, log, text)",
+          "SQS metrics (ApproximateAgeOfOldestMessage, ApproximateNumberOfMessagesVisible, NumberOfMessagesSent)",
+          "Lambda log queries",
+          "Custom CloudWatch Insights queries",
+          "Widget positioning (x, y, width, height)",
+          "Time series and table views",
+          "Multiple log sources",
+          "Pattern matching in logs"
+        ],
+        "use_cases": [
+          "SQS queue monitoring",
+          "Lambda performance tracking",
+          "Error analysis",
+          "Success rate calculation"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "statistics-dashboard",
+            "file": "terraform/modules/sql_polyglot/cloudwatch_dashboard.tf",
+            "purpose": "SQL Polyglot Backend Monitoring Dashboard",
+            "config": {
+              "dashboard_name": "${local.project_id}-dashboard",
+              "monitored_queues": [
+                "translator",
+                "compiler"
+              ],
+              "monitored_lambdas": [
+                "translator",
+                "compiler"
+              ],
+              "widget_types": [
+                "metric",
+                "log",
+                "text"
+              ],
+              "metrics_tracked": [
+                "SQS ApproximateAgeOfOldestMessage",
+                "SQS ApproximateNumberOfMessagesVisible",
+                "SQS NumberOfMessagesSent",
+                "Lambda Duration",
+                "Lambda Memory Usage",
+                "DLQ Messages"
+              ],
+              "log_queries": [
+                "Lambda errors with pattern matching",
+                "Translation/Compilation stats",
+                "Overall success rate",
+                "Memory usage analysis"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "aws_cloudwatch_query_definition": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "query_string"
+        ],
+        "optional_inputs": [
+          "log_group_names"
+        ],
+        "computed_outputs": [
+          "query_definition_id"
+        ],
+        "dependencies": [
+          "CloudWatch Log Groups"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "CloudWatch Insights query syntax",
+          "Multiple log group sources",
+          "Field extraction and filtering",
+          "Aggregation (stats, count)",
+          "Sorting and limiting results",
+          "Custom query naming",
+          "JSON field parsing"
+        ],
+        "use_cases": [
+          "Error tracking",
+          "File-specific debugging",
+          "Exception analysis",
+          "Process monitoring"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "exceptions_by_process",
+            "file": "terraform/modules/sql_polyglot/cloudwatch_queries.tf",
+            "purpose": "Track exceptions grouped by process",
+            "config": {
+              "name": "${local.project_id}-exceptions_by_process",
+              "log_group_names": [
+                "sql_analyzer",
+                "validation_case_generator",
+                "compiler",
+                "translator",
+                "validator"
+              ],
+              "query_fields": [
+                "process_name",
+                "exception.0.exc_type",
+                "exception.0.exc_value"
+              ],
+              "filters": [
+                "level = 'error'"
+              ],
+              "aggregation": "count() by process_name, exception, exception_value",
+              "limit": 10000
+            }
+          },
+          {
+            "name": "details_for_file",
+            "file": "terraform/modules/sql_polyglot/cloudwatch_queries.tf",
+            "purpose": "Get detailed logs for specific file",
+            "config": {
+              "name": "${local.project_id}-log_details_for_file",
+              "log_group_names": [
+                "sql_analyzer",
+                "validation_case_generator",
+                "compiler",
+                "translator",
+                "validator"
+              ],
+              "query_fields": [
+                "@timestamp",
+                "process_name",
+                "event",
+                "level",
+                "exception",
+                "@message"
+              ],
+              "filters": [
+                "target_file = '<file_name>.sql'",
+                "level != 'debug'"
+              ],
+              "limit": 10000
+            }
+          },
+          {
+            "name": "error_count_by_file_and_process",
+            "file": "terraform/modules/sql_polyglot/cloudwatch_queries.tf",
+            "purpose": "Count errors by file and process",
+            "config": {
+              "name": "${local.project_id}-error_count_by_file_and_process",
+              "log_group_names": [
+                "sql_analyzer",
+                "validation_case_generator",
+                "compiler",
+                "translator",
+                "validator"
+              ],
+              "query_fields": [
+                "target_file",
+                "process_name",
+                "level"
+              ],
+              "filters": [
+                "level = 'error'"
+              ],
+              "aggregation": "count() by target_file, process_name, level",
+              "limit": 10000
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "CloudWatch Logs": {
+    "aws_cloudwatch_log_group": {
+      "general_configuration": {
+        "required_inputs": [
+          "name"
+        ],
+        "optional_inputs": [
+          "retention_in_days",
+          "kms_key_id",
+          "tags"
+        ],
+        "computed_outputs": [
+          "arn",
+          "name"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Custom log group naming patterns",
+          "Configurable retention periods",
+          "Lambda log group naming (/aws/lambda/{function_name})",
+          "VPN log group naming (/aws/vpn/{project_id}/logs)",
+          "Optional KMS encryption",
+          "Tags support"
+        ],
+        "use_cases": [
+          "Lambda function logging",
+          "VPN connection logging",
+          "Application logging"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "vpn",
+            "file": "terraform/modules/client_vpn/cloudwatch.tf",
+            "purpose": "VPN connection logs",
+            "config": {
+              "name": "/aws/vpn/${var.project_id}/logs",
+              "retention_in_days": "var.log_group_retention_in_days"
+            }
+          }
+        ],
+        "backend": [
+          {
+            "name": "logs",
+            "file": "terraform/modules/docker_lambda_function/cloudwatch.tf",
+            "purpose": "Docker Lambda function logs",
+            "config": {
+              "name": "/aws/lambda/${local.function_name}",
+              "retention_in_days": "var.log_retention_days"
+            }
+          },
+          {
+            "name": "this",
+            "file": "terraform/modules/lambda_function/cloudwatch.tf",
+            "purpose": "Zip Lambda function logs",
+            "config": {
+              "name": "/aws/lambda/${local.function_name}",
+              "retention_in_days": "var.log_retention_days"
+            }
+          }
+        ]
+      }
+    },
+    "aws_cloudwatch_log_stream": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "log_group_name"
+        ],
+        "optional_inputs": [],
+        "computed_outputs": [
+          "arn"
+        ],
+        "dependencies": [
+          "aws_cloudwatch_log_group"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Custom stream naming",
+          "Association with log groups"
+        ],
+        "use_cases": [
+          "VPN usage tracking",
+          "Application-specific log streams"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "vpn",
+            "file": "terraform/modules/client_vpn/cloudwatch.tf",
+            "purpose": "VPN usage log stream",
+            "config": {
+              "name": "vpn-usage",
+              "log_group_name": "aws_cloudwatch_log_group.vpn.name"
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "DynamoDB": {
+    "aws_dynamodb_table": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "billing_mode",
+          "hash_key",
+          "attributes"
+        ],
+        "optional_inputs": [
+          "range_key",
+          "stream_enabled",
+          "stream_view_type",
+          "read_capacity",
+          "write_capacity",
+          "global_secondary_indexes",
+          "point_in_time_recovery",
+          "ttl",
+          "server_side_encryption",
+          "replica",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "stream_arn",
+          "stream_label"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "PAY_PER_REQUEST and PROVISIONED billing modes",
+          "Hash key (partition key) configuration",
+          "Optional range key (sort key)",
+          "DynamoDB Streams (KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES)",
+          "Global Secondary Indexes with projection types (ALL, KEYS_ONLY, INCLUDE)",
+          "Point-in-time recovery",
+          "TTL (Time To Live) configuration",
+          "Server-side encryption with optional KMS",
+          "Multi-region replication",
+          "Attribute types (S=String, N=Number, B=Binary)",
+          "Dynamic attribute definitions",
+          "Dynamic GSI creation",
+          "Tags support"
+        ],
+        "use_cases": [
+          "Application data storage",
+          "Terraform state locking",
+          "Event sourcing with streams",
+          "Analytics data collection",
+          "Run tracking"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "table",
+            "file": "terraform/modules/dynamodb/main.tf",
+            "purpose": "Reusable DynamoDB table module",
+            "config": {
+              "name": "var.table_name",
+              "billing_mode": "var.billing_mode (default: PAY_PER_REQUEST)",
+              "hash_key": "var.hash_key",
+              "range_key": "var.range_key (default: null)",
+              "stream_enabled": "var.stream_enabled (default: false)",
+              "stream_view_type": "var.stream_view_type (default: NEW_IMAGE)",
+              "attributes": "var.attributes (list of {name, type})",
+              "global_secondary_indexes": "var.global_secondary_indexes (default: [])",
+              "point_in_time_recovery": "var.enable_point_in_time_recovery (default: false)",
+              "ttl_enabled": "var.ttl_enabled (default: false)",
+              "ttl_attribute_name": "var.ttl_attribute_name (default: TTL)",
+              "enable_encryption": "var.enable_encryption (default: false)",
+              "kms_key_arn": "var.kms_key_arn (default: null)",
+              "replica_regions": "var.replica_regions (default: [])",
+              "tags": "merge({Name = ${var.project_id}-${var.table_name}}, var.tags)"
+            }
+          }
+        ],
+        "support_tools": [
+          {
+            "name": "lock-table",
+            "file": "terraform/terraform-state-init/main.tf",
+            "purpose": "Terraform state locking",
+            "config": {
+              "name": "local.ddb_table_name",
+              "billing_mode": "PAY_PER_REQUEST",
+              "hash_key": "LockID",
+              "attributes": [
+                {
+                  "name": "LockID",
+                  "type": "S"
+                }
+              ],
+              "stream_enabled": false,
+              "depends_on": [
+                "aws_s3_bucket.infra-bucket"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "EC2 (Elastic Compute Cloud)": {
+    "aws_ec2_client_vpn_endpoint": {
+      "general_configuration": {
+        "required_inputs": [
+          "description",
+          "server_certificate_arn",
+          "client_cidr_block",
+          "authentication_options",
+          "connection_log_options"
+        ],
+        "optional_inputs": [
+          "split_tunnel",
+          "self_service_portal",
+          "security_group_ids",
+          "vpc_id",
+          "dns_servers",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "dns_name"
+        ],
+        "dependencies": [
+          "aws_acm_certificate",
+          "aws_cloudwatch_log_group",
+          "aws_security_group"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Certificate-based authentication",
+          "Federated authentication (SAML)",
+          "Split tunnel configuration",
+          "Self-service portal",
+          "CloudWatch logging",
+          "Custom DNS servers",
+          "Security group association",
+          "VPC association"
+        ],
+        "use_cases": [
+          "Remote VPC access",
+          "Secure database connections",
+          "Private resource access"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "default",
+            "file": "terraform/modules/client_vpn/main.tf",
+            "purpose": "Client VPN endpoint for remote access",
+            "config": {
+              "description": "${var.project_id}-vpn",
+              "server_certificate_arn": "aws_acm_certificate.server.arn",
+              "client_cidr_block": "var.client_cidr",
+              "split_tunnel": "var.split_tunnel",
+              "self_service_portal": "local.self_service_portal",
+              "security_group_ids": [
+                "aws_security_group.vpn[0].id or var.security_group_id"
+              ],
+              "vpc_id": "var.vpc_id",
+              "dns_servers": "var.destination_cidrs",
+              "authentication_type": "var.authentication_type (certificate-authentication or federated-authentication)",
+              "root_certificate_chain_arn": "aws_acm_certificate.root.arn (for certificate auth)",
+              "saml_provider_arn": "var.iam_saml_provider_arn (for federated auth)",
+              "connection_log_enabled": true,
+              "cloudwatch_log_group": "aws_cloudwatch_log_group.vpn.name",
+              "cloudwatch_log_stream": "aws_cloudwatch_log_stream.vpn.name"
+            }
+          }
+        ]
+      }
+    },
+    "aws_ec2_client_vpn_network_association": {
+      "general_configuration": {
+        "required_inputs": [
+          "client_vpn_endpoint_id",
+          "subnet_id"
+        ],
+        "optional_inputs": [],
+        "computed_outputs": [
+          "id",
+          "status"
+        ],
+        "dependencies": [
+          "aws_ec2_client_vpn_endpoint"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Multiple subnet associations",
+          "for_each iteration"
+        ],
+        "use_cases": [
+          "Multi-AZ VPN access"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "default",
+            "file": "terraform/modules/client_vpn/main.tf",
+            "purpose": "Associate VPN with subnets",
+            "config": {
+              "for_each": "var.subnet_ids",
+              "client_vpn_endpoint_id": "aws_ec2_client_vpn_endpoint.default.id",
+              "subnet_id": "each.value"
+            }
+          }
+        ]
+      }
+    },
+    "aws_ec2_client_vpn_authorization_rule": {
+      "general_configuration": {
+        "required_inputs": [
+          "client_vpn_endpoint_id",
+          "target_network_cidr"
+        ],
+        "optional_inputs": [
+          "description",
+          "authorize_all_groups",
+          "access_group_id"
+        ],
+        "computed_outputs": [
+          "id"
+        ],
+        "dependencies": [
+          "aws_ec2_client_vpn_endpoint"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "All groups authorization",
+          "Specific group authorization",
+          "CIDR-based access control"
+        ],
+        "use_cases": [
+          "VPC access",
+          "Internet access",
+          "Specific network access"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "all_groups",
+            "file": "terraform/modules/client_vpn/main.tf",
+            "purpose": "Authorize VPC access",
+            "config": {
+              "client_vpn_endpoint_id": "aws_ec2_client_vpn_endpoint.default.id",
+              "target_network_cidr": "${trimsuffix(var.destination_cidrs[0], 2)}0/16",
+              "description": "All access to the VPC private environment",
+              "authorize_all_groups": true
+            }
+          },
+          {
+            "name": "public_all_groups",
+            "file": "terraform/modules/client_vpn/main.tf",
+            "purpose": "Authorize internet access",
+            "config": {
+              "client_vpn_endpoint_id": "aws_ec2_client_vpn_endpoint.default.id",
+              "target_network_cidr": "0.0.0.0/0",
+              "description": "Outbound access from the VPC private environment to the internet",
+              "authorize_all_groups": true
+            }
+          }
+        ]
+      }
+    },
+    "aws_ec2_client_vpn_route": {
+      "general_configuration": {
+        "required_inputs": [
+          "destination_cidr_block",
+          "client_vpn_endpoint_id",
+          "target_vpc_subnet_id"
+        ],
+        "optional_inputs": [
+          "description"
+        ],
+        "computed_outputs": [
+          "id"
+        ],
+        "dependencies": [
+          "aws_ec2_client_vpn_endpoint"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Custom route creation",
+          "Timeouts configuration",
+          "Dynamic route count"
+        ],
+        "use_cases": [
+          "Custom network routing",
+          "Multi-network access"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "default",
+            "file": "terraform/modules/client_vpn/main.tf",
+            "purpose": "Additional VPN routes",
+            "config": {
+              "count": "length(var.additional_routes)",
+              "description": "var.additional_routes[count.index].description",
+              "destination_cidr_block": "var.additional_routes[count.index].destination_cidr_block",
+              "client_vpn_endpoint_id": "aws_ec2_client_vpn_endpoint.default.id",
+              "target_vpc_subnet_id": "var.additional_routes[count.index].target_vpc_subnet_id",
+              "timeouts": {
+                "create": "5m",
+                "delete": "5m"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "aws_instance": {
+      "general_configuration": {
+        "required_inputs": [
+          "ami",
+          "instance_type"
+        ],
+        "optional_inputs": [
+          "subnet_id",
+          "vpc_security_group_ids",
+          "iam_instance_profile",
+          "user_data",
+          "metadata_options",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "private_ip",
+          "public_ip"
+        ],
+        "dependencies": [
+          "aws_ami",
+          "aws_security_group",
+          "aws_iam_instance_profile"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "AMI selection",
+          "Instance type configuration",
+          "VPC/subnet placement",
+          "Security group association",
+          "IAM instance profile",
+          "User data scripts",
+          "IMDSv2 enforcement",
+          "Lifecycle ignore_changes",
+          "Tags"
+        ],
+        "use_cases": [
+          "SSM tunnel for database access",
+          "Bastion hosts",
+          "Application servers"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "ssm_tunnel",
+            "file": "terraform/modules/ssm_tunnel/ec2.tf",
+            "purpose": "SSM tunnel instance for database access",
+            "config": {
+              "ami": "data.aws_ami.amazon-linux-ami.id (al2023-ami-ecs-hvm)",
+              "instance_type": "var.instance_type",
+              "subnet_id": "var.subnet_id",
+              "vpc_security_group_ids": [
+                "aws_security_group.ssm_tunnel_sg.id"
+              ],
+              "iam_instance_profile": "aws_iam_instance_profile.ssm_tunnel_profile.name",
+              "metadata_options": {
+                "http_tokens": "required"
+              },
+              "user_data": "Install and enable SSM agent",
+              "tags": {
+                "Name": "${var.project_id}-tunnel-to-databases"
+              },
+              "lifecycle": {
+                "ignore_changes": [
+                  "ami"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "aws_network_interface": {
+      "general_configuration": {
+        "required_inputs": [
+          "subnet_id"
+        ],
+        "optional_inputs": [
+          "description",
+          "security_groups",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "private_ip"
+        ],
+        "dependencies": [
+          "aws_security_group"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Multiple security group attachment",
+          "for_each iteration",
+          "zipmap usage"
+        ],
+        "use_cases": [
+          "Database security group attachment",
+          "Multi-SG interfaces"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "database_ssm_tunnel_eni",
+            "file": "terraform/modules/ssm_tunnel/networking.tf",
+            "purpose": "Attach SSM tunnel security group to database SGs",
+            "config": {
+              "for_each": "zipmap(var.db_security_groups_id, aws_security_group.database_allow_ssm_tunnel_sg)",
+              "description": "Attach on databases security group a new security group that allows access from SSM tunnel",
+              "subnet_id": "var.subnet_id",
+              "security_groups": [
+                "each.key",
+                "each.value.id"
+              ],
+              "tags": {
+                "Name": "${var.project_id}-ssm-tunnel-interface"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "ECR (Elastic Container Registry)": {
+    "aws_ecr_repository": {
+      "general_configuration": {
+        "required_inputs": [
+          "name"
+        ],
+        "optional_inputs": [
+          "image_tag_mutability",
+          "encryption_configuration",
+          "image_scanning_configuration",
+          "tags"
+        ],
+        "computed_outputs": [
+          "arn",
+          "registry_id",
+          "repository_url"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Custom repository naming",
+          "Image tag mutability (MUTABLE/IMMUTABLE)",
+          "Encryption (AES256 or KMS)",
+          "Image scanning on push",
+          "Tags support"
+        ],
+        "use_cases": [
+          "Lambda container images",
+          "Application container storage"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "this",
+            "file": "terraform/modules/ecr/main.tf",
+            "purpose": "Reusable ECR repository module",
+            "config": {
+              "name": "var.repository_name",
+              "image_tag_mutability": "var.image_mutability",
+              "encryption_type": "var.encryption_type",
+              "kms_key": "var.kms_key",
+              "scan_on_push": "var.scan_on_push"
+            }
+          }
+        ]
+      }
+    },
+    "aws_ecr_repository_policy": {
+      "general_configuration": {
+        "required_inputs": [
+          "repository",
+          "policy"
+        ],
+        "optional_inputs": [],
+        "computed_outputs": [
+          "registry_id"
+        ],
+        "dependencies": [
+          "aws_ecr_repository",
+          "IAM roles"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Role-based access control",
+          "HTTPS enforcement",
+          "Lambda service principal access",
+          "Conditional access (sourceArn)",
+          "Dynamic policy generation",
+          "Multiple principal types (AWS, Service)"
+        ],
+        "use_cases": [
+          "Restrict ECR access to specific roles",
+          "Lambda image pull permissions",
+          "Security compliance"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "this",
+            "file": "terraform/modules/ecr/main.tf",
+            "purpose": "Module-level ECR policy",
+            "config": {
+              "repository": "aws_ecr_repository.this.name",
+              "policy_statements": [
+                {
+                  "sid": "DenyAllButSpecificRoles",
+                  "effect": "Allow",
+                  "principals": "var.allowed_role_arns + account root + step-functions role",
+                  "actions": [
+                    "ecr:*"
+                  ],
+                  "condition": "length(var.allowed_role_arns) > 0 && var.project_id != null"
+                },
+                {
+                  "sid": "ForceHTTPS",
+                  "effect": "Deny",
+                  "principals": "*",
+                  "actions": [
+                    "ecr:*"
+                  ],
+                  "condition": "aws:SecureTransport = false (if var.force_https)"
+                }
+              ]
+            }
+          },
+          {
+            "name": "ecr_lambda",
+            "file": "terraform/caylent/security.tf",
+            "purpose": "Lambda ECR repository policy",
+            "config": {
+              "repository": "${var.project_id}-lambda",
+              "policy_statements": [
+                {
+                  "sid": "DenyAllButSpecificRoles",
+                  "effect": "Allow",
+                  "principals": "module.main_infra.allowed_iam_arns + module.assessment[0].role_arn",
+                  "actions": [
+                    "ecr:*"
+                  ]
+                },
+                {
+                  "sid": "ForceHTTPS",
+                  "effect": "Deny",
+                  "principals": "*",
+                  "actions": [
+                    "ecr:*"
+                  ],
+                  "condition": "aws:SecureTransport = false"
+                },
+                {
+                  "sid": "LambdaECRImageRetrievalPolicy",
+                  "effect": "Allow",
+                  "principals": "lambda.amazonaws.com",
+                  "actions": [
+                    "ecr:BatchGetImage",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:SetRepositoryPolicy",
+                    "ecr:DeleteRepositoryPolicy",
+                    "ecr:GetRepositoryPolicy"
+                  ],
+                  "condition": "aws:sourceArn like arn:aws:lambda:region:account:function:project_id*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "aws_ecr_lifecycle_policy": {
+      "general_configuration": {
+        "required_inputs": [
+          "repository",
+          "policy"
+        ],
+        "optional_inputs": [],
+        "computed_outputs": [
+          "registry_id"
+        ],
+        "dependencies": [
+          "aws_ecr_repository"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Conditional creation (count)",
+          "JSON-encoded lifecycle rules",
+          "Image expiration rules",
+          "Tag-based rules"
+        ],
+        "use_cases": [
+          "Image cleanup",
+          "Cost optimization",
+          "Retention policies"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "this",
+            "file": "terraform/modules/ecr/main.tf",
+            "purpose": "ECR lifecycle policy",
+            "config": {
+              "count": "var.lifecycle_rules != null ? 1 : 0",
+              "repository": "aws_ecr_repository.this.name",
+              "policy": "jsonencode({rules = var.lifecycle_rules})"
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "EventBridge": {
+    "aws_cloudwatch_event_rule": {
+      "general_configuration": {
+        "required_inputs": [
+          "name"
+        ],
+        "optional_inputs": [
+          "description",
+          "schedule_expression",
+          "event_pattern",
+          "is_enabled",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Cron schedule expressions",
+          "Rate schedule expressions",
+          "Event pattern matching",
+          "Custom rule naming",
+          "Rule descriptions",
+          "Enable/disable rules"
+        ],
+        "use_cases": [
+          "Scheduled Lambda invocations",
+          "Database cost management",
+          "Automated maintenance tasks"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "stop_dbs",
+            "file": "terraform/modules/db_cost_manager/cloudwatch.tf",
+            "purpose": "Schedule RDS/Aurora database stops",
+            "config": {
+              "name": "${var.project_id}_stop_rds_aurora",
+              "description": "Stop RDS instances on every day, every day at 8:00 PM America/New_York",
+              "schedule_expression": "cron(0 1 * * ? *)",
+              "schedule_note": "8:00 PM EST = 1:00 AM UTC next day"
+            }
+          }
+        ]
+      }
+    },
+    "aws_cloudwatch_event_target": {
+      "general_configuration": {
+        "required_inputs": [
+          "rule",
+          "arn"
+        ],
+        "optional_inputs": [
+          "target_id",
+          "input",
+          "input_path",
+          "role_arn"
+        ],
+        "computed_outputs": [],
+        "dependencies": [
+          "aws_cloudwatch_event_rule",
+          "Lambda function"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Lambda function targets",
+          "JSON input transformation",
+          "Custom target IDs",
+          "IAM role for target invocation"
+        ],
+        "use_cases": [
+          "Lambda invocation",
+          "Step Functions execution",
+          "SNS notifications"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "stop_dbs",
+            "file": "terraform/modules/db_cost_manager/cloudwatch.tf",
+            "purpose": "Invoke DB cost manager Lambda",
+            "config": {
+              "rule": "aws_cloudwatch_event_rule.stop_dbs.name",
+              "target_id": "invoke-lambda",
+              "arn": "module.db_cost_manager_lambda.arn",
+              "input": "jsonencode({action = stop})"
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "Glue": {
+    "aws_glue_catalog_database": {
+      "general_configuration": {
+        "required_inputs": [
+          "name"
+        ],
+        "optional_inputs": [
+          "description",
+          "location_uri",
+          "parameters",
+          "create_table_default_permission"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "catalog_id"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Custom database naming",
+          "Default table permissions",
+          "IAM_ALLOWED_PRINCIPALS configuration",
+          "Permission types (ALL, SELECT, ALTER, DROP, DELETE, INSERT)"
+        ],
+        "use_cases": [
+          "Analytics data catalog",
+          "Data lake metadata",
+          "Athena query source"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "this",
+            "file": "terraform/modules/analytics_pipeline/glue.tf",
+            "purpose": "Analytics catalog database",
+            "config": {
+              "name": "local.glue_db_name (${var.project_id}-analytics)",
+              "create_table_default_permission": {
+                "permissions": [
+                  "ALL"
+                ],
+                "principal": {
+                  "data_lake_principal_identifier": "IAM_ALLOWED_PRINCIPALS"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "aws_glue_crawler": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "role",
+          "database_name"
+        ],
+        "optional_inputs": [
+          "description",
+          "schedule",
+          "schema_change_policy",
+          "configuration",
+          "s3_target",
+          "recrawl_policy",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "state"
+        ],
+        "dependencies": [
+          "aws_iam_role",
+          "aws_glue_catalog_database",
+          "S3 bucket"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "On-demand crawling (no schedule)",
+          "Scheduled crawling (cron expressions)",
+          "S3 target configuration",
+          "Path exclusions",
+          "Schema change policies (LOG, UPDATE_IN_DATABASE, DELETE_FROM_DATABASE)",
+          "Recrawl policies (CRAWL_EVERYTHING, CRAWL_NEW_FOLDERS_ONLY)",
+          "Custom crawler configuration JSON",
+          "Table/partition update behaviors",
+          "IAM role with Glue service principal",
+          "S3, CloudWatch, and KMS permissions"
+        ],
+        "use_cases": [
+          "Data catalog discovery",
+          "Schema evolution tracking",
+          "Partition management"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "crawler",
+            "file": "terraform/modules/glue_crawler/main.tf",
+            "purpose": "Reusable Glue crawler module",
+            "module_usage": "terraform/modules/analytics_pipeline/glue.tf",
+            "config": {
+              "name": "var.crawler_name (${var.project_id}-general-crawler)",
+              "description": "var.description (Backup crawler for analytics data catalog recovery)",
+              "role": "aws_iam_role.crawler_role.arn",
+              "database_name": "var.database_name (aws_glue_catalog_database.this.name)",
+              "schedule": "var.is_on_demand ? null : var.crawler_schedule",
+              "is_on_demand": true,
+              "schema_change_policy": {
+                "update_behavior": "var.schema_update_behavior (default: LOG)",
+                "delete_behavior": "var.schema_delete_behavior (default: LOG)"
+              },
+              "configuration": {
+                "Version": "1.0",
+                "CrawlerOutput": {
+                  "Tables": {
+                    "AddOrUpdateBehavior": "MergeNewColumns"
+                  },
+                  "Partitions": {
+                    "AddOrUpdateBehavior": "InheritFromTable"
+                  }
+                }
+              },
+              "s3_target": {
+                "path": "var.s3_target_path (s3://${module.analytics_bucket.id}/)",
+                "exclusions": "var.s3_target_exclusions ([athena/**])"
+              },
+              "recrawl_policy": {
+                "recrawl_behavior": "CRAWL_EVERYTHING"
+              },
+              "iam_role_permissions": [
+                "S3: GetObject, PutObject, ListBucket",
+                "CloudWatch: CreateLogGroup, CreateLogStream, PutLogEvents",
+                "KMS: Decrypt",
+                "Managed Policy: AWSGlueServiceRole"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "IAM (Identity & Access Management)": {
+    "aws_iam_role": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "assume_role_policy"
+        ],
+        "optional_inputs": [
+          "description",
+          "max_session_duration",
+          "permissions_boundary",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "unique_id"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Service principals (lambda.amazonaws.com, ec2.amazonaws.com, glue.amazonaws.com, etc.)",
+          "AssumeRole trust policies",
+          "AssumeRoleWithWebIdentity for OIDC",
+          "Custom role naming",
+          "Lifecycle rules (prevent_destroy, ignore_changes)",
+          "Conditional assume role policies"
+        ],
+        "use_cases": [
+          "Lambda execution",
+          "EC2 instance profiles",
+          "Glue crawlers",
+          "GitHub Actions OIDC",
+          "Cross-service access"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "lambda_role",
+            "file": "terraform/modules/sql_polyglot/iam.tf",
+            "purpose": "Backend Lambda execution",
+            "principal": "lambda.amazonaws.com"
+          },
+          {
+            "name": "crawler_role",
+            "file": "terraform/modules/glue_crawler/main.tf",
+            "purpose": "Glue crawler execution",
+            "principal": "glue.amazonaws.com"
+          }
+        ],
+        "assessment": [
+          {
+            "name": "lambda_role",
+            "file": "terraform/modules/assessment/iam.tf",
+            "purpose": "Assessment Lambda execution",
+            "principal": "lambda.amazonaws.com"
+          }
+        ],
+        "support_tools": [
+          {
+            "name": "this",
+            "file": "terraform/modules/alerting_system/iam.tf",
+            "purpose": "Alerting Lambda",
+            "principal": "lambda.amazonaws.com"
+          },
+          {
+            "name": "this",
+            "file": "terraform/modules/analytics_pipeline/iam.tf",
+            "purpose": "Analytics Lambda",
+            "principal": "lambda.amazonaws.com"
+          },
+          {
+            "name": "this",
+            "file": "terraform/modules/run_tracking/iam.tf",
+            "purpose": "Run tracking Lambda",
+            "principal": "lambda.amazonaws.com"
+          },
+          {
+            "name": "db_cost_manager",
+            "file": "terraform/modules/db_cost_manager/iam.tf",
+            "purpose": "DB cost manager Lambda",
+            "principal": "lambda.amazonaws.com"
+          },
+          {
+            "name": "ssm_tunnel_role",
+            "file": "terraform/modules/ssm_tunnel/iam.tf",
+            "purpose": "SSM tunnel EC2",
+            "principal": "ec2.amazonaws.com"
+          },
+          {
+            "name": "github_actions",
+            "file": "terraform/terraform-state-init/oidc.tf",
+            "purpose": "GitHub Actions OIDC",
+            "principal": "Federated OIDC"
+          }
+        ]
+      }
+    },
+    "aws_iam_role_policy": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "role",
+          "policy"
+        ],
+        "optional_inputs": [],
+        "computed_outputs": [
+          "id"
+        ],
+        "dependencies": [
+          "aws_iam_role"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Inline policy documents",
+          "JSON-encoded policies",
+          "Multiple statement blocks",
+          "Service-specific permissions (S3, Lambda, DynamoDB, Glue, KMS, EC2, Secrets Manager, RDS, Budgets)",
+          "Resource ARN patterns",
+          "Conditional policies",
+          "Wildcard resources"
+        ],
+        "use_cases": [
+          "Lambda permissions",
+          "Service access control",
+          "Cross-service integration"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "lambda_policy",
+            "file": "terraform/modules/sql_polyglot/iam.tf",
+            "permissions": [
+              "Bedrock",
+              "S3",
+              "DynamoDB",
+              "SQS",
+              "Secrets Manager",
+              "SSM",
+              "RDS",
+              "EC2"
+            ]
+          },
+          {
+            "name": "crawler_policy",
+            "file": "terraform/modules/glue_crawler/main.tf",
+            "permissions": [
+              "S3",
+              "CloudWatch Logs",
+              "KMS"
+            ]
+          }
+        ],
+        "assessment": [
+          {
+            "name": "lambda_policy",
+            "file": "terraform/modules/assessment/iam.tf",
+            "permissions": [
+              "Bedrock",
+              "S3",
+              "DynamoDB",
+              "SQS",
+              "Secrets Manager",
+              "SSM",
+              "EC2"
+            ]
+          }
+        ],
+        "support_tools": [
+          {
+            "name": "this",
+            "file": "terraform/modules/alerting_system/iam.tf",
+            "permissions": [
+              "Lambda",
+              "CloudWatch Logs",
+              "KMS",
+              "EC2",
+              "Secrets Manager",
+              "IAM",
+              "Budgets"
+            ]
+          },
+          {
+            "name": "this",
+            "file": "terraform/modules/analytics_pipeline/iam.tf",
+            "permissions": [
+              "S3",
+              "Lambda",
+              "CloudWatch Logs",
+              "Glue",
+              "KMS",
+              "DynamoDB",
+              "EC2",
+              "Secrets Manager",
+              "IAM"
+            ]
+          },
+          {
+            "name": "this",
+            "file": "terraform/modules/run_tracking/iam.tf",
+            "permissions": [
+              "Lambda",
+              "CloudWatch Logs",
+              "DynamoDB",
+              "EC2",
+              "IAM",
+              "SQS"
+            ]
+          },
+          {
+            "name": "db_cost_manager",
+            "file": "terraform/modules/db_cost_manager/iam.tf",
+            "permissions": [
+              "RDS",
+              "CloudWatch Logs",
+              "Lambda",
+              "EC2"
+            ]
+          }
+        ]
+      }
+    },
+    "aws_iam_role_policy_attachment": {
+      "general_configuration": {
+        "required_inputs": [
+          "role",
+          "policy_arn"
+        ],
+        "optional_inputs": [],
+        "computed_outputs": [
+          "id"
+        ],
+        "dependencies": [
+          "aws_iam_role"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "AWS managed policies",
+          "Common managed policies (AWSLambdaVPCAccessExecutionRole, AWSLambdaDynamoDBExecutionRole, AmazonSSMManagedInstanceCore, AdministratorAccess, AWSGlueServiceRole)",
+          "Multiple attachments per role",
+          "Lifecycle rules"
+        ],
+        "use_cases": [
+          "VPC Lambda access",
+          "DynamoDB stream access",
+          "SSM instance management",
+          "GitHub Actions admin access"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "lambda_vpc_access",
+            "policy": "AWSLambdaVPCAccessExecutionRole",
+            "count": "Multiple modules"
+          },
+          {
+            "name": "ddb_lambda_policy",
+            "policy": "AWSLambdaDynamoDBExecutionRole",
+            "count": "Multiple modules"
+          },
+          {
+            "name": "aws_managed_policy_attachment",
+            "policy": "AWSGlueServiceRole",
+            "file": "terraform/modules/glue_crawler/main.tf"
+          }
+        ],
+        "support_tools": [
+          {
+            "name": "ssm_tunnel_core",
+            "policy": "AmazonSSMManagedInstanceCore",
+            "file": "terraform/modules/ssm_tunnel/iam.tf"
+          },
+          {
+            "name": "admin_policy",
+            "policy": "AdministratorAccess",
+            "file": "terraform/terraform-state-init/oidc.tf"
+          }
+        ]
+      }
+    },
+    "aws_iam_instance_profile": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "role"
+        ],
+        "optional_inputs": [
+          "path"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "unique_id"
+        ],
+        "dependencies": [
+          "aws_iam_role"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "EC2 instance role association",
+          "Custom profile naming"
+        ],
+        "use_cases": [
+          "EC2 SSM access",
+          "Instance-based service access"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "ssm_tunnel_profile",
+            "file": "terraform/modules/ssm_tunnel/iam.tf",
+            "purpose": "SSM tunnel EC2 instance profile"
+          }
+        ]
+      }
+    },
+    "aws_iam_openid_connect_provider": {
+      "general_configuration": {
+        "required_inputs": [
+          "url",
+          "client_id_list",
+          "thumbprint_list"
+        ],
+        "optional_inputs": [
+          "tags"
+        ],
+        "computed_outputs": [
+          "arn"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "GitHub Actions OIDC (token.actions.githubusercontent.com)",
+          "Thumbprint validation",
+          "Lifecycle prevent_destroy",
+          "Lifecycle ignore_changes"
+        ],
+        "use_cases": [
+          "GitHub Actions authentication",
+          "CI/CD pipeline access"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "github",
+            "file": "terraform/terraform-state-init/oidc.tf",
+            "purpose": "GitHub Actions OIDC provider",
+            "config": {
+              "url": "https://token.actions.githubusercontent.com",
+              "client_id_list": [
+                "sts.amazonaws.com"
+              ],
+              "thumbprint": "6938fd4d98bab03faadb97b34396831e3780aea1"
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "KMS (Key Management)": {
+    "aws_kms_key": {
+      "general_configuration": {
+        "required_inputs": [
+          "description"
+        ],
+        "optional_inputs": [
+          "deletion_window_in_days",
+          "enable_key_rotation",
+          "policy",
+          "customer_master_key_spec",
+          "key_usage",
+          "multi_region",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "key_id"
+        ],
+        "dependencies": [
+          "IAM policy document"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Symmetric and asymmetric keys",
+          "Key rotation enablement",
+          "Custom deletion windows (7-30 days)",
+          "Key usage types (ENCRYPT_DECRYPT, SIGN_VERIFY)",
+          "Key specs (SYMMETRIC_DEFAULT, RSA_2048, RSA_3072, RSA_4096, ECC_NIST_P256, etc.)",
+          "Multi-region keys",
+          "Custom key policies",
+          "Tags support"
+        ],
+        "use_cases": [
+          "S3 encryption",
+          "Secrets Manager encryption",
+          "DynamoDB encryption",
+          "General data encryption"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "this",
+            "file": "terraform/modules/kms/main.tf",
+            "purpose": "Reusable KMS key module",
+            "module_usage": "terraform/caylent/security.tf (module.main_kms)",
+            "config": {
+              "description": "var.description (KMS key for the main applications of the account)",
+              "deletion_window_in_days": "var.deletion_window_in_days (default: 7)",
+              "enable_key_rotation": "var.enable_key_rotation (default: true, set to false in usage)",
+              "policy": "data.aws_iam_policy_document.kms_policy.json",
+              "customer_master_key_spec": "var.key_spec (default: SYMMETRIC_DEFAULT)",
+              "key_usage": "var.key_usage (default: ENCRYPT_DECRYPT)",
+              "multi_region": "var.multi_region (default: false)",
+              "tags": "var.tags"
+            }
+          }
+        ]
+      }
+    },
+    "aws_kms_alias": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "target_key_id"
+        ],
+        "optional_inputs": [],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "target_key_arn"
+        ],
+        "dependencies": [
+          "aws_kms_key"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Alias naming with 'alias/' prefix",
+          "Key ID association",
+          "Human-readable key references"
+        ],
+        "use_cases": [
+          "Key identification",
+          "Application-specific key naming"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "this",
+            "file": "terraform/modules/kms/main.tf",
+            "purpose": "KMS key alias",
+            "module_usage": "terraform/caylent/security.tf (alias: ${var.environment}/${var.project_id})",
+            "config": {
+              "name": "alias/${var.alias_name}",
+              "target_key_id": "aws_kms_key.this.key_id"
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "Lambda": {
+    "aws_lambda_function": {
+      "general_configuration": {
+        "required_inputs": [
+          "function_name",
+          "role"
+        ],
+        "optional_inputs": [
+          "package_type",
+          "filename",
+          "source_code_hash",
+          "handler",
+          "runtime",
+          "layers",
+          "image_uri",
+          "image_config",
+          "architectures",
+          "timeout",
+          "memory_size",
+          "reserved_concurrent_executions",
+          "environment",
+          "vpc_config",
+          "tags"
+        ],
+        "computed_outputs": [
+          "arn",
+          "invoke_arn",
+          "qualified_arn",
+          "version"
+        ],
+        "dependencies": [
+          "IAM role",
+          "CloudWatch log group",
+          "VPC resources"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Zip package type (with filename, handler, runtime)",
+          "Image package type (with image_uri, image_config)",
+          "Architectures (arm64, x86_64)",
+          "Timeout configuration (1-900 seconds)",
+          "Memory size (128-10240 MB)",
+          "Reserved concurrent executions",
+          "Lambda layers",
+          "Environment variables",
+          "VPC configuration (subnets, security groups)",
+          "Image command override",
+          "Dependencies on log groups",
+          "Tags"
+        ],
+        "use_cases": [
+          "Backend processing",
+          "Assessment workflows",
+          "Analytics pipeline",
+          "Cost management",
+          "Run tracking"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "function",
+            "file": "terraform/modules/docker_lambda_function/main.tf",
+            "package_type": "Image",
+            "purpose": "Backend Docker Lambda"
+          },
+          {
+            "name": "function",
+            "file": "terraform/modules/lambda_function/main.tf",
+            "package_type": "Zip",
+            "purpose": "Zip-based Lambda"
+          }
+        ],
+        "assessment": [
+          {
+            "name": "function",
+            "file": "terraform/modules/docker_lambda_function/main.tf",
+            "package_type": "Image",
+            "purpose": "Assessment Docker Lambda"
+          }
+        ],
+        "support_tools": [
+          {
+            "name": "function",
+            "file": "terraform/modules/lambda_function/main.tf",
+            "package_type": "Zip",
+            "purpose": "Analytics/Run Tracking/Alerting/DB Cost Manager"
+          }
+        ]
+      }
+    },
+    "aws_lambda_event_source_mapping": {
+      "general_configuration": {
+        "required_inputs": [
+          "event_source_arn",
+          "function_name"
+        ],
+        "optional_inputs": [
+          "batch_size",
+          "enabled",
+          "starting_position",
+          "maximum_batching_window_in_seconds",
+          "scaling_config"
+        ],
+        "computed_outputs": [
+          "uuid",
+          "state"
+        ],
+        "dependencies": [
+          "aws_lambda_function",
+          "Event source (SQS/DynamoDB)"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "SQS event sources",
+          "DynamoDB stream event sources",
+          "Batch size configuration",
+          "Starting position (LATEST, TRIM_HORIZON)",
+          "Scaling configuration (maximum_concurrency)",
+          "Enable/disable mapping",
+          "Multiple event sources per function",
+          "Conditional creation (count)"
+        ],
+        "use_cases": [
+          "SQS queue processing",
+          "DynamoDB stream processing",
+          "Event-driven architectures"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "lambda_sqs_processed_trigger",
+            "file": "terraform/modules/docker_lambda_function/main.tf",
+            "source": "SQS",
+            "batch_size": 1
+          },
+          {
+            "name": "lambda_sqs_processed_trigger",
+            "file": "terraform/modules/lambda_function/event_source_mapping.tf",
+            "source": "SQS",
+            "batch_size": 1
+          },
+          {
+            "name": "lambda_ddb_triggers",
+            "file": "terraform/modules/lambda_function/event_source_mapping.tf",
+            "source": "DynamoDB",
+            "batch_size": "var.dynamodb_event_sources[count.index].batch_size"
+          }
+        ],
+        "assessment": [
+          {
+            "name": "lambda_ddb_triggers",
+            "file": "terraform/modules/assessment/event_source_mapping.tf",
+            "source": "DynamoDB"
+          }
+        ]
+      }
+    },
+    "aws_lambda_permission": {
+      "general_configuration": {
+        "required_inputs": [
+          "statement_id",
+          "action",
+          "function_name",
+          "principal"
+        ],
+        "optional_inputs": [
+          "source_arn",
+          "source_account",
+          "event_source_token"
+        ],
+        "computed_outputs": [],
+        "dependencies": [
+          "aws_lambda_function"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Service principals (sqs.amazonaws.com, dynamodb.amazonaws.com, events.amazonaws.com, sns.amazonaws.com)",
+          "Source ARN restrictions",
+          "Multiple permissions per function",
+          "Conditional creation (count, for_each)",
+          "Unique statement IDs"
+        ],
+        "use_cases": [
+          "SQS invocation",
+          "DynamoDB stream invocation",
+          "EventBridge invocation",
+          "SNS invocation"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "allow_sqs",
+            "principal": "sqs.amazonaws.com",
+            "files": [
+              "docker_lambda_function/main.tf",
+              "lambda_function/event_source_mapping.tf"
+            ]
+          },
+          {
+            "name": "allow_ddb",
+            "principal": "dynamodb.amazonaws.com",
+            "file": "lambda_function/event_source_mapping.tf"
+          },
+          {
+            "name": "allow_cloudwatch",
+            "principal": "events.amazonaws.com",
+            "file": "lambda_function/event_source_mapping.tf"
+          }
+        ],
+        "support_tools": [
+          {
+            "name": "allow_sns",
+            "principal": "sns.amazonaws.com",
+            "file": "lambda_function/event_source_mapping.tf"
+          }
+        ],
+        "assessment": [
+          {
+            "name": "AllowExecutionFromDynamoDB",
+            "principal": "dynamodb.amazonaws.com",
+            "file": "assessment/event_source_mapping.tf"
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "RDS (Relational Database)": {
+    "aws_db_instance": {
+      "general_configuration": {
+        "required_inputs": [
+          "identifier",
+          "engine",
+          "instance_class",
+          "username",
+          "password"
+        ],
+        "optional_inputs": [
+          "db_name",
+          "allocated_storage",
+          "engine_version",
+          "parameter_group_name",
+          "option_group_name",
+          "db_subnet_group_name",
+          "vpc_security_group_ids",
+          "publicly_accessible",
+          "backup_retention_period",
+          "backup_window",
+          "storage_encrypted",
+          "skip_final_snapshot",
+          "deletion_protection",
+          "enabled_cloudwatch_logs_exports",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "endpoint",
+          "address",
+          "port"
+        ],
+        "dependencies": [
+          "aws_db_subnet_group",
+          "aws_security_group",
+          "aws_db_parameter_group",
+          "aws_db_option_group"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Multiple engines (mysql, postgres, oracle-ee, oracle-se2, sqlserver-ex, sqlserver-web, sqlserver-se, sqlserver-ee)",
+          "Conditional creation (count based on engine type)",
+          "SQL Server specific handling (no db_name)",
+          "Storage encryption",
+          "Backup configuration",
+          "CloudWatch logs exports",
+          "Public/private accessibility",
+          "Deletion protection",
+          "License models",
+          "Auto minor version upgrades",
+          "Apply immediately option"
+        ],
+        "use_cases": [
+          "Source database",
+          "Target database",
+          "Non-Aurora RDS instances"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "this",
+            "file": "terraform/modules/database/other_dbs.tf",
+            "purpose": "Non-Aurora RDS instance",
+            "config": {
+              "count": "!contains(aurora_engines, var.db_conf.engine) ? 1 : 0",
+              "identifier": "${var.project_id}-${var.db_purpose}-database",
+              "engine": "var.db_conf.engine",
+              "engine_version": "var.db_conf.engine_version",
+              "instance_class": "var.db_conf.instance_class",
+              "allocated_storage": 20,
+              "db_name": "startswith(sqlserver) ? null : local.custom_db_name",
+              "username": "local.username",
+              "password": "random_password.password.result",
+              "db_subnet_group_name": "aws_db_subnet_group.this.name",
+              "vpc_security_group_ids": [
+                "aws_security_group.this.id"
+              ],
+              "publicly_accessible": "var.publicly_accessible",
+              "backup_retention_period": 5,
+              "backup_window": "07:00-09:00",
+              "storage_encrypted": true,
+              "skip_final_snapshot": true,
+              "deletion_protection": true,
+              "enabled_cloudwatch_logs_exports": "local.selected_log_types",
+              "license_model": "license-included",
+              "parameter_group_name": "aws_db_parameter_group.this[0].id (conditional)",
+              "option_group_name": "aws_db_option_group.this[0].id (conditional)"
+            }
+          }
+        ]
+      }
+    },
+    "aws_rds_cluster": {
+      "general_configuration": {
+        "required_inputs": [
+          "cluster_identifier",
+          "engine",
+          "master_username",
+          "master_password"
+        ],
+        "optional_inputs": [
+          "database_name",
+          "engine_version",
+          "db_subnet_group_name",
+          "vpc_security_group_ids",
+          "backup_retention_period",
+          "preferred_backup_window",
+          "storage_encrypted",
+          "skip_final_snapshot",
+          "apply_immediately",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "endpoint",
+          "reader_endpoint",
+          "cluster_resource_id"
+        ],
+        "dependencies": [
+          "aws_db_subnet_group",
+          "aws_security_group"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Aurora engines (aurora-mysql, aurora-postgresql)",
+          "Conditional creation (count based on engine type)",
+          "Cluster-level configuration",
+          "Storage encryption",
+          "Backup configuration",
+          "Apply immediately option"
+        ],
+        "use_cases": [
+          "Aurora MySQL clusters",
+          "Aurora PostgreSQL clusters"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "this",
+            "file": "terraform/modules/database/aurora.tf",
+            "purpose": "Aurora RDS cluster",
+            "config": {
+              "count": "contains(aurora_engines, var.db_conf.engine) ? 1 : 0",
+              "cluster_identifier": "${var.project_id}-${var.db_purpose}-database",
+              "engine": "var.db_conf.engine",
+              "engine_version": "var.db_conf.engine_version",
+              "database_name": "local.db_name",
+              "master_username": "local.username",
+              "master_password": "random_password.password.result",
+              "backup_retention_period": 5,
+              "preferred_backup_window": "07:00-09:00",
+              "apply_immediately": true,
+              "db_subnet_group_name": "aws_db_subnet_group.this.name",
+              "vpc_security_group_ids": [
+                "aws_security_group.this.id"
+              ],
+              "storage_encrypted": true,
+              "skip_final_snapshot": true
+            }
+          }
+        ]
+      }
+    },
+    "aws_rds_cluster_instance": {
+      "general_configuration": {
+        "required_inputs": [
+          "cluster_identifier",
+          "instance_class",
+          "engine"
+        ],
+        "optional_inputs": [
+          "identifier",
+          "engine_version",
+          "db_subnet_group_name",
+          "db_parameter_group_name",
+          "publicly_accessible",
+          "apply_immediately",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "endpoint",
+          "port"
+        ],
+        "dependencies": [
+          "aws_rds_cluster",
+          "aws_db_subnet_group",
+          "aws_db_parameter_group"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Aurora cluster association",
+          "Conditional creation (count based on cluster existence)",
+          "Instance-level configuration",
+          "Public/private accessibility",
+          "Apply immediately option"
+        ],
+        "use_cases": [
+          "Aurora cluster instances"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "this",
+            "file": "terraform/modules/database/aurora.tf",
+            "purpose": "Aurora cluster instance",
+            "config": {
+              "count": "contains(aurora_engines, var.db_conf.engine) ? 1 : 0",
+              "cluster_identifier": "aws_rds_cluster.this[0].id",
+              "instance_class": "var.db_conf.instance_class",
+              "engine": "aws_rds_cluster.this[0].engine",
+              "engine_version": "aws_rds_cluster.this[0].engine_version",
+              "identifier": "${var.project_id}-${var.db_purpose}-database",
+              "db_subnet_group_name": "aws_db_subnet_group.this.name",
+              "db_parameter_group_name": "aws_db_parameter_group.this[0].id (conditional)",
+              "publicly_accessible": "var.publicly_accessible",
+              "apply_immediately": true
+            }
+          }
+        ]
+      }
+    },
+    "aws_db_parameter_group": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "family"
+        ],
+        "optional_inputs": [
+          "description",
+          "parameter",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Conditional creation (count)",
+          "Dynamic parameter blocks",
+          "Parameter apply methods (immediate, pending-reboot)",
+          "Engine family specification"
+        ],
+        "use_cases": [
+          "Custom database parameters",
+          "Performance tuning"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "this",
+            "file": "terraform/modules/database/other_dbs.tf",
+            "purpose": "Database parameter group",
+            "config": {
+              "count": "var.db_parameter_group.should_create_db_parameter_group ? 1 : 0",
+              "name": "${var.project_id}-${var.db_purpose}-src-parm-group",
+              "family": "var.db_parameter_group.family",
+              "description": "Parameter group for ${var.project_id}-${var.db_purpose}-database",
+              "parameters": "var.db_parameter_group.parameters (dynamic block)"
+            }
+          }
+        ]
+      }
+    },
+    "aws_db_option_group": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "engine_name",
+          "major_engine_version"
+        ],
+        "optional_inputs": [
+          "option_group_description",
+          "option",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Conditional creation (count)",
+          "Dynamic option blocks",
+          "Option settings configuration",
+          "Engine-specific options"
+        ],
+        "use_cases": [
+          "Oracle/SQL Server specific features",
+          "Database extensions"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "this",
+            "file": "terraform/modules/database/other_dbs.tf",
+            "purpose": "Database option group",
+            "config": {
+              "count": "var.db_option_group.should_create_db_option_group ? 1 : 0",
+              "name": "${var.project_id}-${var.db_purpose}-src-option-group",
+              "engine_name": "var.db_option_group.engine_name",
+              "major_engine_version": "var.db_option_group.major_engine_version",
+              "option_group_description": "Option group for ${var.project_id}-${var.db_purpose}-database",
+              "options": "var.db_option_group.options (dynamic block)"
+            }
+          }
+        ]
+      }
+    },
+    "aws_db_subnet_group": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "subnet_ids"
+        ],
+        "optional_inputs": [
+          "description",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn"
+        ],
+        "dependencies": [
+          "VPC subnets"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Multiple subnet association",
+          "Custom naming"
+        ],
+        "use_cases": [
+          "Multi-AZ database deployment",
+          "VPC subnet grouping"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "name": "this",
+            "file": "terraform/modules/database/networking.tf",
+            "purpose": "Database subnet group",
+            "config": {
+              "name": "${var.project_id}-${var.db_purpose}-subnet-group",
+              "subnet_ids": "var.subnet_ids"
+            }
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "S3 (Simple Storage)": {
+    "aws_s3_bucket": {
+      "general_configuration": {
+        "required_inputs": [
+          "bucket"
+        ],
+        "optional_inputs": [
+          "tags",
+          "force_destroy"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "bucket_domain_name"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Custom naming patterns",
+          "Lifecycle ignore_changes",
+          "Tags"
+        ],
+        "use_cases": [
+          "Application storage",
+          "Analytics data",
+          "Terraform state"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/s3_bucket/main.tf",
+            "naming": "${var.project_id}-${var.bucket_name}-${account_id}"
+          }
+        ],
+        "support_tools": [
+          {
+            "file": "terraform/terraform-state-init/main.tf",
+            "purpose": "Terraform state storage"
+          }
+        ]
+      }
+    },
+    "aws_s3_bucket_versioning": {
+      "general_configuration": {
+        "required_inputs": [
+          "bucket",
+          "versioning_configuration"
+        ],
+        "computed_outputs": [
+          "id"
+        ],
+        "dependencies": [
+          "aws_s3_bucket"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Enabled/Suspended status"
+        ],
+        "use_cases": [
+          "Version control",
+          "Data protection"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/s3_bucket/main.tf",
+            "status": "Enabled"
+          }
+        ]
+      }
+    },
+    "aws_s3_bucket_ownership_controls": {
+      "general_configuration": {
+        "required_inputs": [
+          "bucket",
+          "rule"
+        ],
+        "dependencies": [
+          "aws_s3_bucket"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "BucketOwnerPreferred",
+          "ObjectWriter",
+          "BucketOwnerEnforced"
+        ],
+        "use_cases": [
+          "ACL management"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/s3_bucket/main.tf",
+            "object_ownership": "BucketOwnerPreferred"
+          }
+        ]
+      }
+    },
+    "aws_s3_bucket_acl": {
+      "general_configuration": {
+        "required_inputs": [
+          "bucket",
+          "acl"
+        ],
+        "dependencies": [
+          "aws_s3_bucket",
+          "aws_s3_bucket_ownership_controls"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "private",
+          "public-read",
+          "public-read-write"
+        ],
+        "use_cases": [
+          "Access control"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/s3_bucket/main.tf",
+            "acl": "private"
+          }
+        ]
+      }
+    },
+    "aws_s3_bucket_notification": {
+      "general_configuration": {
+        "required_inputs": [
+          "bucket"
+        ],
+        "optional_inputs": [
+          "queue",
+          "topic",
+          "lambda_function"
+        ],
+        "dependencies": [
+          "aws_s3_bucket",
+          "SQS/SNS/Lambda"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "SQS queue notifications",
+          "Event types (s3:ObjectCreated:*)",
+          "Filter prefix/suffix",
+          "Dynamic queue blocks",
+          "Conditional creation"
+        ],
+        "use_cases": [
+          "Event-driven processing"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/s3_bucket/main.tf",
+            "events": [
+              "s3:ObjectCreated:*"
+            ],
+            "filter_prefix": "transient/",
+            "filter_suffix": ".sql"
+          }
+        ]
+      }
+    },
+    "aws_s3_bucket_policy": {
+      "general_configuration": {
+        "required_inputs": [
+          "bucket",
+          "policy"
+        ],
+        "dependencies": [
+          "aws_s3_bucket"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "HTTPS enforcement",
+          "Role-based access",
+          "QuickSight service roles",
+          "Conditional policies"
+        ],
+        "use_cases": [
+          "Security policies",
+          "Access control"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/s3_bucket/policy.tf",
+            "statements": [
+              "DenyInsecureTransport",
+              "DenyNonAllowedRoles"
+            ]
+          }
+        ]
+      }
+    },
+    "aws_s3_bucket_public_access_block": {
+      "general_configuration": {
+        "required_inputs": [
+          "bucket"
+        ],
+        "optional_inputs": [
+          "block_public_acls",
+          "block_public_policy",
+          "ignore_public_acls",
+          "restrict_public_buckets"
+        ],
+        "dependencies": [
+          "aws_s3_bucket"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "All block options"
+        ],
+        "use_cases": [
+          "Security hardening"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "file": "terraform/terraform-state-init/main.tf",
+            "all_blocks": true
+          }
+        ]
+      }
+    },
+    "aws_s3_bucket_server_side_encryption_configuration": {
+      "general_configuration": {
+        "required_inputs": [
+          "bucket",
+          "rule"
+        ],
+        "dependencies": [
+          "aws_s3_bucket"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "AES256",
+          "aws:kms"
+        ],
+        "use_cases": [
+          "Data encryption"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "file": "terraform/terraform-state-init/main.tf",
+            "sse_algorithm": "AES256"
+          }
+        ]
+      }
+    },
+    "aws_s3_object": {
+      "general_configuration": {
+        "required_inputs": [
+          "bucket",
+          "key"
+        ],
+        "optional_inputs": [
+          "source",
+          "content",
+          "acl"
+        ],
+        "dependencies": [
+          "aws_s3_bucket"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Folder creation",
+          "File upload",
+          "Conditional creation"
+        ],
+        "use_cases": [
+          "Folder structure",
+          "VPN certificates"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/s3_bucket/objects.tf",
+            "keys": [
+              "transient/",
+              "error/",
+              "processed/"
+            ],
+            "conditional": "var.build_paths"
+          }
+        ],
+        "support_tools": [
+          {
+            "file": "terraform/modules/client_vpn/security.tf",
+            "purpose": "VPN certificates"
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "SNS (Simple Notification)": {
+    "aws_sns_topic": {
+      "general_configuration": {
+        "required_inputs": [
+          "name"
+        ],
+        "optional_inputs": [
+          "display_name",
+          "policy",
+          "delivery_policy",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Custom naming",
+          "Tags"
+        ],
+        "use_cases": [
+          "Billing alerts",
+          "Lambda notifications"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "name": "billing_alerts",
+            "file": "terraform/modules/alerting_system/sns.tf",
+            "naming": "${var.project_id}-alerts"
+          }
+        ]
+      }
+    },
+    "aws_sns_topic_policy": {
+      "general_configuration": {
+        "required_inputs": [
+          "arn",
+          "policy"
+        ],
+        "dependencies": [
+          "aws_sns_topic"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Account owner permissions",
+          "Service principal permissions (budgets.amazonaws.com)",
+          "Conditional policies"
+        ],
+        "use_cases": [
+          "Budget notifications",
+          "Cross-service access"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "file": "terraform/modules/alerting_system/sns.tf",
+            "principals": [
+              "AWS account",
+              "budgets.amazonaws.com"
+            ]
+          }
+        ]
+      }
+    },
+    "aws_sns_topic_subscription": {
+      "general_configuration": {
+        "required_inputs": [
+          "topic_arn",
+          "protocol",
+          "endpoint"
+        ],
+        "dependencies": [
+          "aws_sns_topic",
+          "Lambda function"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "Lambda protocol",
+          "Multiple subscriptions",
+          "Conditional creation"
+        ],
+        "use_cases": [
+          "Lambda invocation from SNS"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "file": "terraform/modules/lambda_function/event_source_mapping.tf",
+            "protocol": "lambda",
+            "endpoint": "aws_lambda_function.function.arn"
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "SQS (Simple Queue)": {
+    "aws_sqs_queue": {
+      "general_configuration": {
+        "required_inputs": [
+          "name"
+        ],
+        "optional_inputs": [
+          "visibility_timeout_seconds",
+          "receive_wait_time_seconds",
+          "delay_seconds",
+          "redrive_policy",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn",
+          "url"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Main queue and DLQ creation",
+          "Redrive policy",
+          "Visibility timeout",
+          "Delay configuration",
+          "Tags"
+        ],
+        "use_cases": [
+          "Lambda triggers",
+          "Dead letter queues"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/sqs_queue/main.tf",
+            "creates": [
+              "main queue",
+              "DLQ"
+            ],
+            "naming": "${var.project_id}-${var.queue_name}"
+          }
+        ]
+      }
+    },
+    "aws_sqs_queue_policy": {
+      "general_configuration": {
+        "required_inputs": [
+          "queue_url",
+          "policy"
+        ],
+        "dependencies": [
+          "aws_sqs_queue"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "S3 SendMessage permissions",
+          "Source ARN conditions",
+          "Conditional creation"
+        ],
+        "use_cases": [
+          "S3 event notifications"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/sqs_queue/main.tf",
+            "condition": "var.enable_s3_policy",
+            "principal": "*",
+            "source_arn": "var.s3_bucket_arn"
+          }
+        ]
+      }
+    },
+    "aws_sqs_queue_redrive_allow_policy": {
+      "general_configuration": {
+        "required_inputs": [
+          "queue_url",
+          "redrive_allow_policy"
+        ],
+        "dependencies": [
+          "aws_sqs_queue (DLQ)"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "byQueue permission",
+          "Source queue ARNs"
+        ],
+        "use_cases": [
+          "DLQ redrive configuration"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/sqs_queue/main.tf",
+            "permission": "byQueue",
+            "source": "aws_sqs_queue.sqs_queue.arn"
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "SSM (Systems Manager)": {
+    "aws_ssm_parameter": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "type",
+          "value"
+        ],
+        "optional_inputs": [
+          "description",
+          "tier",
+          "key_id"
+        ],
+        "computed_outputs": [
+          "arn",
+          "version"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "for_each iteration",
+          "Parameter types (String, StringList, SecureString)",
+          "Tiers (Standard, Advanced)",
+          "KMS encryption for SecureString",
+          "Path-based naming"
+        ],
+        "use_cases": [
+          "Lambda configuration",
+          "Application parameters"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/ssm/main.tf",
+            "naming": "/${var.environment}/${each.key}",
+            "iteration": "var.parameters"
+          },
+          {
+            "file": "terraform/modules/sql_polyglot/parameter_store.tf",
+            "purpose": "Lambda parameters"
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "Secrets Manager": {
+    "aws_secretsmanager_secret": {
+      "general_configuration": {
+        "required_inputs": [
+          "name"
+        ],
+        "optional_inputs": [
+          "kms_key_id",
+          "description",
+          "recovery_window_in_days"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "for_each iteration",
+          "KMS encryption",
+          "Custom naming patterns"
+        ],
+        "use_cases": [
+          "Database credentials",
+          "API keys",
+          "Slack webhooks"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/secrets/main.tf",
+            "naming": "${var.name}/${each.key}"
+          },
+          {
+            "file": "terraform/modules/database/credentials.tf",
+            "purpose": "DB credentials"
+          }
+        ]
+      }
+    },
+    "aws_secretsmanager_secret_version": {
+      "general_configuration": {
+        "required_inputs": [
+          "secret_id",
+          "secret_string"
+        ],
+        "dependencies": [
+          "aws_secretsmanager_secret"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "for_each iteration",
+          "Lifecycle ignore_changes",
+          "Conditional creation based on var.ignore_changes"
+        ],
+        "use_cases": [
+          "Secret value management",
+          "Manual secret updates"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/secrets/main.tf",
+            "variants": [
+              "main_keeping_changes",
+              "main_ignoring_changes"
+            ]
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "Service Quotas": {
+    "aws_servicequotas_service_quota": {
+      "general_configuration": {
+        "required_inputs": [
+          "quota_code",
+          "service_code",
+          "value"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Conditional creation (count)",
+          "Service codes (bedrock, lambda, etc.)",
+          "Quota increase requests"
+        ],
+        "use_cases": [
+          "Bedrock prompt limits",
+          "Service limit increases"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/sql_polyglot/service_quotas.tf",
+            "service": "bedrock",
+            "quota": "prompts per account",
+            "condition": "current < required"
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "TLS/Crypto": {
+    "tls_private_key": {
+      "general_configuration": {
+        "required_inputs": [
+          "algorithm"
+        ],
+        "computed_outputs": [
+          "private_key_pem",
+          "public_key_pem"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "RSA algorithm",
+          "Key generation"
+        ],
+        "use_cases": [
+          "VPN certificates"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "files": [
+              "client_vpn/acm-ca.tf",
+              "client_vpn/acm-root.tf",
+              "client_vpn/acm-server.tf"
+            ],
+            "algorithm": "RSA"
+          }
+        ]
+      }
+    },
+    "tls_self_signed_cert": {
+      "general_configuration": {
+        "required_inputs": [
+          "private_key_pem",
+          "subject",
+          "validity_period_hours",
+          "allowed_uses"
+        ],
+        "computed_outputs": [
+          "cert_pem"
+        ],
+        "dependencies": [
+          "tls_private_key"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "CA certificates",
+          "Custom validity periods",
+          "Subject configuration",
+          "Allowed uses (cert_signing, crl_signing)"
+        ],
+        "use_cases": [
+          "VPN CA certificates"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "file": "client_vpn/acm-ca.tf",
+            "is_ca_certificate": true,
+            "validity_hours": 87600
+          }
+        ]
+      }
+    },
+    "tls_cert_request": {
+      "general_configuration": {
+        "required_inputs": [
+          "private_key_pem",
+          "subject"
+        ],
+        "computed_outputs": [
+          "cert_request_pem"
+        ],
+        "dependencies": [
+          "tls_private_key"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "CSR generation",
+          "Subject configuration"
+        ],
+        "use_cases": [
+          "VPN client/server certificates"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "files": [
+              "client_vpn/acm-root.tf",
+              "client_vpn/acm-server.tf"
+            ]
+          }
+        ]
+      }
+    },
+    "tls_locally_signed_cert": {
+      "general_configuration": {
+        "required_inputs": [
+          "cert_request_pem",
+          "ca_private_key_pem",
+          "ca_cert_pem",
+          "validity_period_hours",
+          "allowed_uses"
+        ],
+        "computed_outputs": [
+          "cert_pem"
+        ],
+        "dependencies": [
+          "tls_cert_request",
+          "tls_self_signed_cert"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "CA signing",
+          "Client/server auth",
+          "Custom validity"
+        ],
+        "use_cases": [
+          "VPN client/server certificates"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "files": [
+              "client_vpn/acm-root.tf",
+              "client_vpn/acm-server.tf"
+            ],
+            "validity_hours": 87600
+          }
+        ]
+      }
+    },
+    "random_password": {
+      "general_configuration": {
+        "required_inputs": [
+          "length"
+        ],
+        "optional_inputs": [
+          "special",
+          "override_special"
+        ],
+        "computed_outputs": [
+          "result"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Custom length",
+          "Special characters",
+          "Character overrides"
+        ],
+        "use_cases": [
+          "Database passwords"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/database/credentials.tf",
+            "purpose": "DB password generation"
+          }
+        ]
+      }
+    },
+    "random_string": {
+      "general_configuration": {
+        "required_inputs": [
+          "length"
+        ],
+        "optional_inputs": [
+          "special",
+          "upper",
+          "lower",
+          "numeric"
+        ],
+        "computed_outputs": [
+          "result"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Custom length",
+          "Character type control"
+        ],
+        "use_cases": [
+          "Database usernames",
+          "Random identifiers"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "terraform/modules/database/credentials.tf",
+            "purpose": "DB username generation"
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "VPC (Virtual Private Cloud)": {
+    "aws_security_group": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "vpc_id"
+        ],
+        "optional_inputs": [
+          "description",
+          "ingress",
+          "egress",
+          "tags"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Custom naming",
+          "VPC association",
+          "Ingress/egress rules",
+          "Tags"
+        ],
+        "use_cases": [
+          "Lambda security",
+          "Database security",
+          "VPN security"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "files": [
+              "sql_polyglot/lambda.tf",
+              "database/networking.tf"
+            ],
+            "count": 9
+          }
+        ],
+        "assessment": [
+          {
+            "file": "assessment/network.tf"
+          }
+        ],
+        "support_tools": [
+          {
+            "files": [
+              "alerting_system/networking.tf",
+              "analytics_pipeline/networking.tf",
+              "run_tracking/networking.tf",
+              "client_vpn/others.tf",
+              "ssm_tunnel/networking.tf"
+            ],
+            "count": 5
+          }
+        ]
+      }
+    },
+    "aws_vpc_security_group_ingress_rule": {
+      "general_configuration": {
+        "required_inputs": [
+          "security_group_id"
+        ],
+        "optional_inputs": [
+          "cidr_ipv4",
+          "cidr_ipv6",
+          "referenced_security_group_id",
+          "from_port",
+          "to_port",
+          "ip_protocol",
+          "description"
+        ],
+        "computed_outputs": [
+          "id"
+        ],
+        "dependencies": [
+          "aws_security_group"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "CIDR-based rules",
+          "Security group references",
+          "Port ranges",
+          "Conditional creation"
+        ],
+        "use_cases": [
+          "Database access",
+          "VPC access",
+          "VPN access"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "database/networking.tf",
+            "rules": [
+              "vpc_to_database",
+              "lambda_to_database",
+              "vpn_to_database",
+              "open_db_ipv4",
+              "open_db_ipv6"
+            ]
+          }
+        ],
+        "support_tools": [
+          {
+            "file": "ssm_tunnel/networking.tf"
+          }
+        ]
+      }
+    },
+    "aws_vpc_security_group_egress_rule": {
+      "general_configuration": {
+        "required_inputs": [
+          "security_group_id"
+        ],
+        "optional_inputs": [
+          "cidr_ipv4",
+          "referenced_security_group_id",
+          "from_port",
+          "to_port",
+          "ip_protocol",
+          "description"
+        ],
+        "computed_outputs": [
+          "id"
+        ],
+        "dependencies": [
+          "aws_security_group"
+        ]
+      },
+      "module_requirements": {
+        "must_support": [
+          "CIDR-based rules",
+          "Security group references",
+          "All traffic rules"
+        ],
+        "use_cases": [
+          "Outbound access",
+          "Database egress"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "database/networking.tf",
+            "rule": "database_outbound_rule"
+          }
+        ],
+        "support_tools": [
+          {
+            "file": "ssm_tunnel/networking.tf"
+          }
+        ]
+      }
+    },
+    "aws_vpc_endpoint": {
+      "general_configuration": {
+        "required_inputs": [
+          "vpc_id",
+          "service_name"
+        ],
+        "optional_inputs": [
+          "vpc_endpoint_type",
+          "subnet_ids",
+          "security_group_ids",
+          "route_table_ids"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "Gateway endpoints (S3, DynamoDB)",
+          "Interface endpoints (Bedrock, SQS, Secrets Manager, SSM)",
+          "Conditional creation"
+        ],
+        "use_cases": [
+          "Private AWS service access"
+        ]
+      },
+      "declarations": {
+        "backend": [
+          {
+            "file": "sql_polyglot/vpc_endpoints.tf",
+            "services": [
+              "bedrock-runtime",
+              "s3",
+              "dynamodb",
+              "sqs",
+              "secretsmanager",
+              "ssm"
+            ]
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  },
+  "Web Services Budgets": {
+    "aws_budgets_budget": {
+      "general_configuration": {
+        "required_inputs": [
+          "name",
+          "budget_type",
+          "limit_amount",
+          "limit_unit",
+          "time_unit"
+        ],
+        "optional_inputs": [
+          "time_period_start",
+          "notification"
+        ],
+        "computed_outputs": [
+          "id",
+          "arn"
+        ],
+        "dependencies": []
+      },
+      "module_requirements": {
+        "must_support": [
+          "COST budget type",
+          "MONTHLY time unit",
+          "Multiple notifications",
+          "Percentage thresholds",
+          "SNS topic subscribers"
+        ],
+        "use_cases": [
+          "Cost monitoring",
+          "Budget alerts"
+        ]
+      },
+      "declarations": {
+        "support_tools": [
+          {
+            "file": "alerting_system/alerts.tf",
+            "name": "monthly_budget",
+            "thresholds": [
+              80,
+              100
+            ],
+            "limit": "var.billing_alert_threshold"
+          }
+        ]
+      }
+    },
+    "backlog_complete": true
+  }
+}
