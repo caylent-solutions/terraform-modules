@@ -1950,14 +1950,14 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Support unique statement IDs
 - [ ] Support use cases: SQS invocation, DynamoDB stream invocation, EventBridge invocation, SNS invocation 
 
-#### Story 12.5: Lambda Function Example
+#### Story 12.5: Lambda Zip Deployment Example
 **As a** module consumer  
-**I want** a Lambda function example  
-**So that** I can test and understand function, event source mapping, and permission configuration
+**I want** a Lambda Zip deployment example  
+**So that** I can test and understand Zip-based Lambda deployment with event sources
 
 **Acceptance Criteria:**
-- [ ] Create examples/lambda-function/ with function, event source mapping, and permission configuration
-- [ ] Include Zip package type configuration
+- [ ] Create examples/lambda-zip-deployment/ with complete configuration
+- [ ] Include Zip package type configuration (filename, handler, runtime)
 - [ ] Include environment variables configuration
 - [ ] Include VPC configuration
 - [ ] Include event source mapping for SQS or DynamoDB
@@ -1966,16 +1966,32 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Example serves as test fixture for terratest
 - [ ] Document example in README
 
-#### Story 12.6: Lambda Function Tests
-**As a** module maintainer  
-**I want** comprehensive Lambda function tests  
-**So that** function, event source mapping, and permission functionality is verified
+#### Story 12.6: Lambda Docker Image Deployment Example
+**As a** module consumer  
+**I want** a Lambda Docker image deployment example  
+**So that** I can test and understand container-based Lambda deployment
 
 **Acceptance Criteria:**
-- [ ] Create tests/lambda-function/module_test.go
-- [ ] Test uses examples/lambda-function/ as fixture
+- [ ] Create examples/lambda-docker-deployment/ with complete configuration
+- [ ] Include Image package type configuration (image_uri, image_config)
+- [ ] Include image command override configuration
+- [ ] Include environment variables configuration
+- [ ] Include VPC configuration
+- [ ] Include event source mapping for SQS or DynamoDB
+- [ ] Include Lambda permission configuration
+- [ ] Include terraform.tfvars with test values
+- [ ] Example serves as test fixture for terratest
+- [ ] Document example in README
+
+#### Story 12.7: Common Lambda Tests
+**As a** module maintainer  
+**I want** common Lambda tests  
+**So that** shared functionality across both deployment methods is verified
+
+**Acceptance Criteria:**
+- [ ] Create tests/common/module_test.go
 - [ ] Test module input validation
-- [ ] Test required outputs exist (arn, invoke_arn, qualified_arn, version, event source uuid, state)
+- [ ] Test required outputs exist (arn, invoke_arn, qualified_arn, version)
 - [ ] Verify function ARN and invoke ARN outputs
 - [ ] Verify function version output
 - [ ] Verify environment variables configuration
@@ -1986,7 +2002,41 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Do NOT test lint, format, or plan (handled by pipeline)
 - [ ] All tests pass with `make tf-test`
 
-#### Story 12.7: Documentation
+#### Story 12.8: Lambda Zip Deployment Tests
+**As a** module maintainer  
+**I want** Zip deployment specific tests  
+**So that** Zip package functionality is verified
+
+**Acceptance Criteria:**
+- [ ] Create tests/lambda-zip-deployment/module_test.go
+- [ ] Test uses examples/lambda-zip-deployment/ as fixture
+- [ ] Verify Zip package type configuration
+- [ ] Verify handler configuration
+- [ ] Verify runtime configuration
+- [ ] Verify source code hash handling
+- [ ] Verify Lambda layers configuration
+- [ ] Idempotency testing handled automatically by terraform-terratest-framework
+- [ ] Do NOT test lint, format, or plan (handled by pipeline)
+- [ ] All tests pass with `make tf-test`
+
+#### Story 12.9: Lambda Docker Image Deployment Tests
+**As a** module maintainer  
+**I want** Docker image deployment specific tests  
+**So that** Image package functionality is verified
+
+**Acceptance Criteria:**
+- [ ] Create tests/lambda-docker-deployment/module_test.go
+- [ ] Test uses examples/lambda-docker-deployment/ as fixture
+- [ ] Verify Image package type configuration
+- [ ] Verify image URI configuration
+- [ ] Verify image command override
+- [ ] Verify image config settings
+- [ ] Verify architecture configuration (arm64, x86_64)
+- [ ] Idempotency testing handled automatically by terraform-terratest-framework
+- [ ] Do NOT test lint, format, or plan (handled by pipeline)
+- [ ] All tests pass with `make tf-test`
+
+#### Story 12.10: Documentation
 **As a** module consumer  
 **I want** complete documentation  
 **So that** I can use the module effectively
@@ -1995,14 +2045,15 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Generate terraform-docs with `make tf-docs`
 - [ ] Document all variables with descriptions and defaults
 - [ ] Document all outputs
-- [ ] Include usage examples in README
+- [ ] Include usage examples in README for both Zip and Docker deployments
 - [ ] Document backend processing use case
 - [ ] Document assessment workflows use case
 - [ ] Document analytics pipeline use case
 - [ ] Document SQS queue processing use case
 - [ ] Document DynamoDB stream processing use case
+- [ ] Document Zip vs Image package type selection guidance
 
-#### Story 12.8: Security & Validation
+#### Story 12.11: Security & Validation
 **As a** security engineer  
 **I want** security scanning and validation  
 **So that** the module is secure
