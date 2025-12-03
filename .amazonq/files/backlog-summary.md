@@ -28,7 +28,7 @@
 11. **Epic 11:** KMS (Key Management) - 2 resources
 12. **Epic 12:** Lambda - 3 resources
 13. **Epic 13:** RDS (Relational Database) - 6 resources
-14. **Epic 14:** S3 (Simple Storage) - 9 resources
+14. **Epic 14:** S3 Bucket - 9 resources
 15. **Epic 15:** SNS (Simple Notification) - 3 resources
 16. **Epic 16:** SQS (Simple Queue) - 3 resources
 17. **Epic 17:** SSM (Systems Manager) - 1 resource

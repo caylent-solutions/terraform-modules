@@ -2448,7 +2448,7 @@
     },
     "backlog_complete": true
   },
-  "S3 (Simple Storage)": {
+  "S3 Bucket": {
     "aws_s3_bucket": {
       "general_configuration": {
         "required_inputs": [

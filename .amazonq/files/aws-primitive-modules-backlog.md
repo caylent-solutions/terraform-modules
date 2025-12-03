@@ -41,6 +41,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ### Stories
 
+#### Story 1.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing ACM module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/acm`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
+
 #### Story 1.1: Module Scaffolding
 **As a** DevOps engineer  
 **I want** the ACM module scaffolded from generic-skeleton  
@@ -199,6 +211,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ### Stories
 
+#### Story 2.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing Athena module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/athena`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
+
 #### Story 2.1: Module Scaffolding
 **As a** DevOps engineer  
 **I want** the Athena module scaffolded from generic-skeleton  
@@ -300,81 +324,22 @@ All modules must include comprehensive functional tests using terraform-terrates
 ---
 
 
-## Epic 3: CloudWatch Primitive Module (PLACEHOLDER - TO BE UPDATEDt** I can understand simple usage
-
-**Acceptance Criteria:**
-- [ ] Create examples/basic
-- [ ] Include terraform.tfvars with test values
-- [ ] Document example in README
-
-#### Story 2.4: Advanced Example
-**As a** module consumer  
-**I want** an advanced example  
-**So that** I can understand complex usage
-
-**Acceptance Criteria:**
-- [ ] Create examples/advanced
-- [ ] Include terraform.tfvars with test values
-- [ ] Document example in README
-
-#### Story 2.5: Common Tests
-**As a** module maintainer  
-**I want** common tests implemented  
-**So that** basic functionality is verified
-
-**Acceptance Criteria:**
-- [ ] Implement tests/common/module_test.go
-- [ ] Test idempotency (automatic via framework)
-- [ ] Test input validation
-- [ ] All tests pass with `make test-common`
-
-#### Story 2.6: Example Tests
-**As a** module maintainer  
-**I want** example tests implemented  
-**So that** usage is verified
-
-**Acceptance Criteria:**
-- [ ] Implement tests/basic/module_test.go
-- [ ] Implement tests/advanced/module_test.go
-- [ ] All tests pass with `make test`
-
-#### Story 2.7: Documentation
-**As a** module consumer  
-**I want** complete documentation  
-**So that** I can use the module effectively
-
-**Acceptance Criteria:**
-- [ ] Generate terraform-docs with `make tf-docs`
-- [ ] Document all variables
-- [ ] Document all outputs
-- [ ] Include usage examples in README
-
-#### Story 2.8: Security & Validation
-**As a** security engineer  
-**I want** security scanning and validation  
-**So that** the module is secure
-
-**Acceptance Criteria:**
-- [ ] Pass `make tf-security` (tfsec)
-- [ ] Pass `make tf-lint`
-- [ ] Pass `make tf-format`
-- [ ] Pass `make module-validate MODULE_PATH=providers/aws/primitives/athena MODULE_TYPE=primitive`
-
----
 
 ## Epic 3: CloudWatch Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/cloudwatch`
-**JSON Specification:** `.amazonq/files/terraform_resources_grouped.json` → `["CloudWatch"]`
+**JSON Specification:** `.amazonq/files/terraform_resources_grouped.json` → `["CloudWatch", "CloudWatch Logs"]`
 **Development Environment:** Caylent devcontainer
 
 **Resources:**
 - aws_cloudwatch_dashboard
 - aws_cloudwatch_query_definition
+- aws_cloudwatch_log_group
+- aws_cloudwatch_log_stream
 
 **Description:**
-Create a reusable CloudWatch primitive module supporting dashboards with multiple widget types, custom CloudWatch Insights queries, and comprehensive monitoring capabilities.
+Create a single, unified CloudWatch primitive module (at `providers/aws/primitives/cloudwatch`) that implements both CloudWatch Dashboards/Insights and CloudWatch Logs requirements. It covers dashboards with multiple widget types, custom CloudWatch Insights queries, and CloudWatch Logs for log groups, retention, KMS encryption, and log streams. No separate `cloudwatch-logs` module is created.
 
 **Testing Requirements:**
 All modules must include comprehensive functional tests using terraform-terratest-framework v1.3.0 that validate the module's functionality, including idempotency, input validation, and all must_support features.
@@ -391,15 +356,28 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ### Stories
 
-#### Story 3.1: Module Scaffolding
+#### Story 3.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing CloudWatch module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/cloudwatch`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
+
+#### Story 3.1: Module Scaffolding (Dashboards & Logs)
 **As a** DevOps engineer  
-**I want** the CloudWatch module scaffolded from generic-skeleton  
-**So that** it follows monorepo standards
+**I want** the CloudWatch and CloudWatch Logs modules scaffolded from generic-skeleton  
+**So that** they follow monorepo standards
 
 **Acceptance Criteria:**
 - [ ] Copy generic-skeleton to `providers/aws/primitives/cloudwatch`
 - [ ] Run `make cpm-configure` and `make install`
-- [ ] Update module metadata (README, VERSION, etc.)
+- [ ] Update module metadata (README, VERSION, etc.) for both modules
+- [ ] Verify `make module-validate MODULE_PATH=providers/aws/primitives/cloudwatch MODULE_TYPE=primitive` passes
 - [ ] Verify `make module-validate MODULE_PATH=providers/aws/primitives/cloudwatch MODULE_TYPE=primitive` passes
 
 #### Story 3.2: Core Dashboard Resource Implementation
@@ -479,7 +457,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Do NOT test lint, format, or plan (handled by pipeline)
 - [ ] All tests pass with `make tf-test`
 
-#### Story 3.7: Documentation
+#### Story 3.7: Documentation (Dashboards & Insights)
 **As a** module consumer  
 **I want** complete documentation  
 **So that** I can use the module effectively
@@ -491,7 +469,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Include usage examples in README
 - [ ] Document monitoring dashboard use case
 
-#### Story 3.8: Security & Validation
+#### Story 3.8: Security & Validation (Dashboards)
 **As a** security engineer  
 **I want** security scanning and validation  
 **So that** the module is secure
@@ -503,49 +481,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Pass `make tf-test`
 - [ ] Pass `make module-validate MODULE_PATH=providers/aws/primitives/cloudwatch MODULE_TYPE=primitive`
 
----
-
-## Epic 4: CloudWatch Logs Primitive Module
-
-**Module Type:** Primitive
-**Module Path:** `providers/aws/primitives/cloudwatch-logs`
-**JSON Specification:** `.amazonq/files/terraform_resources_grouped.json` → `["CloudWatch Logs"]`
-**Development Environment:** Caylent devcontainer
-
-**Resources:**
-- aws_cloudwatch_log_group
-- aws_cloudwatch_log_stream
-
-**Description:**
-Create a reusable CloudWatch Logs primitive module supporting log groups with custom naming patterns, retention policies, KMS encryption, and log streams for Lambda, VPN, and application logging.
-
-**Testing Requirements:**
-All modules must include comprehensive functional tests using terraform-terratest-framework v1.3.0 that validate the module's functionality, including idempotency, input validation, and all must_support features.
-
-**Example and Testing Strategy:**
-- Examples serve as test fixtures for terraform-terratest-framework
-- Only create multiple examples when configurations cannot coexist due to conflicts
-- Example folder names should describe the configuration (not "basic"/"advanced")
-- Example folder names map directly to test folder names
-- When multiple examples exist: tests/common/ contains shared tests, example-specific test folders contain only unique tests
-- When single example exists: no tests/common/ folder needed, all tests in the example's test folder
-- Pipeline handles lint, format, and plan validation - do not duplicate in tests
-- Tests focus on functional validation: resource creation, outputs, and module-specific behavior
-
-### Stories
-
-#### Story 4.1: Module Scaffolding
-**As a** DevOps engineer  
-**I want** the CloudWatch Logs module scaffolded from generic-skeleton  
-**So that** it follows monorepo standards
-
-**Acceptance Criteria:**
-- [ ] Copy generic-skeleton to `providers/aws/primitives/cloudwatch-logs`
-- [ ] Run `make cpm-configure` and `make install`
-- [ ] Update module metadata (README, VERSION, etc.)
-- [ ] Verify `make module-validate MODULE_PATH=providers/aws/primitives/cloudwatch-logs MODULE_TYPE=primitive` passes
-
-#### Story 4.2: Core Log Group Resource Implementation
+#### Story 3.9: Core Log Group Resource Implementation
 **As a** platform engineer  
 **I want** aws_cloudwatch_log_group resource implemented  
 **So that** I can manage CloudWatch log groups
@@ -556,7 +492,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Support optional inputs: retention_in_days, kms_key_id, tags
 - [ ] Output: arn, name
 
-#### Story 4.3: Log Group Configuration Support
+#### Story 3.10: Log Group Configuration Support
 **As a** logging engineer  
 **I want** comprehensive log group configuration support  
 **So that** I can configure log groups for different use cases
@@ -570,7 +506,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Support tags
 - [ ] Support use cases: Lambda function logging, VPN connection logging, Application logging
 
-#### Story 4.4: Log Stream Resource Implementation
+#### Story 3.11: Log Stream Resource Implementation
 **As a** platform engineer  
 **I want** aws_cloudwatch_log_stream resource implemented  
 **So that** I can manage CloudWatch log streams
@@ -584,7 +520,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Support association with log groups
 - [ ] Support use cases: VPN usage tracking, Application-specific log streams
 
-#### Story 4.5: Log Group and Stream Example
+#### Story 3.12: Log Group and Stream Example
 **As a** module consumer  
 **I want** a log group and stream example  
 **So that** I can test and understand log group and stream creation
@@ -598,7 +534,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Example serves as test fixture for terratest
 - [ ] Document example in README
 
-#### Story 4.6: Log Group and Stream Tests
+#### Story 3.13: Log Group and Stream Tests
 **As a** module maintainer  
 **I want** comprehensive log group and stream tests  
 **So that** logging functionality is verified
@@ -617,7 +553,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Do NOT test lint, format, or plan (handled by pipeline)
 - [ ] All tests pass with `make tf-test`
 
-#### Story 4.7: Documentation
+#### Story 3.14: Documentation (Logs)
 **As a** module consumer  
 **I want** complete documentation  
 **So that** I can use the module effectively
@@ -631,7 +567,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Document VPN connection logging use case
 - [ ] Document application logging use case
 
-#### Story 4.8: Security & Validation
+#### Story 3.15: Security & Validation (Logs)
 **As a** security engineer  
 **I want** security scanning and validation  
 **So that** the module is secure
@@ -641,11 +577,11 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Pass `make tf-lint`
 - [ ] Pass `make tf-format`
 - [ ] Pass `make tf-test`
-- [ ] Pass `make module-validate MODULE_PATH=providers/aws/primitives/cloudwatch-logs MODULE_TYPE=primitive`
+- [ ] Pass `make module-validate MODULE_PATH=providers/aws/primitives/cloudwatch MODULE_TYPE=primitive`
 
 ---
 
-## Epic 5: DynamoDB Primitive Module
+## Epic 4: DynamoDB Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/dynamodb`
@@ -672,6 +608,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 4.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing DynamoDB module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/dynamodb`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 5.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -785,7 +733,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 6: EC2 (Elastic Compute Cloud) Primitive Module
+## Epic 5: EC2 (Elastic Compute Cloud) Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/ec2-elastic-compute-cloud`
@@ -817,6 +765,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 5.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing EC2 module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/ec2`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 6.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -1027,7 +987,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 7: ECR (Elastic Container Registry) Primitive Module
+## Epic 6: ECR (Elastic Container Registry) Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/ecr-elastic-container-registry`
@@ -1056,6 +1016,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 6.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing ECR module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/ecr`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 7.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -1189,7 +1161,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 8: EventBridge Primitive Module
+## Epic 7: EventBridge Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/eventbridge`
@@ -1217,6 +1189,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 7.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing EventBridge module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/eventbridge`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 8.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -1330,7 +1314,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 9: Glue Primitive Module
+## Epic 8: Glue Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/glue`
@@ -1358,6 +1342,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 8.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing Glue module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/glue`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 9.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -1480,7 +1476,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 10: IAM (Identity & Access Management) Primitive Module
+## Epic 9: IAM (Identity & Access Management) Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/iam-identity-&-access-management`
@@ -1511,6 +1507,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 9.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing IAM module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/iam`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 10.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -1704,7 +1712,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 11: KMS (Key Management) Primitive Module
+## Epic 10: KMS (Key Management) Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/kms-key-management`
@@ -1732,6 +1740,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 10.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing KMS module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/kms`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 11.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -1848,7 +1868,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 12: Lambda Primitive Module
+## Epic 11: Lambda Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/lambda`
@@ -1877,6 +1897,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 11.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing Lambda module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/lambda`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 12.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -2067,7 +2099,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 13: RDS (Relational Database) Primitive Module
+## Epic 12: RDS (Relational Database) Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/rds-relational-database`
@@ -2099,6 +2131,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 12.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing RDS module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/rds`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 13.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -2323,11 +2367,11 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 14: S3 (Simple Storage) Primitive Module
+## Epic 13: S3 Bucket Primitive Module
 
 **Module Type:** Primitive
-**Module Path:** `providers/aws/primitives/s3-simple-storage`
-**JSON Specification:** `.amazonq/files/terraform_resources_grouped.json` → `["S3 (Simple Storage)"]`
+**Module Path:** `providers/aws/primitives/s3-bucket`
+**JSON Specification:** `.amazonq/files/terraform_resources_grouped.json` → `["S3 Bucket"]`
 **Development Environment:** Caylent devcontainer
 
 **Resources:**
@@ -2359,16 +2403,28 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ### Stories
 
+#### Story 13.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing S3 Bucket module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/s3-bucket`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
+
 #### Story 14.1: Module Scaffolding
 **As a** DevOps engineer  
-**I want** the S3 (Simple Storage) module scaffolded from generic-skeleton  
+**I want** the S3 Bucket module scaffolded from generic-skeleton  
 **So that** it follows monorepo standards
 
 **Acceptance Criteria:**
-- [ ] Copy generic-skeleton to `providers/aws/primitives/s3-simple-storage`
+- [ ] Copy generic-skeleton to `providers/aws/primitives/s3-bucket`
 - [ ] Run `make cpm-configure` and `make install`
 - [ ] Update module metadata (README, VERSION, etc.)
-- [ ] Verify `make module-validate MODULE_PATH=providers/aws/primitives/s3-simple-storage MODULE_TYPE=primitive` passes
+- [ ] Verify `make module-validate MODULE_PATH=providers/aws/primitives/s3-bucket MODULE_TYPE=primitive` passes
 
 #### Story 14.2: aws_s3_bucket Implementation
 **As a** platform engineer  
@@ -2558,11 +2614,11 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Pass `make tf-lint`
 - [ ] Pass `make tf-format`
 - [ ] Pass `make tf-test`
-- [ ] Pass `make module-validate MODULE_PATH=providers/aws/primitives/s3-simple-storage MODULE_TYPE=primitive`
+- [ ] Pass `make module-validate MODULE_PATH=providers/aws/primitives/s3-bucket MODULE_TYPE=primitive`
 
 ---
 
-## Epic 15: SNS (Simple Notification) Primitive Module
+## Epic 14: SNS (Simple Notification) Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/sns-simple-notification`
@@ -2591,6 +2647,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 14.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing SNS module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/sns`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 15.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -2701,7 +2769,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 16: SQS (Simple Queue) Primitive Module
+## Epic 15: SQS (Simple Queue) Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/sqs-simple-queue`
@@ -2730,6 +2798,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 15.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing SQS module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/sqs`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 16.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -2845,7 +2925,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 17: SSM (Systems Manager) Primitive Module
+## Epic 16: SSM (Systems Manager) Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/ssm-systems-manager`
@@ -2872,6 +2952,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 16.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing SSM module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/ssm`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 17.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -2961,7 +3053,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 18: Secrets Manager Primitive Module
+## Epic 17: Secrets Manager Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/secrets-manager`
@@ -2989,6 +3081,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 17.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing Secrets Manager module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/secrets-manager`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 18.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -3089,7 +3193,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 19: Service Quotas Primitive Module
+## Epic 18: Service Quotas Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/service-quotas`
@@ -3116,6 +3220,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 18.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing Service Quotas module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/service-quotas`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 19.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -3209,7 +3325,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 20: TLS/Crypto Primitive Module
+## Epic 19: TLS/Crypto Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/tls-crypto`
@@ -3241,6 +3357,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 20.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing VPC module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/vpc`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 20.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -3408,7 +3536,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 21: VPC (Virtual Private Cloud) Primitive Module
+## Epic 20: VPC (Virtual Private Cloud) Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/vpc-virtual-private-cloud`
@@ -3440,6 +3568,18 @@ All modules must include comprehensive functional tests using terraform-terrates
 - Tests focus on functional validation: resource creation, outputs, and module-specific behavior
 
 ### Stories
+
+#### Story 21.0: Refactor Existing Module (accelerate-db)
+**As a** maintainer  
+**I want** to refactor the existing Budgets module  
+**So that** it retains current functionality while meeting all epic requirements
+
+**Acceptance Criteria:**
+- [ ] Work is performed on branch `accelerate-db`
+- [ ] Refactor module at `providers/aws/primitives/budget`
+- [ ] Preserve all existing behavior and outputs
+- [ ] Add functional tests and enforce OPA policies
+- [ ] Clean up docs per prompt; rewrite README with attribution
 
 #### Story 21.1: Module Scaffolding
 **As a** DevOps engineer  
@@ -3585,7 +3725,7 @@ All modules must include comprehensive functional tests using terraform-terrates
 
 ---
 
-## Epic 22: Web Services Budgets Primitive Module
+## Epic 21: Web Services Budgets Primitive Module
 
 **Module Type:** Primitive
 **Module Path:** `providers/aws/primitives/web-services-budgets`
@@ -3716,6 +3856,111 @@ All modules must include comprehensive functional tests using terraform-terrates
 - [ ] Pass `make tf-format`
 - [ ] Pass `make tf-test`
 - [ ] Pass `make module-validate MODULE_PATH=providers/aws/primitives/web-services-budgets MODULE_TYPE=primitive`
+
+---
+
+## Template Epic: Imported Primitive Module (Do Not Renumber)
+
+**Module Type:** Primitive
+**Module Path:** `providers/aws/primitives/<module-name>`
+**Development Environment:** Caylent devcontainer
+
+**Description:**
+Use this template when a refactored module depends on external modules. Import the upstream module into this monorepo with full history, then refactor it to Caylent standards: rewrite README with attribution, add functional tests, enforce OPA policies, and clean up docs. Do not include nested Terraform modules or wrappers—each primitive must be single and self-contained.
+
+**Import Reference:** `.amazonq/files/import-external-repo-with-history.md`
+
+### Stories
+
+#### Story T.1: Import Upstream Code with Full History
+**As a** DevOps engineer  
+**I want** the upstream module imported into the monorepo  
+**So that** full commit history and attribution are preserved
+
+**Acceptance Criteria:**
+- [ ] Use the import guide to add upstream remote, fetch, read-tree into target path, merge history, and remove temp remote
+- [ ] Imported files exist under `providers/aws/primitives/<module-name>`
+- [ ] No `.git` folder inside the target path (not a submodule)
+- [ ] Verify preserved history and author attribution via `git log` and `git show`
+
+#### Story T.2: Scaffold and Normalize Primitive
+**As a** platform engineer  
+**I want** the module aligned to our skeleton and constraints  
+**So that** it meets monorepo standards
+
+**Acceptance Criteria:**
+- [ ] Normalize structure to match `generic-skeleton` where needed
+- [ ] Remove any nested/wrapper modules; ensure single primitive composition
+- [ ] Use only allowed providers; maintain provider consistency
+- [ ] Pass `make module-validate MODULE_PATH=providers/aws/primitives/<module-name> MODULE_TYPE=primitive`
+
+#### Story T.3: README Rewrite with Attribution
+**As a** module maintainer  
+**I want** a clean README acknowledging the source and Caylent refactor  
+**So that** usage is clear and attribution is preserved
+
+**Acceptance Criteria:**
+- [ ] Rewrite `README.md` per prompt rules: acknowledge `https://github.com/<org>/<repo>` and note Caylent refactor (functional tests, OPA policies, monorepo requirements)
+- [ ] Explain module purpose, when to use it, and how to use it
+- [ ] Show consumption from this monorepo using `source = "git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/primitives/<module-name>?ref=<version>"`
+- [ ] Do not list inputs/outputs in README; rely on `TERRAFORM-DOCS.md`
+
+#### Story T.4: Examples and TERRAFORM-DOCS
+**As a** module consumer  
+**I want** minimal examples and generated docs  
+**So that** I can use the module effectively
+
+**Acceptance Criteria:**
+- [ ] Provide minimal example(s) used as fixtures for tests
+- [ ] Generate `TERRAFORM-DOCS.md` with `make tf-docs`
+
+#### Story T.5: Functional Tests
+**As a** module maintainer  
+**I want** functional tests via the framework  
+**So that** behavior is validated
+
+**Acceptance Criteria:**
+- [ ] Add tests using `terraform-terratest-framework v1.3.0`
+- [ ] Focus on functional validation; do not duplicate lint/format/plan
+- [ ] All tests pass with `make tf-test`
+
+#### Story T.6: Enforce OPA Policies
+**As a** security engineer  
+**I want** OPA policy compliance  
+**So that** the module meets our standards
+
+**Acceptance Criteria:**
+- [ ] Fix all policy violations
+- [ ] Pass `make module-validate MODULE_PATH=providers/aws/primitives/<module-name> MODULE_TYPE=primitive`
+
+#### Story T.7: Update Dependent Module Sources
+**As a** platform engineer  
+**I want** dependent modules to source from our monorepo  
+**So that** external references are removed
+
+**Acceptance Criteria:**
+- [ ] Replace external `source` references with:
+
+    ```hcl
+    module "<name>" {
+        source = "git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/primitives/<module-name>?ref=<version>"
+        # inputs here
+    }
+    ```
+- [ ] Confirm no external module sources remain
+
+#### Story T.8: Documentation Cleanup
+**As a** module maintainer  
+**I want** only necessary docs retained  
+**So that** the module remains focused
+
+**Acceptance Criteria:**
+- [ ] Remove upstream-specific docs/configs not required by the skeleton
+- [ ] Keep `README.md`, `TERRAFORM-DOCS.md`, and minimal examples only
+
+### Security & Validation
+- [ ] Pass `make tf-security`, `make tf-lint`, `make tf-format`, `make tf-test`
+- [ ] Pass `make module-validate MODULE_PATH=providers/aws/primitives/<module-name> MODULE_TYPE=primitive`
 
 ---
 
