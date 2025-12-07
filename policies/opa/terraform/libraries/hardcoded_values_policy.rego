@@ -64,8 +64,9 @@ contains_hardcoded_value(content) if {
 contains_hardcoded_value(content) if {
 	regex.match(`\w+\s*=\s*(true|false)`, content)
 
-	# Exclude lifecycle blocks which require literal values
-	not regex.match(`lifecycle\s*\{[^}]*create_before_destroy\s*=\s*(true|false)[^}]*\}`, content)
+	# Exclude lifecycle blocks which require literal values per Terraform meta-argument constraints
+	# Lifecycle blocks cannot use variables, locals, or any dynamic values - only literal static values
+	not regex.match(`lifecycle\s*\{[^}]*\w+\s*=\s*(true|false)[^}]*\}`, content)
 }
 
 # Match hardcoded JSON-style maps
