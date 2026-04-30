@@ -1,171 +1,111 @@
-.PHONY: install test test-common clean clean-all go-lint go-format tf-docs tf-docs-check tf-format tf-format-fix tf-lint tf-plan tf-security tf-test test-all help
+CPM_ENV_FILE = .cpmenv
+ifeq (,$(wildcard $(CPM_ENV_FILE)))
+$(error Error: $(CPM_ENV_FILE) not found. Run: curl -o .cpmenv https://raw.githubusercontent.com/caylent-solutions/cpm/main/examples/example-make-task-runner/.cpmenv)
+endif
+include $(CPM_ENV_FILE)
 
-# Set GOARCH based on system architecture
-define set_goarch
-	ARCH=$$(uname -m); \
-	if [ "$$ARCH" = "aarch64" ]; then \
-		export GOARCH=arm64; \
-	elif [ "$$ARCH" = "x86_64" ]; then \
-		export GOARCH=amd64; \
-	fi
-endef
+# Validate required variables
+REQUIRED_VARS := \
+	REPO_MANIFESTS_URL \
+	REPO_MANIFESTS_REVISION \
+	REPO_MANIFESTS_PATH \
+	REPO_URL \
+	REPO_REV \
+	ASDF_URL \
+	ASDF_VERSION \
+	ASDF_DIR \
+	TOOL_VERSIONS_FILE \
+	DEFAULT_PYTHON_VERSION \
+	PACKAGES_DIR
+$(foreach var,$(REQUIRED_VARS),$(if $($(var)),,$(error Error: $(var) not set in $(CPM_ENV_FILE))))
 
-# Install dependencies
-install:
-	@echo "Installing dependencies..."
-	@$(call set_goarch); \
-	echo "Detected architecture: $$ARCH, setting GOARCH=$$GOARCH"; \
-	go clean -cache -testcache -modcache; \
-	go mod tidy; \
-	go mod download; \
-	go install github.com/caylent-solutions/terraform-terratest-framework/cmd/tftest
-	@asdf reshim golang || true
-	@echo "Dependencies installed successfully"
+# Export variables for repo tool
+export REPO_URL REPO_REV GITBASE
 
-# Run all tests with clean cache and timeout
-test:
-	@echo "Cleaning Go test cache..."
-	@$(call set_goarch); go clean -cache -testcache
-	@echo "Cleaning up any existing Terraform state..."
-	@find . -name "terraform.tfstate*" -delete 2>/dev/null || true
-	@find . -type d -name ".terraform" -exec rm -rf {} + 2>/dev/null || true
-	@echo "Running tests with clean cache..."
-	@echo "GO_TEST_TIMEOUT=$${GO_TEST_TIMEOUT:-not set}"
-	@$(call set_goarch); tftest run --parallel-fixtures=false --parallel-tests=false GOFLAGS="-count=1"
+# Include project level defaults (env vars, etc.)
+-include Makefile.includes
 
-# Run common tests with clean cache
-test-common:
-	@echo "Cleaning Go test cache..."
-	@$(call set_goarch); go clean -cache -testcache
-	@echo "Running common tests with clean cache..."
-	@$(call set_goarch); TERRATEST_DISABLE_PARALLEL_TESTS=true go test ./tests/common -v -count=1
+# Include all package Makefiles after configuration is loaded
+-include $(PACKAGES_DIR)/*/Makefile
 
-# Clean up temporary files
-clean:
-	@echo "Cleaning up temporary files..."
-	@find . -type d -name ".terraform" -exec rm -rf {} +
-	@find . -name ".terraform.lock.hcl" -delete
-	@find . -name "terraform.tfstate*" -delete
-	@find . -name ".terraform.tfstate.lock.info" -delete
+.DEFAULT_GOAL := help
 
-# Clean up everything including Go cache
-clean-all: clean
-	@echo "Cleaning Go cache..."
-	@$(call set_goarch); go clean -cache -testcache
-	@echo "All caches cleaned"
+.PHONY: help
+help: ## Show available make targets
+	@echo "Available targets:"
+	@$(MAKE) -pRrq -f $(firstword $(MAKEFILE_LIST)) : 2>/dev/null | \
+		awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | \
+		sort | uniq | \
+		grep -v -e '^[^[:alnum:]]' -e '^$@$$'
 
-# Lint Go files in tests directory
-go-lint:
-	@echo "Linting Go files in tests directory..."
-	@$(call set_goarch); REPO_ROOT=$$(git rev-parse --show-toplevel) && go run $$REPO_ROOT/scripts/go-lint/main.go --path tests
+.PHONY: cpm-clean
+cpm-clean:
+	@rm -rf $(PACKAGES_DIR) .repo
+	@echo "Cleaned $(PACKAGES_DIR) and .repo directories"
 
-# Format Go files in tests directory
-go-format:
-	@echo "Formatting Go files in tests directory..."
-	@$(call set_goarch); REPO_ROOT=$$(git rev-parse --show-toplevel) && go run $$REPO_ROOT/scripts/go-format/main.go --path tests
+.PHONY: cpm-configure
+cpm-configure: cpm-install-asdf cpm-install-tools cpm-install-repo
+	@ASDF_DIR=$(ASDF_DIR) && . $$ASDF_DIR/asdf.sh && \
+	if ! which repo > /dev/null 2>&1; then \
+		echo "Error: repo tool not found after installation"; \
+		exit 1; \
+	fi && \
+	echo "Using repo version: $(REPO_REV)" && \
+	echo n | repo --color=never init --no-repo-verify \
+		-u "$(REPO_MANIFESTS_URL)" \
+		-b "$(REPO_MANIFESTS_REVISION)" \
+		-m "$(REPO_MANIFESTS_PATH)" \
+		--repo-rev="$(REPO_REV)" || { echo "Error: repo init failed"; exit 1; } && \
+	repo sync || { echo "Error: repo sync failed"; exit 1; }
 
-# Generate Terraform documentation
-tf-docs:
-	@echo "Generating documentation for Terraform module..."
-	@terraform-docs markdown . > TERRAFORM-DOCS.md
-
-# Check if Terraform documentation is up-to-date
-tf-docs-check:
-	@echo "Checking if documentation is up-to-date..."
-	@terraform-docs markdown . > TERRAFORM-DOCS.md.generated
-	@diff TERRAFORM-DOCS.md TERRAFORM-DOCS.md.generated > /dev/null || (echo "ERROR: Documentation is out of date. Run 'make tf-docs' to update it." && exit 1)
-	@rm TERRAFORM-DOCS.md.generated
-
-# Check Terraform formatting
-tf-format:
-	@echo "Checking Terraform formatting..."
-	@terraform fmt -check -recursive
-
-# Fix Terraform formatting issues
-tf-format-fix:
-	@echo "Fixing Terraform formatting..."
-	@terraform fmt -recursive
-
-# Lint Terraform files
-tf-lint:
-	@echo "Linting Terraform files..."
-	@tflint
-
-# Run Terraform plan for root and all example subfolders
-tf-plan:
-	@echo "\033[1;36m🚀 Running Terraform plan...\033[0m"
-	@terraform init -backend=false > /dev/null || { echo "\033[1;31m❌ terraform init failed at root\033[0m"; exit 1; }
-
-	@if [ -f "terraform.tfvars" ]; then \
-		echo ""; \
-		echo "\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
-		echo "\033[1;36m🔍 Running plan for:\033[0m \033[1;32mroot\033[0m"; \
-		echo "\033[1;90m📁 Path:\033[0m $$(pwd)"; \
-		echo "\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
-		terraform plan -var-file=terraform.tfvars -out=plan-root.tfplan || { echo "\033[1;31m❌ terraform plan failed at root\033[0m"; exit 1; }; \
+.PHONY: cpm-install-asdf
+cpm-install-asdf:
+	@if [ -d "$(ASDF_DIR)" ]; then \
+		echo "asdf already installed at $(ASDF_DIR)"; \
 	else \
-		found=0; \
-		for dir in examples/*/; do \
-			tfvars="$$dir/terraform.tfvars"; \
-			if [ -f "$$tfvars" ]; then \
-				example=$$(basename "$$dir"); \
-				absdir=$$(cd "$$dir" && pwd); \
-				echo ""; \
-				echo "\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
-				echo "\033[1;36m🔍 Running plan for:\033[0m \033[1;32m$$example\033[0m"; \
-				echo "\033[1;90m📁 Path:\033[0m $$absdir"; \
-				echo "\033[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"; \
-				( \
-					cd "$$dir" && \
-					terraform init -backend=false > /dev/null && \
-					terraform plan -var-file=terraform.tfvars -out="../../plan-$$example.tfplan" \
-				) || { echo "\033[1;31m❌ terraform plan failed in $$dir\033[0m"; exit 1; }; \
-				found=1; \
-			fi; \
-		done; \
-		if [ "$$found" -eq 0 ]; then \
-			echo "\033[1;31m❌ No terraform.tfvars found in root or examples – aborting\033[0m"; \
-			exit 1; \
+		echo "Installing asdf $(ASDF_VERSION)..."; \
+		git clone $(ASDF_URL) $(ASDF_DIR) --branch $(ASDF_VERSION) || { echo "Error: Failed to clone asdf"; exit 1; }; \
+		echo "asdf installed successfully"; \
+	fi
+	@if [ ! -f "$(TOOL_VERSIONS_FILE)" ]; then \
+		echo "Creating $(TOOL_VERSIONS_FILE) with python $(DEFAULT_PYTHON_VERSION)..."; \
+		echo "python $(DEFAULT_PYTHON_VERSION)" > $(TOOL_VERSIONS_FILE); \
+	else \
+		if ! grep -q "^python" $(TOOL_VERSIONS_FILE); then \
+			echo "Adding python $(DEFAULT_PYTHON_VERSION) to $(TOOL_VERSIONS_FILE)..."; \
+			echo "python $(DEFAULT_PYTHON_VERSION)" >> $(TOOL_VERSIONS_FILE); \
 		fi; \
 	fi
 
-# Run security checks
-tf-security:
-	@echo "Checking for security issues..."
-	@tfsec .
-
-# Run Terraform tests with required config file
-tf-test:
-	@echo "Running Terraform tests..."
-	@if [ -f "test.config" ]; then \
-		echo "Loading test configuration from test.config"; \
-		export $$(grep -v '^#' test.config | xargs); \
-		echo "Loaded environment variables:"; \
-		VAR_PATTERN=$$(grep -v '^#' test.config | cut -d= -f1 | paste -sd '|' -); \
-		printenv | grep -E "^($$VAR_PATTERN)="; \
-		make test; \
-	else \
-		echo "Error: test.config not found. Aborting."; \
+.PHONY: cpm-install-repo
+cpm-install-repo:
+	@if [ -z "$(REPO_REV)" ]; then \
+		echo "Error: REPO_REV not set"; \
 		exit 1; \
 	fi
+	@ASDF_DIR=$(ASDF_DIR) && . $$ASDF_DIR/asdf.sh && \
+	echo "Installing repo tool version $(REPO_REV)..." && \
+	pip install "git+$(REPO_URL)@$(REPO_REV)" || { echo "Error: Failed to install repo tool"; exit 1; } && \
+	asdf reshim python && \
+	echo "Repo tool installed successfully"
 
-
-# Run all tests (not fixing tasks)
-test-all:
-	@make clean-all
-	@make go-lint
-	@make go-format
-	@make tf-docs-check
-	@make tf-format
-	@make tf-lint
-	@make tf-plan
-	@make tf-security
-	@make tf-test
-
-# List all available make tasks with descriptions
-help:
-	@echo "Available make tasks:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-	@echo ""
-	@echo "For tasks without descriptions:"
-	@grep -E '^[a-zA-Z_-]+:' $(MAKEFILE_LIST) | grep -v "## " | sort | awk 'BEGIN {FS = ":"}; {printf "\033[36m%-30s\033[0m\n", $$1}'
+.PHONY: cpm-install-tools
+cpm-install-tools:
+	@if [ ! -d "$(ASDF_DIR)" ]; then \
+		echo "Error: asdf not installed. Run 'make cpm-install-asdf' first."; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(TOOL_VERSIONS_FILE)" ]; then \
+		echo "Error: $(TOOL_VERSIONS_FILE) not found. Run 'make cpm-install-asdf' first."; \
+		exit 1; \
+	fi
+	@ASDF_DIR=$(ASDF_DIR) && . $$ASDF_DIR/asdf.sh && \
+	awk '{print $$1}' $(TOOL_VERSIONS_FILE) | sort -u | while read plugin; do \
+		if ! asdf plugin list | grep -q "^$$plugin$$"; then \
+			echo "Installing asdf plugin: $$plugin"; \
+			asdf plugin add $$plugin || { echo "Error: Failed to add plugin $$plugin"; exit 1; }; \
+		fi; \
+	done && \
+	echo "Installing tools from $(TOOL_VERSIONS_FILE)..." && \
+	asdf install || { echo "Error: Failed to install tools"; exit 1; } && \
+	echo "Tools installed successfully"

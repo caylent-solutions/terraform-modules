@@ -33,3 +33,4 @@ No inputs.
 | <a name="output_iam_identity_center_permission_set_keys"></a> [iam\_identity\_center\_permission\_set\_keys](#output\_iam\_identity\_center\_permission\_set\_keys) | Valid permission set configuration keys for IAM Identity Center |
 | <a name="output_iam_identity_center_policy_properties"></a> [iam\_identity\_center\_policy\_properties](#output\_iam\_identity\_center\_policy\_properties) | Valid policy property names for IAM Identity Center |
 | <a name="output_iam_identity_center_principal_types"></a> [iam\_identity\_center\_principal\_types](#output\_iam\_identity\_center\_principal\_types) | Valid principal types for IAM Identity Center |
+| <a name="output_lambda_extension"></a> [lambda\_extension](#output\_lambda\_extension) | AWS Parameters and Secrets Lambda Extension constants (env var names, layer ARN patterns, AWS-managed layer version) |

@@ -39,6 +39,11 @@ output "format_strings" {
   value       = module.aws_constants.format_strings
 }
 
+output "lambda_extension" {
+  description = "AWS Parameters and Secrets Lambda Extension constants"
+  value       = module.aws_constants.lambda_extension
+}
+
 # Grouped outputs for convenience
 output "all_constants" {
   description = "All AWS constants from the module"
@@ -54,6 +59,9 @@ output "all_constants" {
       array_indices        = module.aws_constants.array_indices
       defaults             = module.aws_constants.defaults
       format_strings       = module.aws_constants.format_strings
+    }
+    lambda = {
+      extension = module.aws_constants.lambda_extension
     }
   }
 }

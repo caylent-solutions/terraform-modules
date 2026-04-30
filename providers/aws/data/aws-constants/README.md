@@ -23,6 +23,21 @@ This data module provides centralized access to AWS service constants and patter
 - Default values
 - Format string patterns
 
+### Lambda Extension (`lambda_extension`)
+- AWS Parameters and Secrets Lambda Extension environment variable names
+  (`PARAMETERS_SECRETS_EXTENSION_HTTP_PORT`,
+  `PARAMETERS_SECRETS_EXTENSION_CACHE_ENABLED`,
+  `PARAMETERS_SECRETS_EXTENSION_CACHE_SIZE`,
+  `PARAMETERS_SECRETS_EXTENSION_MAX_CONNECTIONS`,
+  `SECRETS_MANAGER_TIMEOUT_MILLIS`, `SSM_PARAMETER_STORE_TIMEOUT_MILLIS`)
+- AWS-managed layer version pin (currently `11`)
+- Layer name and ARN pattern for x86_64 and arm64 architectures
+  (`AWS-Parameters-and-Secrets-Lambda-Extension`,
+  `AWS-Parameters-and-Secrets-Lambda-Extension-Arm64`)
+
+Consumed by the `lambda` primitive when
+`enable_parameters_and_secrets_extension = true`.
+
 ## Usage
 
 ```hcl
