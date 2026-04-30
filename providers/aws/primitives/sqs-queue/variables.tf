@@ -1,10 +1,10 @@
 variable "name" {
-  description = "Base name of the SQS queue. For FIFO queues, the module appends `.fifo`. The DLQ (when enabled) is named `<name>-dlq` (or `<name>-dlq.fifo`)."
+  description = "Base name of the SQS queue. For FIFO queues, the module appends `.fifo`. The DLQ (when enabled) is named `<name>-dlq` (or `<name>-dlq.fifo`). The base name is capped at 71 characters so the longest derived name (`<name>-dlq.fifo`, +9 chars) stays within SQS's 80-character queue-name limit."
   type        = string
 
   validation {
-    condition     = can(regex("^[a-zA-Z0-9_-]{1,75}$", var.name))
-    error_message = "Queue name must be 1-75 characters and contain only alphanumerics, hyphens, and underscores."
+    condition     = can(regex("^[a-zA-Z0-9_-]{1,71}$", var.name))
+    error_message = "Queue name must be 1-71 characters (alphanumerics, hyphens, underscores). The 71-char cap leaves headroom for `-dlq.fifo` so the resulting AWS queue name fits within SQS's 80-char limit."
   }
 }
 
@@ -127,9 +127,14 @@ variable "dlq_message_retention_seconds" {
 }
 
 variable "create_dlq_depth_alarm" {
-  description = "Whether to create a CloudWatch alarm on the DLQ's ApproximateNumberOfMessagesVisible metric. Requires create_dlq = true."
+  description = "Whether to create a CloudWatch alarm on the DLQ's ApproximateNumberOfMessagesVisible metric. Requires create_dlq = true (enforced by cross-variable validation)."
   type        = bool
   default     = false
+
+  validation {
+    condition     = !(var.create_dlq_depth_alarm) || var.create_dlq
+    error_message = "create_dlq_depth_alarm = true requires create_dlq = true (the alarm targets the DLQ; with no DLQ there is nothing to alarm on)."
+  }
 }
 
 variable "dlq_depth_alarm_threshold" {
