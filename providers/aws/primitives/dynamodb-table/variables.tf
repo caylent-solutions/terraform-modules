@@ -36,16 +36,30 @@ variable "range_key" {
 }
 
 variable "attributes" {
-  description = "List of attribute definitions for keys and indexes. Each attribute is `{ name = string, type = \"S\"|\"N\"|\"B\" }`."
+  description = "List of attribute definitions for keys and indexes. Each attribute is `{ name = string, type = \"S\"|\"N\"|\"B\" }`. Required because every key referenced by `hash_key`, `range_key`, GSI, or LSI must have a matching attribute definition."
   type = list(object({
     name = string
     type = string
   }))
-  default = []
+
+  validation {
+    condition     = length(var.attributes) >= 1
+    error_message = "attributes must contain at least the partition key (hash_key) attribute definition."
+  }
 
   validation {
     condition     = alltrue([for a in var.attributes : contains(["S", "N", "B"], a.type)])
     error_message = "Every attribute type must be one of S (string), N (number), or B (binary)."
+  }
+
+  validation {
+    condition     = contains([for a in var.attributes : a.name], var.hash_key)
+    error_message = "var.attributes must contain a definition for the hash_key attribute."
+  }
+
+  validation {
+    condition     = var.range_key == null || contains([for a in var.attributes : a.name], coalesce(var.range_key, ""))
+    error_message = "var.attributes must contain a definition for the range_key attribute when range_key is set."
   }
 }
 
@@ -56,9 +70,14 @@ variable "global_secondary_indexes" {
 }
 
 variable "local_secondary_indexes" {
-  description = "Local Secondary Indexes. Each entry: { name, range_key, projection_type (KEYS_ONLY|INCLUDE|ALL), non_key_attributes (optional list, required when projection_type = INCLUDE) }. LSIs require range_key on the table."
+  description = "Local Secondary Indexes. Each entry: { name, range_key, projection_type (KEYS_ONLY|INCLUDE|ALL), non_key_attributes (optional list, required when projection_type = INCLUDE) }. LSIs require range_key on the table (enforced by cross-variable validation)."
   type        = any
   default     = []
+
+  validation {
+    condition     = length(var.local_secondary_indexes) == 0 || var.range_key != null
+    error_message = "local_secondary_indexes requires var.range_key to be set on the table (LSIs are defined relative to the primary sort key)."
+  }
 }
 
 variable "read_capacity" {
@@ -177,6 +196,11 @@ variable "autoscaling_read_max_capacity" {
     condition     = var.autoscaling_read_max_capacity >= 1
     error_message = "autoscaling_read_max_capacity must be >= 1."
   }
+
+  validation {
+    condition     = var.autoscaling_read_max_capacity >= var.autoscaling_read_min_capacity
+    error_message = "autoscaling_read_max_capacity must be >= autoscaling_read_min_capacity (Application Auto Scaling rejects max < min at apply time)."
+  }
 }
 
 variable "autoscaling_write_min_capacity" {
@@ -198,6 +222,11 @@ variable "autoscaling_write_max_capacity" {
   validation {
     condition     = var.autoscaling_write_max_capacity >= 1
     error_message = "autoscaling_write_max_capacity must be >= 1."
+  }
+
+  validation {
+    condition     = var.autoscaling_write_max_capacity >= var.autoscaling_write_min_capacity
+    error_message = "autoscaling_write_max_capacity must be >= autoscaling_write_min_capacity (Application Auto Scaling rejects max < min at apply time)."
   }
 }
 
