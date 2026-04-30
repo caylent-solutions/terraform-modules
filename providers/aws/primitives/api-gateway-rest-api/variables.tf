@@ -21,13 +21,13 @@ variable "openapi_body" {
 }
 
 variable "endpoint_type" {
-  description = "API Gateway endpoint type. One of REGIONAL, EDGE, or PRIVATE."
+  description = "API Gateway endpoint type. This primitive supports REGIONAL only (per the spec brief and to keep the custom-domain certificate semantics consistent: REGIONAL uses `regional_certificate_arn` with a regional ACM cert, EDGE requires `certificate_arn` with a us-east-1 cert, PRIVATE has no public custom-domain story). EDGE/PRIVATE consumers should use a dedicated primitive."
   type        = string
   default     = "REGIONAL"
 
   validation {
-    condition     = contains(["REGIONAL", "EDGE", "PRIVATE"], var.endpoint_type)
-    error_message = "endpoint_type must be one of REGIONAL, EDGE, or PRIVATE."
+    condition     = var.endpoint_type == "REGIONAL"
+    error_message = "endpoint_type must be REGIONAL. EDGE and PRIVATE are not supported by this primitive."
   }
 }
 
@@ -198,7 +198,7 @@ variable "custom_domain_name" {
 }
 
 variable "custom_domain_certificate_arn" {
-  description = "ACM certificate ARN for the custom domain. Required when custom_domain_name is set; the certificate must be in the same region as the API for REGIONAL endpoints."
+  description = "ACM certificate ARN for the REGIONAL custom domain. Required when custom_domain_name is set. The certificate must be in the SAME region as the API (REGIONAL custom domains do not use a us-east-1 cert; that requirement applies to EDGE-optimized custom domains, which this primitive does not support)."
   type        = string
   default     = null
 
