@@ -39,3 +39,8 @@ output "format_strings" {
   description = "Common format string patterns"
   value       = local.format_strings
 }
+
+output "lambda_extension" {
+  description = "AWS Parameters and Secrets Lambda Extension constants (env var names, layer ARN patterns, AWS-managed layer version)"
+  value       = local.lambda_extension
+}
