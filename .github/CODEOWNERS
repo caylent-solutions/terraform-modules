@@ -48,3 +48,7 @@ providers/aws/primitives/managed-grafana-workspace/   @matt-dresden-caylent
 providers/aws/collections/telemetry-api/              @matt-dresden-caylent
 providers/aws/collections/telemetry-storage/          @matt-dresden-caylent
 providers/aws/collections/telemetry-observability/    @matt-dresden-caylent
+
+# Python tooling artifacts -- specific patterns so pr-validation CODEOWNERS scan accepts the PR
+.gitignore  @matt-dresden-caylent
+uv.lock     @matt-dresden-caylent
