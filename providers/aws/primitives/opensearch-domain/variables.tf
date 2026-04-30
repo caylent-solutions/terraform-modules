@@ -44,13 +44,13 @@ variable "dedicated_master_type" {
 }
 
 variable "dedicated_master_count" {
-  description = "Count of dedicated master nodes (3 or 5; only used when dedicated_master_enabled = true)."
+  description = "Count of dedicated master nodes (3 or 5; only used when dedicated_master_enabled = true). Validation is conditional on dedicated_master_enabled."
   type        = number
   default     = 3
 
   validation {
-    condition     = contains([3, 5], var.dedicated_master_count)
-    error_message = "dedicated_master_count must be 3 or 5."
+    condition     = !var.dedicated_master_enabled || contains([3, 5], var.dedicated_master_count)
+    error_message = "When dedicated_master_enabled = true, dedicated_master_count must be 3 or 5."
   }
 }
 
@@ -61,18 +61,18 @@ variable "zone_awareness_enabled" {
 }
 
 variable "availability_zone_count" {
-  description = "Number of AZs (2 or 3) when zone_awareness_enabled = true."
+  description = "Number of AZs (2 or 3) when zone_awareness_enabled = true. Validation is conditional on zone_awareness_enabled."
   type        = number
   default     = 2
 
   validation {
-    condition     = contains([2, 3], var.availability_zone_count)
-    error_message = "availability_zone_count must be 2 or 3."
+    condition     = !var.zone_awareness_enabled || contains([2, 3], var.availability_zone_count)
+    error_message = "When zone_awareness_enabled = true, availability_zone_count must be 2 or 3."
   }
 }
 
 variable "ebs_volume_type" {
-  description = "EBS volume type for data nodes. gp3 or gp2."
+  description = "EBS volume type for data nodes. One of gp3, gp2, or io1. gp3 supports configurable iops + throughput; io1 requires iops; gp2 ignores iops/throughput."
   type        = string
   default     = "gp3"
 
@@ -94,15 +94,30 @@ variable "ebs_volume_size" {
 }
 
 variable "ebs_iops" {
-  description = "Provisioned IOPS for the EBS volume (only meaningful for gp3/io1)."
+  description = "Provisioned IOPS for the EBS volume (gp3/io1 only). io1 REQUIRES this; gp3 accepts it as an override of the default 3000; gp2 must leave this null."
   type        = number
   default     = null
+
+  validation {
+    condition     = !(var.ebs_volume_type == "gp2") || var.ebs_iops == null
+    error_message = "ebs_iops is not configurable for gp2 volumes; leave null."
+  }
+
+  validation {
+    condition     = !(var.ebs_volume_type == "io1") || var.ebs_iops != null
+    error_message = "ebs_iops is required when ebs_volume_type = io1."
+  }
 }
 
 variable "ebs_throughput" {
-  description = "Provisioned throughput in MiB/s for gp3 volumes."
+  description = "Provisioned throughput in MiB/s. gp3 only; null for gp2 / io1."
   type        = number
   default     = null
+
+  validation {
+    condition     = var.ebs_volume_type == "gp3" || var.ebs_throughput == null
+    error_message = "ebs_throughput is only configurable for gp3 volumes; leave null for gp2 / io1."
+  }
 }
 
 variable "kms_key_id" {
@@ -133,15 +148,25 @@ variable "custom_endpoint_enabled" {
 }
 
 variable "custom_endpoint" {
-  description = "Custom endpoint hostname (used when custom_endpoint_enabled = true)."
+  description = "Custom endpoint hostname. Required when custom_endpoint_enabled = true."
   type        = string
   default     = null
+
+  validation {
+    condition     = !var.custom_endpoint_enabled || (var.custom_endpoint != null && length(var.custom_endpoint) > 0)
+    error_message = "When custom_endpoint_enabled = true, custom_endpoint is required."
+  }
 }
 
 variable "custom_endpoint_certificate_arn" {
-  description = "ACM certificate ARN for the custom endpoint (used when custom_endpoint_enabled = true)."
+  description = "ACM certificate ARN for the custom endpoint. Required when custom_endpoint_enabled = true."
   type        = string
   default     = null
+
+  validation {
+    condition     = !var.custom_endpoint_enabled || (var.custom_endpoint_certificate_arn != null && length(var.custom_endpoint_certificate_arn) > 0)
+    error_message = "When custom_endpoint_enabled = true, custom_endpoint_certificate_arn is required."
+  }
 }
 
 variable "vpc_subnet_ids" {
@@ -163,9 +188,8 @@ variable "advanced_security_master_user_arn" {
 }
 
 variable "access_policies_json" {
-  description = "Domain access policy as a JSON-encoded string. Null lets AWS apply the default open-to-everyone policy (only safe for VPC-mode domains)."
+  description = "Domain access policy as a JSON-encoded string. REQUIRED. Public-mode domains without an explicit access policy default to wide-open access; this primitive rejects that footgun by requiring callers to provide a deliberate policy. For VPC-mode domains where IAM controls are layered with security groups, pass a deny-all-from-other-principals policy explicitly to make the intent visible."
   type        = string
-  default     = null
 }
 
 variable "log_retention_in_days" {
