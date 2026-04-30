@@ -26,7 +26,7 @@ To use these helpers in your tests:
 import (
     "testing"
     
-    "github.com/your-org/terraform-modules/skeletons/generic-skeleton/tests/helpers"
+    "github.com/caylent-solutions/terraform-modules/providers/aws/primitives/lambda/tests/helpers"
     "github.com/caylent-solutions/terraform-terratest-framework/pkg/testctx"
     "github.com/gruntwork-io/terratest/modules/terraform"
 )

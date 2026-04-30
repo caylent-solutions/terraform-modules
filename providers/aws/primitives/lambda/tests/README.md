@@ -7,33 +7,26 @@ This directory contains tests for the Terraform module using the [Terraform Terr
 The tests are organized into the following directories:
 
 - **common/**: Tests that run on all examples
-- **basic/**: Tests for the basic example
-- **advanced/**: Tests for the advanced example
-- **helpers/**: Helper functions for tests
+- **lambda-zip-deployment/**: Tests for the `examples/lambda-zip-deployment/` example
+- **lambda-docker-deployment/**: Tests for the `examples/lambda-docker-deployment/` example
+- **helpers/**: Helper functions used by the per-example test packages
 
 ## Running Tests
 
-Tests can be run using the provided Makefile commands:
+Tests are driven via the repo-root Makefile (which sources
+`test.config` for `GO_TEST_TIMEOUT` and `TERRATEST_IDEMPOTENCY` and
+invokes `tftest run` inside the module):
 
 ```bash
-# Run all tests
-make test
+# Run all tests for this module (sequential fixtures and tests)
+make tf-test MODULE_PATH=providers/aws/primitives/lambda
 
-# Run tests for a specific example
-make test-basic
-make test-advanced
+# Run only the common tests
+cd providers/aws/primitives/lambda && make test-common
 
-# Run only common tests
-make test-common
-
-# Lint Go test files
-make go-lint
-
-# Format Go test files
-make go-format
-
-# Clean up temporary files
-make clean
+# Format / lint Go test files
+cd providers/aws/primitives/lambda && make go-format
+cd providers/aws/primitives/lambda && make go-lint
 ```
 
 ## Test Requirements

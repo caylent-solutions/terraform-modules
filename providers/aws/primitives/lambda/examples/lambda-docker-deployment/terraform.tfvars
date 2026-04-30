@@ -5,9 +5,9 @@ function_name = "test-lambda-docker"
 
 image_command = ["app.handler"]
 
-architectures = ["x86_64"]
+architectures = ["arm64"]
 timeout       = 60
-memory_size   = 1024
+memory_size   = 2048
 
 environment_variables = {
   LOG_LEVEL = "INFO"

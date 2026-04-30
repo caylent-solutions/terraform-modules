@@ -34,6 +34,28 @@ variable "package_type" {
     condition     = contains(["Zip", "Image"], var.package_type)
     error_message = "Package type must be either 'Zip' or 'Image'."
   }
+
+  validation {
+    condition = !(var.package_type == "Zip") || (
+      (var.filename != null) != (var.s3_bucket != null && var.s3_key != null)
+    )
+    error_message = "When package_type is 'Zip', exactly one source must be set: either var.filename, OR both var.s3_bucket and var.s3_key (mutually exclusive)."
+  }
+
+  validation {
+    condition     = !(var.package_type == "Zip") || var.image_uri == null
+    error_message = "When package_type is 'Zip', var.image_uri must be null."
+  }
+
+  validation {
+    condition     = !(var.package_type == "Image") || var.image_uri != null
+    error_message = "When package_type is 'Image', var.image_uri must be set."
+  }
+
+  validation {
+    condition     = !(var.package_type == "Image") || (var.filename == null && var.s3_bucket == null && var.s3_key == null)
+    error_message = "When package_type is 'Image', var.filename, var.s3_bucket, and var.s3_key must all be null."
+  }
 }
 
 # Zip package type variables
@@ -97,14 +119,9 @@ variable "layers" {
 
 # Image package type variables
 variable "image_uri" {
-  description = "ECR image URI containing the function's deployment package (Image only)"
+  description = "ECR image URI containing the function's deployment package (Image only). Cross-variable validation against package_type lives on var.package_type to avoid a Terraform validation cycle."
   type        = string
   default     = null
-
-  validation {
-    condition     = var.image_uri == null || var.package_type == "Image"
-    error_message = "Image URI is only valid for Image package type."
-  }
 }
 
 variable "image_config" {

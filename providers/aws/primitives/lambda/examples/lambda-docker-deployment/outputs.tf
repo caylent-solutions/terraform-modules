@@ -32,8 +32,3 @@ output "efs_file_system_id" {
   description = "ID of the EFS file system"
   value       = aws_efs_file_system.lambda.id
 }
-
-output "code_signing_config_arn" {
-  description = "ARN of code signing configuration"
-  value       = aws_lambda_code_signing_config.lambda.arn
-}

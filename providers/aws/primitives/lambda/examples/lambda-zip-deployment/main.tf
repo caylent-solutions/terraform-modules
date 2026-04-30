@@ -146,20 +146,18 @@ module "lambda" {
   s3_key           = aws_s3_object.lambda_package.key
   source_code_hash = data.archive_file.lambda.output_base64sha256
   handler          = "function.lambda_handler"
-  runtime          = "python3.12"
+  runtime          = var.runtime
 
-  timeout                        = 30
-  memory_size                    = 512
+  timeout                        = var.timeout
+  memory_size                    = var.memory_size
   reserved_concurrent_executions = 5
   ephemeral_storage_size         = 1024
 
   kms_key_arn = aws_kms_key.lambda.arn
+  layers      = var.layers
 
-  environment = {
-    variables = {
-      LOG_LEVEL = "INFO"
-      ENV       = "test"
-    }
+  environment = var.environment_variables == null ? null : {
+    variables = var.environment_variables
   }
 
   environment_from_ssm = {
@@ -169,6 +167,11 @@ module "lambda" {
   environment_from_secrets = {
     DB_CREDS = aws_secretsmanager_secret.db_creds.arn
   }
+
+  vpc_config = var.enable_vpc ? {
+    subnet_ids         = var.subnet_ids
+    security_group_ids = var.security_group_ids
+  } : null
 
   dead_letter_config = {
     target_arn = aws_sqs_queue.dlq.arn
@@ -183,10 +186,10 @@ module "lambda" {
 
   tracing_mode = "Active"
 
-  event_source_mappings = {
+  event_source_mappings = var.enable_event_source ? {
     sqs = {
       event_source_arn                   = aws_sqs_queue.test.arn
-      batch_size                         = 10
+      batch_size                         = var.batch_size
       maximum_batching_window_in_seconds = 5
       filter_criteria = {
         filters = [
@@ -197,9 +200,9 @@ module "lambda" {
         maximum_concurrency = 5
       }
     }
-  }
+  } : {}
 
-  permissions = {
+  permissions = var.enable_event_source ? {
     sqs = {
       statement_id   = "AllowSQSInvoke"
       action         = "lambda:InvokeFunction"
@@ -207,7 +210,7 @@ module "lambda" {
       source_arn     = aws_sqs_queue.test.arn
       source_account = data.aws_caller_identity.current.account_id
     }
-  }
+  } : {}
 
   provisioned_concurrent_executions = {
     prod = {

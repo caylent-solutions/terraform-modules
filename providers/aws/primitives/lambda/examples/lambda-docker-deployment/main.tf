@@ -138,20 +138,6 @@ resource "aws_efs_access_point" "lambda" {
   }
 }
 
-resource "aws_signer_signing_profile" "lambda" {
-  platform_id = "AWSLambda-SHA384-ECDSA"
-}
-
-resource "aws_lambda_code_signing_config" "lambda" {
-  allowed_publishers {
-    signing_profile_version_arns = [aws_signer_signing_profile.lambda.arn]
-  }
-
-  policies {
-    untrusted_artifact_on_deployment = "Warn"
-  }
-}
-
 data "archive_file" "layer" {
   type        = "zip"
   source_dir  = "${path.module}/layer"
@@ -162,27 +148,27 @@ module "lambda" {
   source = "../../"
 
   function_name = var.function_name
-  description   = "Docker deployment with VPC, EFS, and code signing"
+  description   = "Docker deployment with VPC, EFS, and Parameters & Secrets Lambda Extension"
   role          = aws_iam_role.lambda.arn
   package_type  = "Image"
   publish       = false
 
   image_uri = "${aws_ecr_repository.lambda.repository_url}:latest"
 
-  image_config = {
-    command = ["app.handler"]
+  image_config = var.image_command == null ? null : {
+    command = var.image_command
   }
 
-  architectures                  = ["arm64"]
-  timeout                        = 60
-  memory_size                    = 2048
+  architectures                  = var.architectures
+  timeout                        = var.timeout
+  memory_size                    = var.memory_size
   reserved_concurrent_executions = -1
   ephemeral_storage_size         = 2048
 
-  # Code signing not supported for container images
-  # code_signing_config_arn = aws_lambda_code_signing_config.lambda.arn
-
-  vpc_config = {
+  vpc_config = var.enable_vpc ? {
+    subnet_ids         = var.subnet_ids
+    security_group_ids = var.security_group_ids
+    } : {
     subnet_ids         = aws_subnet.test[*].id
     security_group_ids = [aws_security_group.lambda.id]
   }
@@ -193,6 +179,10 @@ module "lambda" {
   }
 
   tracing_mode = "PassThrough"
+
+  environment = var.environment_variables == null ? null : {
+    variables = var.environment_variables
+  }
 
   enable_parameters_and_secrets_extension = true
   parameters_and_secrets_extension_config = {
@@ -210,11 +200,9 @@ module "lambda" {
     }
   }
 
-  tags = {
-    Environment = "test"
-    ManagedBy   = "terraform"
-    Deployment  = "docker"
-  }
+  tags = merge(var.tags, {
+    Deployment = "docker"
+  })
 
   depends_on = [null_resource.docker_build_push, aws_efs_mount_target.lambda]
 }

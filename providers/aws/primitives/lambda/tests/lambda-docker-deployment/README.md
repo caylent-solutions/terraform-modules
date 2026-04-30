@@ -12,7 +12,7 @@ All tests run in a single provision cycle for efficiency.
 
 1. **Provision Once**: Deploy `lambda-docker-deployment` example infrastructure (ECR, Docker build/push, VPC, EFS, Lambda)
 2. **Run All Subtests**: Execute all 9 test scenarios as Go subtests
-3. **Idempotency Test**: Disabled (VPC ENI cleanup is slow)
+3. **Idempotency Test**: Enabled (`TERRATEST_IDEMPOTENCY=true` in `test.config`); the apply runs twice and the second run must show zero changes
 4. **Destroy Once**: Tear down all infrastructure
 
 ⚠️ **Warning**: Docker tests take 28+ minutes due to VPC, EFS, and Docker image build. Recommended for manual testing only.
@@ -168,8 +168,8 @@ PASS
 
 ## Test Configuration
 
-- **Idempotency**: Disabled
-- **Global Timeout**: 60 minutes (configured in `test.config`)
+- **Idempotency**: Enabled (`TERRATEST_IDEMPOTENCY=true` in `test.config`)
+- **Global Timeout**: 120 minutes (`GO_TEST_TIMEOUT=120m` in `test.config`)
 - **Example Used**: `lambda-docker-deployment`
 - **Total Execution Time**: ~28 minutes (local), may be slower in CI (includes provision, test, and destroy)
 
@@ -240,9 +240,8 @@ TestDockerDeploymentFeatures (main test)
 - Example: `test-lambda-docker-a5d3f491`
 
 ### Idempotency
-- Disabled due to Docker build timestamp trigger
-- VPC ENI cleanup makes re-runs impractical
-- Tests are validated but not idempotent
+- Enabled (`TERRATEST_IDEMPOTENCY=true`); the framework runs `terraform apply` a second time after the first apply succeeds and asserts zero pending changes
+- The Docker `null_resource` triggers must be deterministic (same image tag and ECR URL on both runs) so the second apply does not rebuild
 
 
 
@@ -294,7 +293,7 @@ go test -v -timeout 120m -run TestDockerDeploymentFeatures/FailingSubtest ./test
 - All subtests share the same `ctx` (TestContext) instance
 - Failed subtests don't block other subtests from running
 - Framework handles all Terraform lifecycle (init, apply, destroy)
-- Idempotency disabled via `TERRATEST_IDEMPOTENCY=false` (set per-test if needed)
+- Idempotency enabled via `TERRATEST_IDEMPOTENCY=true` in `test.config` (the second apply must show zero changes)
 
 ## Removed Tests
 

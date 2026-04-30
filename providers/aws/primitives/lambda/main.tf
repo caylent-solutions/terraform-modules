@@ -115,10 +115,6 @@ resource "aws_lambda_function" "this" {
   }
 
   tags = var.tags
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "aws_lambda_event_source_mapping" "this" {
