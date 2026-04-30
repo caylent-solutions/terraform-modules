@@ -9,25 +9,7 @@ resource "aws_ecr_repository" "lambda" {
 
 resource "null_resource" "docker_build_push" {
   provisioner "local-exec" {
-    command = <<-EOT
-      set -e
-      
-      # Create minimal Dockerfile
-      cat > ${path.module}/Dockerfile <<'EOF'
-FROM public.ecr.aws/lambda/python:3.12
-CMD ["index.handler"]
-EOF
-      
-      # Get ECR login
-      aws ecr get-login-password --region ${data.aws_region.current.name} | docker login --username AWS --password-stdin ${aws_ecr_repository.lambda.repository_url}
-      
-      # Build and push
-      docker build -t ${aws_ecr_repository.lambda.repository_url}:latest ${path.module}
-      docker push ${aws_ecr_repository.lambda.repository_url}:latest
-      
-      # Cleanup
-      rm -f ${path.module}/Dockerfile
-    EOT
+    command = "${path.module}/scripts/build-and-push.sh ${data.aws_region.current.name} ${aws_ecr_repository.lambda.repository_url} latest ${path.module}"
   }
 
   depends_on = [aws_ecr_repository.lambda]

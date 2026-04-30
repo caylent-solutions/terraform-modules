@@ -1,4 +1,4 @@
-module github.com/caylent-solutions/terraform-modules/skeletons/generic-skeleton
+module github.com/caylent-solutions/terraform-modules/providers/aws/primitives/lambda
 
 go 1.24.4
 

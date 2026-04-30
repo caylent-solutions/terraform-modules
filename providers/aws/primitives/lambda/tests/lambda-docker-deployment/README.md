@@ -276,7 +276,7 @@ docker push <account>.dkr.ecr.us-east-2.amazonaws.com/test-lambda-docker:latest
 ### Subtest Failure
 Run specific subtest to isolate issue:
 ```bash
-go test -v -timeout 60m -run TestDockerDeploymentFeatures/FailingSubtest ./tests/lambda-docker-deployment/
+go test -v -timeout 120m -run TestDockerDeploymentFeatures/FailingSubtest ./tests/lambda-docker-deployment/
 ```
 
 ## CI/CD Recommendations

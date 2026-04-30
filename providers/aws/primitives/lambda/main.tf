@@ -1,5 +1,5 @@
 module "aws_data" {
-  source = "../../data"
+  source = "git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/data/aws-constants?ref=providers/aws/data/aws-constants/v1.1.0"
 }
 
 data "aws_region" "current" {

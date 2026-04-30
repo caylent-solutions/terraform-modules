@@ -9,13 +9,13 @@
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.82.0, < 6.0.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.100.0 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_aws_data"></a> [aws\_data](#module\_aws\_data) | ../../data | n/a |
+| <a name="module_aws_data"></a> [aws\_data](#module\_aws\_data) | git::https://github.com/caylent-solutions/terraform-modules.git//providers/aws/data/aws-constants | providers/aws/data/aws-constants/v1.1.0 |
 
 ## Resources
 
