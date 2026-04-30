@@ -167,3 +167,7 @@ terragrunt-debug.tf.json
 # Package and repo directories
 .packages/
 .repo/
+
+# Python tooling artifacts (not applicable to this Go/Terraform repo)
+uv.lock
+.venv/
