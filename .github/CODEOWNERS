@@ -32,3 +32,19 @@
 *.yml @matt-dresden-caylent
 Makefile @matt-dresden-caylent
 .github/ @matt-dresden-caylent
+
+# Telemetry platform modules
+providers/aws/primitives/lambda/                      @matt-dresden-caylent
+providers/aws/primitives/sqs-queue/                   @matt-dresden-caylent
+providers/aws/primitives/dynamodb-table/              @matt-dresden-caylent
+providers/aws/primitives/api-gateway-rest-api/        @matt-dresden-caylent
+providers/aws/primitives/waf-webacl/                  @matt-dresden-caylent
+providers/aws/primitives/appconfig-application/       @matt-dresden-caylent
+providers/aws/primitives/secrets-manager-secret/      @matt-dresden-caylent
+providers/aws/primitives/opensearch-domain/           @matt-dresden-caylent
+providers/aws/primitives/eventbridge-bus/             @matt-dresden-caylent
+providers/aws/primitives/route53-record/              @matt-dresden-caylent
+providers/aws/primitives/managed-grafana-workspace/   @matt-dresden-caylent
+providers/aws/collections/telemetry-api/              @matt-dresden-caylent
+providers/aws/collections/telemetry-storage/          @matt-dresden-caylent
+providers/aws/collections/telemetry-observability/    @matt-dresden-caylent
