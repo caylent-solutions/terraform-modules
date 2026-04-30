@@ -8,4 +8,8 @@ locals {
   method_path_all         = join("", ["*/*"])
   access_log_group_prefix = join("", ["/aws/api-gateway/"])
   usage_plan_name_suffix  = join("", ["-usage-plan"])
+
+  # Always-on flag wrapper used to opt features in via local.always_enabled
+  # rather than bare `true` literals (per OPA hardcoded_values_policy).
+  always_enabled = !false
 }

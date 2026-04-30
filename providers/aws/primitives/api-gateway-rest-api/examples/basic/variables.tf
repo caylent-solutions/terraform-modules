@@ -51,6 +51,12 @@ variable "create_usage_plan" {
   default     = true
 }
 
+variable "cache_cluster_enabled" {
+  description = "Enable the response cache cluster on the stage. Defaults to `true` to match the module default and satisfy tfsec `aws-api-gateway-enable-cache`. Override to `false` to skip the per-stage cache cluster fee."
+  type        = bool
+  default     = true
+}
+
 variable "create_account_cloudwatch_role" {
   description = "Whether the example provisions the per-account API Gateway CloudWatch Logs role required to enable any stage-level logging. Default true so the example is self-contained."
   type        = bool

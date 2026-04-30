@@ -36,6 +36,7 @@
 |------|-------------|------|---------|:--------:|
 | <a name="input_access_log_retention_in_days"></a> [access\_log\_retention\_in\_days](#input\_access\_log\_retention\_in\_days) | Access log retention in days. | `number` | `7` | no |
 | <a name="input_api_name"></a> [api\_name](#input\_api\_name) | Base API name (a random suffix is appended). | `string` | n/a | yes |
+| <a name="input_cache_cluster_enabled"></a> [cache\_cluster\_enabled](#input\_cache\_cluster\_enabled) | Enable the response cache cluster on the stage. Defaults to `true` to match the module default and satisfy tfsec `aws-api-gateway-enable-cache`. Override to `false` to skip the per-stage cache cluster fee. | `bool` | `true` | no |
 | <a name="input_create_access_log_group"></a> [create\_access\_log\_group](#input\_create\_access\_log\_group) | Create the auto-managed CloudWatch Log Group for stage access logs. | `bool` | `true` | no |
 | <a name="input_create_account_cloudwatch_role"></a> [create\_account\_cloudwatch\_role](#input\_create\_account\_cloudwatch\_role) | Whether the example provisions the per-account API Gateway CloudWatch Logs role required to enable any stage-level logging. Default true so the example is self-contained. | `bool` | `true` | no |
 | <a name="input_create_usage_plan"></a> [create\_usage\_plan](#input\_create\_usage\_plan) | Create a usage plan. | `bool` | `true` | no |

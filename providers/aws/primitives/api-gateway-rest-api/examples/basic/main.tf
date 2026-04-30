@@ -92,6 +92,8 @@ module "api" {
   create_access_log_group      = var.create_access_log_group
   access_log_retention_in_days = var.access_log_retention_in_days
 
+  cache_cluster_enabled = var.cache_cluster_enabled
+
   create_usage_plan      = var.create_usage_plan
   usage_plan_description = var.create_usage_plan ? "Basic example usage plan" : null
 

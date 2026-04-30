@@ -89,13 +89,13 @@ variable "stage_variables" {
 }
 
 variable "cache_cluster_enabled" {
-  description = "Enable an API Gateway response cache for the stage."
+  description = "Enable an API Gateway response cache for the stage. Defaults to `true` so the module ships with caching on per AWS best practice (and tfsec `aws-api-gateway-enable-cache`). Disabling avoids the per-stage cache cluster fee (smallest 0.5GB cluster bills hourly), so consumers that do not need caching should set this to `false` explicitly."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "cache_cluster_size" {
-  description = "Cache size in GB. Valid: 0.5, 1.6, 6.1, 13.5, 28.4, 58.2, 118, 237."
+  description = "Cache size in GB. Valid: 0.5, 1.6, 6.1, 13.5, 28.4, 58.2, 118, 237. Default 0.5 is the smallest billable size."
   type        = string
   default     = "0.5"
 
@@ -106,9 +106,9 @@ variable "cache_cluster_size" {
 }
 
 variable "xray_tracing_enabled" {
-  description = "Enable AWS X-Ray tracing on the stage."
+  description = "Enable AWS X-Ray tracing on the stage. Defaults to `true` so the module ships secure-by-default; consumers can override to `false`."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "method_metrics_enabled" {
@@ -157,9 +157,9 @@ variable "method_throttling_rate_limit" {
 }
 
 variable "create_access_log_group" {
-  description = "Create a CloudWatch Log Group for stage access logs (used when access_log_destination_arn is not provided)."
+  description = "Create a CloudWatch Log Group for stage access logs (used when access_log_destination_arn is not provided). Defaults to `true` so the module ships secure-by-default with stage access logging enabled; consumers can override to `false` and supply `access_log_destination_arn` instead."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "access_log_destination_arn" {
