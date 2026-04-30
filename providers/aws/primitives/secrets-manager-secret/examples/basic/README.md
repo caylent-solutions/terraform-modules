@@ -1,6 +1,6 @@
 # secrets-manager-secret / basic example
 
-Provisions a customer-managed KMS key + a Secrets Manager secret encrypted with that key, populated with a JSON `{username, password}` payload, and configured with a 90-day rotation cadence (no rotation Lambda attached in this example).
+Provisions a customer-managed KMS key + a Secrets Manager secret encrypted with that key, populated with a JSON `{username, password}` payload. The example sets `rotation_automatically_after_days = 90` for documentation, but does NOT pass `rotation_lambda_arn`, so no `aws_secretsmanager_secret_rotation` resource is created (the cadence value only takes effect once a consumer attaches a rotation Lambda).
 
 ## What it creates
 
