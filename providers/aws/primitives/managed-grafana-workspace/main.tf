@@ -1,7 +1,7 @@
 resource "aws_iam_role" "workspace" {
   count = var.create_workspace_role ? 1 : 0
 
-  name_prefix = "${var.workspace_name}${local.role_name_suffix}"
+  name_prefix = substr("${var.workspace_name}${local.role_name_suffix}", 0, 38)
 
   assume_role_policy = data.aws_iam_policy_document.assume[0].json
 

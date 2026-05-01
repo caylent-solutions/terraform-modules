@@ -71,8 +71,11 @@ variable "workspace_role_arn" {
   default     = null
 
   validation {
-    condition     = var.create_workspace_role || var.workspace_role_arn != null
-    error_message = "workspace_role_arn is required when create_workspace_role = false."
+    condition = var.create_workspace_role || (
+      var.workspace_role_arn != null &&
+      length(trimspace(var.workspace_role_arn)) > 0
+    )
+    error_message = "workspace_role_arn must be a non-empty ARN when create_workspace_role = false."
   }
 }
 
