@@ -39,12 +39,30 @@ data "archive_file" "indexer" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
+# Same-account "any IAM principal in this account" baseline policy. Production
+# consumers should narrow this to specific roles / IP ranges per the spec
+# observability access matrix.
+locals {
+  opensearch_access_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" }
+      Action    = "es:*"
+      Resource  = "arn:aws:es:*:${data.aws_caller_identity.current.account_id}:domain/${var.opensearch_domain_name}-${random_id.suffix.hex}/*"
+    }]
+  })
+}
+
 module "telemetry_observability" {
   source = "../../"
 
-  opensearch_domain_name    = "${var.opensearch_domain_name}-${random_id.suffix.hex}"
-  opensearch_engine_version = var.opensearch_engine_version
-  opensearch_instance_type  = var.opensearch_instance_type
+  opensearch_domain_name          = "${var.opensearch_domain_name}-${random_id.suffix.hex}"
+  opensearch_engine_version       = var.opensearch_engine_version
+  opensearch_instance_type        = var.opensearch_instance_type
+  opensearch_access_policies_json = local.opensearch_access_policy
 
   grafana_workspace_name           = "${var.grafana_workspace_name}-${random_id.suffix.hex}"
   grafana_authentication_providers = var.grafana_authentication_providers

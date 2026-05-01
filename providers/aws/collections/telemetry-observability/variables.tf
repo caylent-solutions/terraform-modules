@@ -30,15 +30,15 @@ variable "opensearch_dedicated_master_enabled" {
 }
 
 variable "opensearch_dedicated_master_type" {
-  description = "Instance type for dedicated master nodes."
+  description = "Instance type for dedicated master nodes (only used when dedicated_master_enabled = true). Default matches the opensearch-domain primitive default."
   type        = string
-  default     = null
+  default     = "t3.small.search"
 }
 
 variable "opensearch_dedicated_master_count" {
-  description = "Number of dedicated master nodes."
+  description = "Count of dedicated master nodes (3 or 5; only used when dedicated_master_enabled = true). Default matches the opensearch-domain primitive default."
   type        = number
-  default     = null
+  default     = 3
 }
 
 variable "opensearch_zone_awareness_enabled" {
@@ -48,9 +48,9 @@ variable "opensearch_zone_awareness_enabled" {
 }
 
 variable "opensearch_availability_zone_count" {
-  description = "Number of AZs to spread the cluster across when zone awareness is enabled."
+  description = "Number of AZs to spread the cluster across when zone awareness is enabled (2 or 3). Default matches the opensearch-domain primitive default."
   type        = number
-  default     = null
+  default     = 2
 }
 
 variable "opensearch_ebs_volume_type" {
@@ -72,9 +72,9 @@ variable "opensearch_kms_key_id" {
 }
 
 variable "opensearch_tls_security_policy" {
-  description = "TLS security policy for the domain endpoint."
+  description = "TLS security policy for the domain endpoint. Default matches the opensearch-domain primitive default (perfect-forward-secrecy enforced)."
   type        = string
-  default     = "Policy-Min-TLS-1-2-2019-07"
+  default     = "Policy-Min-TLS-1-2-PFS-2023-10"
 }
 
 variable "opensearch_vpc_subnet_ids" {
@@ -84,15 +84,14 @@ variable "opensearch_vpc_subnet_ids" {
 }
 
 variable "opensearch_vpc_security_group_ids" {
-  description = "Security groups for VPC-mode deployment."
+  description = "Security groups for VPC-mode deployment. Default matches the opensearch-domain primitive default (empty list)."
   type        = list(string)
-  default     = null
+  default     = []
 }
 
 variable "opensearch_access_policies_json" {
-  description = "Access policy document (JSON-encoded). Null uses the primitive's default."
+  description = "Domain access policy as a JSON-encoded string. The opensearch-domain primitive intentionally has no default (rejects the open-public-access footgun); the collection passes the value through verbatim. Set to null to defer to AWS default access (acceptable in dev, NOT in production)."
   type        = string
-  default     = null
 }
 
 variable "opensearch_log_retention_in_days" {

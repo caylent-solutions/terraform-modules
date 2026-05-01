@@ -28,7 +28,8 @@ func TestTelemetryObservabilityBasic(t *testing.T) {
 	grafanaArn := terraform.Output(t, ctx.Terraform, "grafana_workspace_arn")
 	indexerName := terraform.Output(t, ctx.Terraform, "indexer_function_name")
 	indexerArn := terraform.Output(t, ctx.Terraform, "indexer_function_arn")
-	alarmsArn, _ := terraform.OutputE(t, ctx.Terraform, "alarms_topic_arn")
+	alarmsArn, err := terraform.OutputE(t, ctx.Terraform, "alarms_topic_arn")
+	require.NoError(t, err, "alarms_topic_arn output should be readable (it is declared on the example)")
 
 	cfg, err := config.LoadDefaultConfig(t.Context())
 	require.NoError(t, err, "load default AWS config")
@@ -46,7 +47,7 @@ func TestTelemetryObservabilityBasic(t *testing.T) {
 		assert.True(t, strings.Contains(grafanaArn, ":grafana:"), "grafana ARN shape")
 		assert.True(t, strings.HasPrefix(indexerName, "test-telemetry-indexer-"), "indexer name prefix")
 		assert.True(t, strings.Contains(indexerArn, ":lambda:"), "lambda ARN shape")
-		assert.True(t, alarmsArn == "" || alarmsArn == "<nil>", "basic example does not configure alarms_topic_arn (got %q)", alarmsArn)
+		assert.Truef(t, alarmsArn == "" || alarmsArn == "<nil>", "basic example does not configure alarms_topic_arn (got %q)", alarmsArn)
 	})
 
 	t.Run("OpenSearchDomainExists", func(t *testing.T) {
