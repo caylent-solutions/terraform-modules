@@ -51,7 +51,7 @@
 
 | Name | Description |
 |------|-------------|
-| <a name="output_alarms_topic_arn"></a> [alarms\_topic\_arn](#output\_alarms\_topic\_arn) | Pass-through SNS topic ARN (null in the basic example). |
+| <a name="output_alarms_topic_arn"></a> [alarms\_topic\_arn](#output\_alarms\_topic\_arn) | Pass-through SNS topic ARN (empty string in the basic example since the collection input is null; coalesced to '' so Terratest's OutputE doesn't see a null-output 'not found' error). |
 | <a name="output_grafana_workspace_arn"></a> [grafana\_workspace\_arn](#output\_grafana\_workspace\_arn) | Grafana workspace ARN. |
 | <a name="output_grafana_workspace_id"></a> [grafana\_workspace\_id](#output\_grafana\_workspace\_id) | Grafana workspace identifier. |
 | <a name="output_grafana_workspace_url"></a> [grafana\_workspace\_url](#output\_grafana\_workspace\_url) | Grafana workspace endpoint URL. |
