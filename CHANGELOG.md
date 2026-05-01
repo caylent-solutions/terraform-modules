@@ -1,2 +1,2 @@
-## monorepo-config/v1.8.4 (2026-05-01)
-* bbabb78c fix: alias input.files as input.terraform_files in module validator (#255)
+## monorepo-config/v1.8.5 (2026-05-01)
+* 0ed32ef2 fix: exclude examples/ and tests/ from no_resources OPA policy (#257)
