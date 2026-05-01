@@ -368,6 +368,16 @@ func main() {
 			inputJSON["files"] = transformedFiles
 		}
 
+		// Alias `files` as `terraform_files` so library policies that read
+		// `input.terraform_files` (composition_policy, no_resources_policy)
+		// receive the same map the collector emitted under `input.files`.
+		// Without this alias both library policies treat collections as empty,
+		// causing composition_policy to always fail and no_resources_policy
+		// to silently pass without inspecting any content.
+		if files, ok := inputJSON["files"].(map[string]interface{}); ok {
+			inputJSON["terraform_files"] = files
+		}
+
 		// Log files found by the collector
 		if files, ok := inputJSON["files"].(map[string]interface{}); ok {
 			logMessage(LevelDebug, "Found %d files in the module", len(files))
