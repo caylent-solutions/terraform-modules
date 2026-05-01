@@ -17,10 +17,16 @@ violation[result] if {
 	}
 }
 
-# Helper to check if any .tf files contain resource blocks
+# Helper to check if any module-root .tf file contains resource blocks.
+# Examples and tests are excluded because example fixtures legitimately
+# need resource blocks to scaffold dependencies (IAM roles, certs, hosted
+# zones) the consumer would supply in production. The same exclusion
+# pattern is used by source_policy for the same reason.
 has_resource_blocks if {
-	files := input.terraform_files
-	count(files) > 0
-	some _, content in files
+	some path in object.keys(input.terraform_files)
+	endswith(path, ".tf")
+	not contains(path, "/examples/")
+	not contains(path, "/tests/")
+	content := input.terraform_files[path]
 	contains(content, "resource \"")
 }
