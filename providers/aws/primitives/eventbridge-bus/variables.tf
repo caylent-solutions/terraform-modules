@@ -31,9 +31,30 @@ variable "rules" {
 }
 
 variable "targets" {
-  description = "Map of EventBridge targets to create. Key is the logical id; value is `{ rule_key (matches a key in var.rules), target_id, arn, role_arn (optional), input (optional), input_path (optional), input_transformer (optional { input_paths = map, input_template = string }), dlq_arn (optional), retry_policy (optional { maximum_event_age_in_seconds, maximum_retry_attempts }) }`."
-  type        = any
-  default     = {}
+  description = "Map of EventBridge targets to create. Key is the logical id; value is a typed object describing the target. `rule_key` MUST match a key in `var.rules` (validated cross-variable). `input`, `input_path`, and `input_transformer` are mutually exclusive at AWS-side; consumers should set only one."
+  type = map(object({
+    rule_key   = string
+    target_id  = string
+    arn        = string
+    role_arn   = optional(string)
+    input      = optional(string)
+    input_path = optional(string)
+    input_transformer = optional(object({
+      input_paths    = optional(map(string))
+      input_template = string
+    }))
+    dlq_arn = optional(string)
+    retry_policy = optional(object({
+      maximum_event_age_in_seconds = number
+      maximum_retry_attempts       = number
+    }))
+  }))
+  default = {}
+
+  validation {
+    condition     = alltrue([for t in var.targets : contains(keys(var.rules), t.rule_key)])
+    error_message = "Every targets[].rule_key must reference a key defined in var.rules."
+  }
 }
 
 variable "tags" {

@@ -4,7 +4,6 @@
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.12.1 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.82.0, < 6.0.0 |
-| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.6.0 |
 
 ## Providers
 
@@ -32,7 +31,7 @@ No modules.
 | <a name="input_name"></a> [name](#input\_name) | Name of the custom event bus. | `string` | n/a | yes |
 | <a name="input_rules"></a> [rules](#input\_rules) | Map of EventBridge rules to create. Key is the logical id; value is `{ name, description (optional), event_pattern (JSON-encoded string), state (optional, ENABLED/DISABLED) }`. | <pre>map(object({<br/>    name          = string<br/>    description   = optional(string)<br/>    event_pattern = string<br/>    state         = optional(string, "ENABLED")<br/>  }))</pre> | `{}` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags applied to the bus and rules. | `map(string)` | `{}` | no |
-| <a name="input_targets"></a> [targets](#input\_targets) | Map of EventBridge targets to create. Key is the logical id; value is `{ rule_key (matches a key in var.rules), target_id, arn, role_arn (optional), input (optional), input_path (optional), input_transformer (optional { input_paths = map, input_template = string }), dlq_arn (optional), retry_policy (optional { maximum_event_age_in_seconds, maximum_retry_attempts }) }`. | `any` | `{}` | no |
+| <a name="input_targets"></a> [targets](#input\_targets) | Map of EventBridge targets to create. Key is the logical id; value is a typed object describing the target. `rule_key` MUST match a key in `var.rules` (validated cross-variable). `input`, `input_path`, and `input_transformer` are mutually exclusive at AWS-side; consumers should set only one. | <pre>map(object({<br/>    rule_key   = string<br/>    target_id  = string<br/>    arn        = string<br/>    role_arn   = optional(string)<br/>    input      = optional(string)<br/>    input_path = optional(string)<br/>    input_transformer = optional(object({<br/>      input_paths    = optional(map(string))<br/>      input_template = string<br/>    }))<br/>    dlq_arn = optional(string)<br/>    retry_policy = optional(object({<br/>      maximum_event_age_in_seconds = number<br/>      maximum_retry_attempts       = number<br/>    }))<br/>  }))</pre> | `{}` | no |
 
 ## Outputs
 
