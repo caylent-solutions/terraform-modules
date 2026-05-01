@@ -212,9 +212,25 @@ variable "bus_rules" {
 }
 
 variable "bus_targets" {
-  description = "Map of EventBridge targets. See the eventbridge-bus primitive for the object schema."
-  type        = any
-  default     = {}
+  description = "Map of EventBridge targets. Key is the logical id; value matches the eventbridge-bus primitive's typed object schema. `rule_key` must reference a key in `bus_rules`. `input`, `input_path`, and `input_transformer` are mutually exclusive."
+  type = map(object({
+    rule_key   = string
+    target_id  = string
+    arn        = string
+    role_arn   = optional(string)
+    input      = optional(string)
+    input_path = optional(string)
+    input_transformer = optional(object({
+      input_paths    = optional(map(string))
+      input_template = string
+    }))
+    dlq_arn = optional(string)
+    retry_policy = optional(object({
+      maximum_event_age_in_seconds = number
+      maximum_retry_attempts       = number
+    }))
+  }))
+  default = {}
 }
 
 # --- Common -----------------------------------------------------------------
