@@ -39,6 +39,6 @@ output "indexer_function_arn" {
 }
 
 output "alarms_topic_arn" {
-  description = "Pass-through SNS topic ARN (empty string in the basic example since the collection input is null; coalesced to '' so Terratest's OutputE doesn't see a null-output 'not found' error)."
-  value       = coalesce(module.telemetry_observability.alarms_topic_arn, "")
+  description = "Pass-through SNS topic ARN. Empty string in the basic example since the collection input is null; the conditional avoids Terratest's OutputE 'not found' error which fires for any null-valued Terraform output."
+  value       = module.telemetry_observability.alarms_topic_arn == null ? "" : module.telemetry_observability.alarms_topic_arn
 }
