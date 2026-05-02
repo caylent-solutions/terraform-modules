@@ -1,4 +1,4 @@
-aws-nuke 3.56.2 
+aws-nuke 3.64.2
 golang 1.24.4  
 golangci-lint 2.1.6  
 jq 1.7.1  

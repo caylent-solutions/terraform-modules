@@ -1,6 +1,15 @@
 ---
-# AWS Nuke Configuration for Platform QA Account
-# Generated from monorepo-config.json
+# AWS Nuke Configuration for Platform QA + Sandbox Accounts
+# Schema: ekristen/aws-nuke v3 (binary version pinned via .tool-versions).
+# Account number, blocklist, and (optional) regions override are injected
+# at runtime by .github/workflows/nightly-aws-cleanup.yml. Static content
+# below: regions, presets, filters.
+#
+# This file deliberately mirrors aws-nuke-config-us-east-2.yaml; both
+# configs share the same `complete-destruction` preset via the YAML
+# anchor (`&complete_destruction_filters`). Update the anchor block
+# here and re-paste the rendered preset into the regional variant when
+# the filter list changes.
 regions:
   - us-east-1
   - us-east-2
@@ -32,17 +41,22 @@ regions:
   - me-central-1
   - il-central-1
 
-# Protected accounts that cannot be nuked (injected at runtime)
+# Protected accounts that cannot be nuked (injected at runtime).
 blocklist: []
 
-# Account-specific configurations (injected at runtime)
+# Account-specific configurations (injected at runtime).
 accounts: {}
 
-# Presets define filters for resource protection
 presets:
   complete-destruction:
     filters:
-      # Protect critical IAM roles from deletion
+      # =================================================================
+      # Bootstrap / control-plane resources -- recreating these is hours
+      # of work, and most of them are required for ANY post-nuke
+      # Terragrunt re-apply to succeed (state buckets, lock tables,
+      # KMS CMKs, IAM deploy roles, OIDC providers, GitHub Actions
+      # roles, Control Tower baseline).
+      # =================================================================
       IAMRole:
         - property: RoleName
           type: exact
@@ -50,14 +64,25 @@ presets:
         - property: RoleName
           type: exact
           value: gh-actions-terraform-modules-pr-main-validation
-      
-      # Protect AWS managed policies
+        - property: RoleName
+          type: exact
+          value: TerragruntDeployRole
+        - property: RoleName
+          type: glob
+          value: "gh-actions-*"
+        - property: RoleName
+          type: exact
+          value: AWSServiceRoleForAmazonGrafana
+        - property: RoleName
+          type: glob
+          value: "AWSServiceRole*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
       IAMPolicy:
         - property: Arn
           type: glob
           value: "arn:aws:iam::aws:policy/*"
-      
-      # Protect critical role policy attachments
       IAMRolePolicyAttachment:
         - property: RoleName
           type: exact
@@ -65,9 +90,302 @@ presets:
         - property: RoleName
           type: exact
           value: gh-actions-terraform-modules-pr-main-validation
-
-      # Protect Control Tower CloudTrail
+        - property: RoleName
+          type: exact
+          value: TerragruntDeployRole
+        - property: RoleName
+          type: glob
+          value: "gh-actions-*"
+        - property: RoleName
+          type: glob
+          value: "AWSServiceRole*"
+      IAMOpenIDConnectProvider:
+        - property: URL
+          type: exact
+          value: token.actions.githubusercontent.com
       CloudTrailTrail:
         - property: Name
           type: exact
           value: aws-controltower-BaselineCloudTrail
+        - property: Name
+          type: glob
+          value: "aws-controltower-*"
+
+      # Per-region GuardDutyDetector is part of the Control-Tower /
+      # Security-Hub managed baseline; deleting it triggers auto-
+      # recreation but burns API quota and complicates audit logs.
+      # The glob "*" matches every detector in every region so all
+      # are preserved.
+      GuardDutyDetector:
+        - property: DetectorID
+          type: glob
+          value: "*"
+
+      # Trek10 IAM-roles CloudFormation stack (`trek10-iam-roles`,
+      # tagged `team=msp`, SEC-471) is the MSP team's per-account
+      # security baseline -- never nukeable. The glob also covers
+      # any future Control-Tower / Trek10 stacks AND the IAM-create-user
+      # event-forward StackSet replicas (`StackSet-iam-create-user-event-forward-*`)
+      # that propagate the org's security event-bus rules.
+      CloudFormationStack:
+        - property: Name
+          type: exact
+          value: trek10-iam-roles
+        - property: Name
+          type: glob
+          value: "aws-controltower-*"
+        - property: Name
+          type: glob
+          value: "AWSControlTower*"
+        - property: Name
+          type: glob
+          value: "StackSet-iam-create-user-event-forward-*"
+        - property: tag:team
+          type: exact
+          value: msp
+
+      # Org-wide IAM-create-user audit forwarder (`forward-iam-create-user`
+      # rule on the `default` event bus, target = `mgmt-account-bus`)
+      # is part of the same SEC-471 / MSP audit baseline. Protect both
+      # the rule and its target so nuking does not break the audit
+      # forward path.
+      CloudWatchEventsRule:
+        - property: Name
+          type: exact
+          value: forward-iam-create-user
+      CloudWatchEventsTarget:
+        - property: Name
+          type: exact
+          value: forward-iam-create-user
+
+      # =================================================================
+      # Bootstrap state -- the Terragrunt remote state bucket + lock
+      # table per account. Recreating these breaks every subsequent
+      # Terragrunt run.
+      # =================================================================
+      S3Bucket:
+        - property: Name
+          type: glob
+          value: "caylent-tfstate-*"
+        - property: Name
+          type: glob
+          value: "caylent-telemetry-snapshots-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      DynamoDBTable:
+        - property: Name
+          type: exact
+          value: caylent-tfstate-lock
+        - property: Name
+          type: glob
+          value: "telemetry-events-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      KMSKey:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+        - property: tag:Name
+          type: glob
+          value: "caylent-tfstate-*"
+      KMSAlias:
+        - property: Name
+          type: glob
+          value: "alias/caylent-tfstate-*"
+        - property: Name
+          type: glob
+          value: "alias/caylent-telemetry-*"
+        - property: Name
+          type: glob
+          value: "alias/aws/*"
+
+      # =================================================================
+      # caylent-telemetry-spec resources -- every Phase-1 + Phase-2
+      # service the spec creates in dev/qa/uat/perf environments.
+      # Filter by `tag:Service=caylent-telemetry` first (declarative,
+      # set on every resource by the Terragrunt module) and by
+      # name-prefix as a fallback for AWS services that don't surface
+      # tags through aws-nuke's enumeration API.
+      # =================================================================
+      APIGatewayRestAPI:
+        - property: Name
+          type: glob
+          value: "caylent-telemetry-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      APIGatewayV2API:
+        - property: Name
+          type: glob
+          value: "caylent-telemetry-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      APIGatewayV2DomainName:
+        - property: DomainName
+          type: regex
+          value: '.*\.telemetry\.solutions\.caylent\.com$'
+      WAFv2WebACL:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+        - property: Name
+          type: glob
+          value: "caylent-telemetry-*"
+      LambdaFunction:
+        - property: Name
+          type: glob
+          value: "telemetry-authorizer-*"
+        - property: Name
+          type: glob
+          value: "telemetry-processor-*"
+        - property: Name
+          type: glob
+          value: "telemetry-opensearch-indexer-*"
+        - property: Name
+          type: glob
+          value: "telemetry-certinia-forwarder-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      SQSQueue:
+        - property: Name
+          type: glob
+          value: "telemetry-events-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      EventBridgeBus:
+        - property: Name
+          type: glob
+          value: "caylent-telemetry-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      EventBridgeRule:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      OpenSearchDomain:
+        - property: Name
+          type: glob
+          value: "telemetry-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      Route53HostedZone:
+        - property: Name
+          type: regex
+          value: '.*\.telemetry\.solutions\.caylent\.com\.?$'
+        - property: Name
+          type: regex
+          value: '^telemetry\.solutions\.caylent\.com\.?$'
+      Route53ResourceRecordSet:
+        - property: Name
+          type: regex
+          value: '.*\.telemetry\.solutions\.caylent\.com\.?$'
+      ACMCertificate:
+        - property: DomainName
+          type: regex
+          value: '.*\.telemetry\.solutions\.caylent\.com$'
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      SecretsManagerSecret:
+        - property: Name
+          type: glob
+          value: "caylent/telemetry/*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      AppConfigApplication:
+        - property: Name
+          type: exact
+          value: caylent-telemetry
+      AppConfigEnvironment:
+        - property: Name
+          type: glob
+          value: "caylent-telemetry-*"
+      AppConfigConfigurationProfile:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      GrafanaWorkspace:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+        - property: Name
+          type: glob
+          value: "telemetry-*"
+      CloudWatchLogsLogGroup:
+        - property: Name
+          type: glob
+          value: "/aws/lambda/telemetry-*"
+        - property: Name
+          type: glob
+          value: "/aws/lambda/caylent-telemetry-*"
+        - property: Name
+          type: glob
+          value: "/aws/apigateway/caylent-telemetry-*"
+        - property: Name
+          type: glob
+          value: "/aws/events/caylent-telemetry-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      CloudWatchAlarm:
+        - property: Name
+          type: glob
+          value: "caylent-telemetry-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      CloudWatchDashboard:
+        - property: Name
+          type: glob
+          value: "caylent-telemetry-*"
+      SNSTopic:
+        - property: Name
+          type: glob
+          value: "caylent-telemetry-alerts-*"
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      XRayGroup:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      XRaySamplingRule:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      EC2VPC:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      EC2Subnet:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      EC2RouteTable:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      EC2InternetGateway:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      EC2NATGateway:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      EC2SecurityGroup:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
+      EC2VPCEndpoint:
+        - property: tag:Service
+          type: exact
+          value: caylent-telemetry
